@@ -10,6 +10,10 @@
 #include <fbjni/fbjni.h>
 #include "PhotoFile.hpp"
 
+#include "CameraOrientation.hpp"
+#include "JCameraOrientation.hpp"
+#include "JPhotoContainerFormat.hpp"
+#include "PhotoContainerFormat.hpp"
 #include <string>
 
 namespace margelo::nitro::camera {
@@ -33,8 +37,29 @@ namespace margelo::nitro::camera {
       static const auto clazz = javaClassStatic();
       static const auto fieldFilePath = clazz->getField<jni::JString>("filePath");
       jni::local_ref<jni::JString> filePath = this->getFieldValue(fieldFilePath);
+      static const auto fieldWidth = clazz->getField<double>("width");
+      double width = this->getFieldValue(fieldWidth);
+      static const auto fieldHeight = clazz->getField<double>("height");
+      double height = this->getFieldValue(fieldHeight);
+      static const auto fieldOrientation = clazz->getField<JCameraOrientation>("orientation");
+      jni::local_ref<JCameraOrientation> orientation = this->getFieldValue(fieldOrientation);
+      static const auto fieldIsMirrored = clazz->getField<jboolean>("isMirrored");
+      jboolean isMirrored = this->getFieldValue(fieldIsMirrored);
+      static const auto fieldTimestamp = clazz->getField<double>("timestamp");
+      double timestamp = this->getFieldValue(fieldTimestamp);
+      static const auto fieldIsRawPhoto = clazz->getField<jboolean>("isRawPhoto");
+      jboolean isRawPhoto = this->getFieldValue(fieldIsRawPhoto);
+      static const auto fieldContainerFormat = clazz->getField<JPhotoContainerFormat>("containerFormat");
+      jni::local_ref<JPhotoContainerFormat> containerFormat = this->getFieldValue(fieldContainerFormat);
       return PhotoFile(
-        filePath->toStdString()
+        filePath->toStdString(),
+        width,
+        height,
+        orientation->toCpp(),
+        static_cast<bool>(isMirrored),
+        timestamp,
+        static_cast<bool>(isRawPhoto),
+        containerFormat->toCpp()
       );
     }
 
@@ -44,12 +69,19 @@ namespace margelo::nitro::camera {
      */
     [[maybe_unused]]
     static jni::local_ref<JPhotoFile::javaobject> fromCpp(const PhotoFile& value) {
-      using JSignature = JPhotoFile(jni::alias_ref<jni::JString>);
+      using JSignature = JPhotoFile(jni::alias_ref<jni::JString>, double, double, jni::alias_ref<JCameraOrientation>, jboolean, double, jboolean, jni::alias_ref<JPhotoContainerFormat>);
       static const auto clazz = javaClassStatic();
       static const auto create = clazz->getStaticMethod<JSignature>("fromCpp");
       return create(
         clazz,
-        jni::make_jstring(value.filePath)
+        jni::make_jstring(value.filePath),
+        value.width,
+        value.height,
+        JCameraOrientation::fromCpp(value.orientation),
+        value.isMirrored,
+        value.timestamp,
+        value.isRawPhoto,
+        JPhotoContainerFormat::fromCpp(value.containerFormat)
       );
     }
   };

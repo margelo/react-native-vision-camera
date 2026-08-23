@@ -1,6 +1,10 @@
 import type { Image } from 'react-native-nitro-image'
 import type { usePhotoOutput } from '../../hooks/usePhotoOutput'
-import type { TargetPhotoContainerFormat } from '../common-types/PhotoContainerFormat'
+import type { CameraOrientation } from '../common-types/CameraOrientation'
+import type {
+  PhotoContainerFormat,
+  TargetPhotoContainerFormat,
+} from '../common-types/PhotoContainerFormat'
 import type { QualityPrioritization } from '../common-types/QualityPrioritization'
 import type { Size } from '../common-types/Size'
 import type { CameraDevice } from '../inputs/CameraDevice.nitro'
@@ -225,7 +229,9 @@ export interface CapturePhotoSettings {
 }
 
 /**
- * Represents a Photo written to a File.
+ * Represents a Photo captured by
+ * {@linkcode CameraPhotoOutput.capturePhotoToFile | capturePhotoToFile(...)}
+ * and written to a File.
  */
 export interface PhotoFile {
   /**
@@ -233,6 +239,37 @@ export interface PhotoFile {
    * This is a filesystem path, not a `file://` URL.
    */
   filePath: string
+  /**
+   * The width of the captured Photo, in pixels.
+   */
+  width: number
+  /**
+   * The height of the captured Photo, in pixels.
+   */
+  height: number
+  /**
+   * The {@linkcode CameraOrientation} the Photo was captured in.
+   *
+   * The orientation is applied lazily through the file's EXIF metadata.
+   */
+  orientation: CameraOrientation
+  /**
+   * Whether the captured Photo is mirrored along its vertical axis.
+   */
+  isMirrored: boolean
+  /**
+   * The timestamp at which the Photo was captured, using the system's
+   * host clock, in seconds.
+   */
+  timestamp: number
+  /**
+   * Whether the captured Photo is a RAW photo.
+   */
+  isRawPhoto: boolean
+  /**
+   * The {@linkcode PhotoContainerFormat} of the captured Photo.
+   */
+  containerFormat: PhotoContainerFormat
 }
 
 /**
