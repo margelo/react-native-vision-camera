@@ -126,6 +126,8 @@ namespace margelo::nitro::camera { enum class MeteringMode; }
 namespace margelo::nitro::camera { enum class MirrorMode; }
 // Forward declaration of `NativeBuffer` to properly resolve imports.
 namespace margelo::nitro::camera { struct NativeBuffer; }
+// Forward declaration of `PhotoContainerFormat` to properly resolve imports.
+namespace margelo::nitro::camera { enum class PhotoContainerFormat; }
 // Forward declaration of `PhotoFile` to properly resolve imports.
 namespace margelo::nitro::camera { struct PhotoFile; }
 // Forward declaration of `PhotoHDRConstraint` to properly resolve imports.
@@ -311,6 +313,7 @@ namespace VisionCamera { class HybridZoomGestureControllerSpec_cxx; }
 #include "MeteringMode.hpp"
 #include "MirrorMode.hpp"
 #include "NativeBuffer.hpp"
+#include "PhotoContainerFormat.hpp"
 #include "PhotoFile.hpp"
 #include "PhotoHDRConstraint.hpp"
 #include "PixelFormat.hpp"

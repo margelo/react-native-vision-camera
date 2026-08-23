@@ -11,6 +11,10 @@
 namespace margelo::nitro::camera { class HybridPhotoSpec; }
 // Forward declaration of `PhotoFile` to properly resolve imports.
 namespace margelo::nitro::camera { struct PhotoFile; }
+// Forward declaration of `CameraOrientation` to properly resolve imports.
+namespace margelo::nitro::camera { enum class CameraOrientation; }
+// Forward declaration of `PhotoContainerFormat` to properly resolve imports.
+namespace margelo::nitro::camera { enum class PhotoContainerFormat; }
 // Forward declaration of `CapturePhotoSettings` to properly resolve imports.
 namespace margelo::nitro::camera { struct CapturePhotoSettings; }
 // Forward declaration of `FlashMode` to properly resolve imports.
@@ -23,8 +27,6 @@ namespace margelo::nitro::camera { struct CapturePhotoCallbacks; }
 namespace margelo::nitro::image { class HybridImageSpec; }
 // Forward declaration of `MediaType` to properly resolve imports.
 namespace margelo::nitro::camera { enum class MediaType; }
-// Forward declaration of `CameraOrientation` to properly resolve imports.
-namespace margelo::nitro::camera { enum class CameraOrientation; }
 // Forward declaration of `Size` to properly resolve imports.
 namespace margelo::nitro::camera { struct Size; }
 
@@ -36,6 +38,10 @@ namespace margelo::nitro::camera { struct Size; }
 #include "PhotoFile.hpp"
 #include "JPhotoFile.hpp"
 #include <string>
+#include "CameraOrientation.hpp"
+#include "JCameraOrientation.hpp"
+#include "PhotoContainerFormat.hpp"
+#include "JPhotoContainerFormat.hpp"
 #include <NitroModules/JUnit.hpp>
 #include "CapturePhotoSettings.hpp"
 #include "JCapturePhotoSettings.hpp"
@@ -55,8 +61,6 @@ namespace margelo::nitro::camera { struct Size; }
 #include <vector>
 #include "MediaType.hpp"
 #include "JMediaType.hpp"
-#include "CameraOrientation.hpp"
-#include "JCameraOrientation.hpp"
 #include "Size.hpp"
 #include "JSize.hpp"
 

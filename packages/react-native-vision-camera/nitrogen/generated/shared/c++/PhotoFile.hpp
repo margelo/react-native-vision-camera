@@ -28,9 +28,14 @@
 #error NitroModules cannot be found! Are you sure you installed NitroModules properly?
 #endif
 
-
+// Forward declaration of `CameraOrientation` to properly resolve imports.
+namespace margelo::nitro::camera { enum class CameraOrientation; }
+// Forward declaration of `PhotoContainerFormat` to properly resolve imports.
+namespace margelo::nitro::camera { enum class PhotoContainerFormat; }
 
 #include <string>
+#include "CameraOrientation.hpp"
+#include "PhotoContainerFormat.hpp"
 
 namespace margelo::nitro::camera {
 
@@ -40,10 +45,17 @@ namespace margelo::nitro::camera {
   struct PhotoFile final {
   public:
     std::string filePath     SWIFT_PRIVATE;
+    double width     SWIFT_PRIVATE;
+    double height     SWIFT_PRIVATE;
+    CameraOrientation orientation     SWIFT_PRIVATE;
+    bool isMirrored     SWIFT_PRIVATE;
+    double timestamp     SWIFT_PRIVATE;
+    bool isRawPhoto     SWIFT_PRIVATE;
+    PhotoContainerFormat containerFormat     SWIFT_PRIVATE;
 
   public:
     PhotoFile() = default;
-    explicit PhotoFile(std::string filePath): filePath(filePath) {}
+    explicit PhotoFile(std::string filePath, double width, double height, CameraOrientation orientation, bool isMirrored, double timestamp, bool isRawPhoto, PhotoContainerFormat containerFormat): filePath(filePath), width(width), height(height), orientation(orientation), isMirrored(isMirrored), timestamp(timestamp), isRawPhoto(isRawPhoto), containerFormat(containerFormat) {}
 
   public:
     friend bool operator==(const PhotoFile& lhs, const PhotoFile& rhs) = default;
@@ -59,12 +71,26 @@ namespace margelo::nitro {
     static inline margelo::nitro::camera::PhotoFile fromJSI(jsi::Runtime& runtime, const jsi::Value& arg) {
       jsi::Object obj = arg.asObject(runtime);
       return margelo::nitro::camera::PhotoFile(
-        JSIConverter<std::string>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "filePath")))
+        JSIConverter<std::string>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "filePath"))),
+        JSIConverter<double>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "width"))),
+        JSIConverter<double>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "height"))),
+        JSIConverter<margelo::nitro::camera::CameraOrientation>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "orientation"))),
+        JSIConverter<bool>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "isMirrored"))),
+        JSIConverter<double>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "timestamp"))),
+        JSIConverter<bool>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "isRawPhoto"))),
+        JSIConverter<margelo::nitro::camera::PhotoContainerFormat>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "containerFormat")))
       );
     }
     static inline jsi::Value toJSI(jsi::Runtime& runtime, const margelo::nitro::camera::PhotoFile& arg) {
       jsi::Object obj(runtime);
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "filePath"), JSIConverter<std::string>::toJSI(runtime, arg.filePath));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "width"), JSIConverter<double>::toJSI(runtime, arg.width));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "height"), JSIConverter<double>::toJSI(runtime, arg.height));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "orientation"), JSIConverter<margelo::nitro::camera::CameraOrientation>::toJSI(runtime, arg.orientation));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "isMirrored"), JSIConverter<bool>::toJSI(runtime, arg.isMirrored));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "timestamp"), JSIConverter<double>::toJSI(runtime, arg.timestamp));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "isRawPhoto"), JSIConverter<bool>::toJSI(runtime, arg.isRawPhoto));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "containerFormat"), JSIConverter<margelo::nitro::camera::PhotoContainerFormat>::toJSI(runtime, arg.containerFormat));
       return obj;
     }
     static inline bool canConvert(jsi::Runtime& runtime, const jsi::Value& value) {
@@ -76,6 +102,13 @@ namespace margelo::nitro {
         return false;
       }
       if (!JSIConverter<std::string>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "filePath")))) return false;
+      if (!JSIConverter<double>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "width")))) return false;
+      if (!JSIConverter<double>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "height")))) return false;
+      if (!JSIConverter<margelo::nitro::camera::CameraOrientation>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "orientation")))) return false;
+      if (!JSIConverter<bool>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "isMirrored")))) return false;
+      if (!JSIConverter<double>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "timestamp")))) return false;
+      if (!JSIConverter<bool>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "isRawPhoto")))) return false;
+      if (!JSIConverter<margelo::nitro::camera::PhotoContainerFormat>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "containerFormat")))) return false;
       return true;
     }
   };

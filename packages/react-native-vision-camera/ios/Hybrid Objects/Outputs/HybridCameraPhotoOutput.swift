@@ -180,7 +180,15 @@ final class HybridCameraPhotoOutput: HybridCameraPhotoOutputSpec, NativeCameraOu
         .await()
       let filePath = try await photo.saveToTemporaryFileAsync()
         .await()
-      return PhotoFile(filePath: filePath)
+      return PhotoFile(
+        filePath: filePath,
+        width: photo.width,
+        height: photo.height,
+        orientation: photo.orientation,
+        isMirrored: photo.isMirrored,
+        timestamp: photo.timestamp,
+        isRawPhoto: photo.isRawPhoto,
+        containerFormat: photo.containerFormat)
     }
   }
 

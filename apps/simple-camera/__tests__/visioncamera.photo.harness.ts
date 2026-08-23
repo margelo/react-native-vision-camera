@@ -1001,6 +1001,51 @@ describe('VisionCamera - Photo', () => {
     await session.stop()
   })
 
+  it('returns captured Photo metadata from capturePhotoToFile', async () => {
+    const session = await VisionCamera.createCameraSession(false)
+    const photoOutput = VisionCamera.createPhotoOutput({
+      targetResolution: CommonResolutions.HD_4_3,
+      containerFormat: 'jpeg',
+      quality: 0.8,
+      qualityPrioritization: 'balanced',
+    })
+    await session.configure([
+      {
+        input: backDevice,
+        outputs: [{ output: photoOutput, mirrorMode: 'on' }],
+        constraints: [],
+      },
+    ])
+    await session.start()
+
+    try {
+      photoOutput.outputOrientation = 'left'
+      const inMemoryPhoto = await photoOutput.capturePhoto(
+        { flashMode: 'off', enableShutterSound: false },
+        {},
+      )
+      try {
+        const photoFile = await photoOutput.capturePhotoToFile(
+          { flashMode: 'off', enableShutterSound: false },
+          {},
+        )
+
+        expect(photoFile.filePath).toMatch(/^\/.*\.(jpeg|jpg)$/)
+        expect(photoFile.width).toBe(inMemoryPhoto.width)
+        expect(photoFile.height).toBe(inMemoryPhoto.height)
+        expect(photoFile.orientation).toBe(inMemoryPhoto.orientation)
+        expect(photoFile.isMirrored).toBe(inMemoryPhoto.isMirrored)
+        expect(photoFile.timestamp).toBeGreaterThan(0)
+        expect(photoFile.isRawPhoto).toBe(inMemoryPhoto.isRawPhoto)
+        expect(photoFile.containerFormat).toBe(inMemoryPhoto.containerFormat)
+      } finally {
+        inMemoryPhoto.dispose()
+      }
+    } finally {
+      await session.stop()
+    }
+  })
+
   it('reports supportsDepthDataDelivery on a depth-capable device', async (context) => {
     // `supportsDepthDataDelivery` is a per-output property that flips to `true`
     // once the photo output is bound to a device that can produce depth data.
