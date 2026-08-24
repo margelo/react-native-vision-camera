@@ -30,6 +30,7 @@ class HybridTapToFocusGestureController :
   private val onFocusCompletedListeners = mutableSetOf<(HybridMeteringPointSpec) -> Unit>()
   private val context: Context
     get() = NitroModules.applicationContext ?: throw Error("Context not available!")
+  private val mainHandler = Handler(Looper.getMainLooper())
   private var isTracking = false
   private val gestureDetector =
     GestureDetector(
@@ -52,14 +53,16 @@ class HybridTapToFocusGestureController :
           controller
             .focusTo(meteringPoint, FocusOptions(null, null, null, null))
             .then {
-              onFocusCompletedListeners.toList().forEach { it(meteringPoint) }
+              mainHandler.post {
+                onFocusCompletedListeners.toList().forEach { it(meteringPoint) }
+              }
             }.catch { error ->
               Log.e(TAG, "Failed to focus!", error)
             }
           return true
         }
       },
-      Handler(Looper.getMainLooper()),
+      mainHandler,
     )
 
   override fun onTouchEvent(

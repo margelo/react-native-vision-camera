@@ -41,9 +41,11 @@ final class HybridTapToFocusGestureController: HybridTapToFocusGestureController
 
       try controller.focusTo(point: meteringPoint, options: FocusOptions())
         .then { [weak self] _ in
-          guard let self else { return }
-          let focusCompletedListeners = Array(self.onFocusCompletedListeners.values)
-          focusCompletedListeners.forEach { $0(meteringPoint) }
+          DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            let focusCompletedListeners = Array(self.onFocusCompletedListeners.values)
+            focusCompletedListeners.forEach { $0(meteringPoint) }
+          }
         }
         .catch { error in
           logger.error("Failed to focus! \(error)")
