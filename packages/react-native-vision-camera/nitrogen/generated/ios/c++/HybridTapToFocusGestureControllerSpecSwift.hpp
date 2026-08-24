@@ -12,9 +12,17 @@
 // Forward declaration of `HybridTapToFocusGestureControllerSpec_cxx` to properly resolve imports.
 namespace VisionCamera { class HybridTapToFocusGestureControllerSpec_cxx; }
 
+// Forward declaration of `ListenerSubscription` to properly resolve imports.
+namespace margelo::nitro::camera { struct ListenerSubscription; }
+// Forward declaration of `HybridMeteringPointSpec` to properly resolve imports.
+namespace margelo::nitro::camera { class HybridMeteringPointSpec; }
 // Forward declaration of `HybridGestureControllerSpecSwift` to properly resolve imports.
 namespace margelo::nitro::camera { class HybridGestureControllerSpecSwift; }
 
+#include "ListenerSubscription.hpp"
+#include <functional>
+#include <memory>
+#include "HybridMeteringPointSpec.hpp"
 #include "HybridGestureControllerSpecSwift.hpp"
 
 #include "VisionCamera-Swift-Cxx-Umbrella.hpp"
@@ -68,7 +76,22 @@ namespace margelo::nitro::camera {
 
   public:
     // Methods
-    
+    inline ListenerSubscription addOnTapListener(const std::function<void(const std::shared_ptr<HybridMeteringPointSpec>& /* point */)>& onTap) override {
+      auto __result = _swiftPart.addOnTapListener(onTap);
+      if (__result.hasError()) [[unlikely]] {
+        std::rethrow_exception(__result.error());
+      }
+      auto __value = std::move(__result.value());
+      return __value;
+    }
+    inline ListenerSubscription addOnFocusCompletedListener(const std::function<void(const std::shared_ptr<HybridMeteringPointSpec>& /* point */)>& onFocusCompleted) override {
+      auto __result = _swiftPart.addOnFocusCompletedListener(onFocusCompleted);
+      if (__result.hasError()) [[unlikely]] {
+        std::rethrow_exception(__result.error());
+      }
+      auto __value = std::move(__result.value());
+      return __value;
+    }
 
   private:
     VisionCamera::HybridTapToFocusGestureControllerSpec_cxx _swiftPart;

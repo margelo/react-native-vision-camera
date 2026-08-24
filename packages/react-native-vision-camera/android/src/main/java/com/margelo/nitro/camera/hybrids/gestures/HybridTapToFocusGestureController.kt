@@ -13,7 +13,9 @@ import androidx.camera.view.PreviewView
 import com.margelo.nitro.NitroModules
 import com.margelo.nitro.camera.FocusOptions
 import com.margelo.nitro.camera.HybridCameraControllerSpec
+import com.margelo.nitro.camera.HybridMeteringPointSpec
 import com.margelo.nitro.camera.HybridTapToFocusGestureControllerSpec
+import com.margelo.nitro.camera.ListenerSubscription
 import com.margelo.nitro.camera.hybrids.HybridCameraController
 import com.margelo.nitro.camera.hybrids.metering.HybridMeteringPoint
 import com.margelo.nitro.camera.public.NativeGestureController
@@ -24,6 +26,8 @@ class HybridTapToFocusGestureController :
   override var controller: HybridCameraControllerSpec? = null
 
   private var previewView: PreviewView? = null
+  private val onTapListeners = mutableSetOf<(HybridMeteringPointSpec) -> Unit>()
+  private val onFocusCompletedListeners = mutableSetOf<(HybridMeteringPointSpec) -> Unit>()
   private val context: Context
     get() = NitroModules.applicationContext ?: throw Error("Context not available!")
   private var isTracking = false
@@ -42,8 +46,16 @@ class HybridTapToFocusGestureController :
           val controller = controller ?: return false
 
           val point = previewView.meteringPointFactory.createPoint(e.x, e.y)
-          val meteringPoint = HybridMeteringPoint(e.x.toDouble(), e.y.toDouble(), null, point)
-          controller.focusTo(meteringPoint, FocusOptions(null, null, null, null))
+          val density = context.resources.displayMetrics.density
+          val meteringPoint = HybridMeteringPoint((e.x / density).toDouble(), (e.y / density).toDouble(), null, point)
+          onTapListeners.toList().forEach { it(meteringPoint) }
+          controller
+            .focusTo(meteringPoint, FocusOptions(null, null, null, null))
+            .then {
+              onFocusCompletedListeners.toList().forEach { it(meteringPoint) }
+            }.catch { error ->
+              Log.e(TAG, "Failed to focus!", error)
+            }
           return true
         }
       },
@@ -91,6 +103,20 @@ class HybridTapToFocusGestureController :
         }
         return false
       }
+    }
+  }
+
+  override fun addOnTapListener(onTap: (HybridMeteringPointSpec) -> Unit): ListenerSubscription {
+    onTapListeners.add(onTap)
+    return ListenerSubscription {
+      onTapListeners.remove(onTap)
+    }
+  }
+
+  override fun addOnFocusCompletedListener(onFocusCompleted: (HybridMeteringPointSpec) -> Unit): ListenerSubscription {
+    onFocusCompletedListeners.add(onFocusCompleted)
+    return ListenerSubscription {
+      onFocusCompletedListeners.remove(onFocusCompleted)
     }
   }
 }

@@ -13,10 +13,17 @@
 #error NitroModules cannot be found! Are you sure you installed NitroModules properly?
 #endif
 
+// Forward declaration of `ListenerSubscription` to properly resolve imports.
+namespace margelo::nitro::camera { struct ListenerSubscription; }
+// Forward declaration of `HybridMeteringPointSpec` to properly resolve imports.
+namespace margelo::nitro::camera { class HybridMeteringPointSpec; }
 // Forward declaration of `HybridGestureControllerSpec` to properly resolve imports.
 namespace margelo::nitro::camera { class HybridGestureControllerSpec; }
 
+#include "ListenerSubscription.hpp"
 #include <memory>
+#include "HybridMeteringPointSpec.hpp"
+#include <functional>
 #include "HybridGestureControllerSpec.hpp"
 
 namespace margelo::nitro::camera {
@@ -50,7 +57,8 @@ namespace margelo::nitro::camera {
 
     public:
       // Methods
-      
+      virtual ListenerSubscription addOnTapListener(const std::function<void(const std::shared_ptr<HybridMeteringPointSpec>& /* point */)>& onTap) = 0;
+      virtual ListenerSubscription addOnFocusCompletedListener(const std::function<void(const std::shared_ptr<HybridMeteringPointSpec>& /* point */)>& onFocusCompleted) = 0;
 
     protected:
       // Hybrid Setup
