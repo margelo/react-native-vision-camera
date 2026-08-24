@@ -92,6 +92,14 @@ namespace margelo::nitro::camera {
       auto __value = std::move(__result.value());
       return __value;
     }
+    inline ListenerSubscription addOnFocusResetListener(const std::function<void(const std::shared_ptr<HybridMeteringPointSpec>& /* point */)>& onFocusReset) override {
+      auto __result = _swiftPart.addOnFocusResetListener(onFocusReset);
+      if (__result.hasError()) [[unlikely]] {
+        std::rethrow_exception(__result.error());
+      }
+      auto __value = std::move(__result.value());
+      return __value;
+    }
 
   private:
     VisionCamera::HybridTapToFocusGestureControllerSpec_cxx _swiftPart;

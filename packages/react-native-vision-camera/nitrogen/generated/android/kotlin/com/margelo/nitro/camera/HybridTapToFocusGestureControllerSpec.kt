@@ -47,6 +47,15 @@ abstract class HybridTapToFocusGestureControllerSpec: HybridGestureControllerSpe
     return __result
   }
 
+  abstract fun addOnFocusResetListener(onFocusReset: (point: HybridMeteringPointSpec) -> Unit): ListenerSubscription
+
+  @DoNotStrip
+  @Keep
+  private fun addOnFocusResetListener_cxx(onFocusReset: Func_void_std__shared_ptr_HybridMeteringPointSpec_): ListenerSubscription {
+    val __result = addOnFocusResetListener(onFocusReset)
+    return __result
+  }
+
   // Default implementation of `HybridObject.toString()`
   override fun toString(): String {
     return "[HybridObject TapToFocusGestureController]"

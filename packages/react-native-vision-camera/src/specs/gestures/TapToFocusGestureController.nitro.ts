@@ -30,4 +30,17 @@ export interface TapToFocusGestureController extends GestureController {
   addOnFocusCompletedListener(
     onFocusCompleted: (point: MeteringPoint) => void,
   ): ListenerSubscription
+
+  /**
+   * Adds a listener that is called after focus triggered by a native tap
+   * automatically resets.
+   *
+   * This is not called if the reset fails or the focus is superseded by a
+   * newer focus operation. Call
+   * {@linkcode ListenerSubscription.remove | remove()} on the returned
+   * subscription to stop receiving updates.
+   */
+  addOnFocusResetListener(
+    onFocusReset: (point: MeteringPoint) => void,
+  ): ListenerSubscription
 }

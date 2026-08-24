@@ -2,6 +2,9 @@ package com.margelo.nitro.camera.hybrids
 
 import android.animation.Animator
 import android.animation.ValueAnimator
+import android.os.Handler
+import android.os.Looper
+import android.util.Log
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraState
 import androidx.camera.core.FocusMeteringAction
@@ -33,6 +36,7 @@ import com.margelo.nitro.core.Promise
 import com.margelo.nitro.core.resolve
 import com.margelo.nitro.core.resolved
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicLong
 
 class HybridCameraController(
   val camera: Camera,
@@ -41,6 +45,10 @@ class HybridCameraController(
   private val cameraState: CameraState?
     get() = camera.cameraInfo.cameraState.value
   private var zoomAnimator: ValueAnimator? = null
+  private val focusResetHandler = Handler(Looper.getMainLooper())
+  private val focusGeneration = AtomicLong()
+  private val focusResetLock = Any()
+  private var pendingFocusReset: Runnable? = null
 
   override val isConnected: Boolean
     get() = cameraState?.type == CameraState.Type.OPEN
@@ -140,7 +148,14 @@ class HybridCameraController(
   override fun focusTo(
     point: HybridMeteringPointSpec,
     options: FocusOptions,
+  ): Promise<Unit> = focusTo(point, options, null)
+
+  fun focusTo(
+    point: HybridMeteringPointSpec,
+    options: FocusOptions,
+    onReset: (() -> Unit)?,
   ): Promise<Unit> {
+    val generation = beginFocusOperation()
     return Promise.async {
       val point =
         point as? HybridMeteringPoint
@@ -159,14 +174,68 @@ class HybridCameraController(
             SceneAdaptiveness.CONTINUOUS -> action.setLockingMode(0)
           }
           // Disable auto reset, or set it to a fixed duration (seconds)
-          autoResetAfter.match(
-            { _ -> action.disableAutoCancel() },
-            { duration -> action.setAutoCancelDuration(duration.toLong(), TimeUnit.SECONDS) },
-          )
+          if (onReset != null) {
+            action.disableAutoCancel()
+          } else {
+            autoResetAfter.match(
+              { _ -> action.disableAutoCancel() },
+              { duration -> action.setAutoCancelDuration(duration.toLong(), TimeUnit.SECONDS) },
+            )
+          }
         }
       camera.cameraControl
         .startFocusAndMetering(focusAction.build())
         .await()
+
+      if (onReset != null) {
+        autoResetAfter.match(
+          { _ -> },
+          { duration -> scheduleFocusReset(generation, duration, onReset) },
+        )
+      }
+    }
+  }
+
+  private fun beginFocusOperation(): Long {
+    val generation = focusGeneration.incrementAndGet()
+    synchronized(focusResetLock) {
+      pendingFocusReset?.let { focusResetHandler.removeCallbacks(it) }
+      pendingFocusReset = null
+    }
+    return generation
+  }
+
+  private fun scheduleFocusReset(
+    generation: Long,
+    duration: Double,
+    onReset: () -> Unit,
+  ) {
+    val reset =
+      Runnable {
+        if (focusGeneration.get() != generation) return@Runnable
+        val future = camera.cameraControl.cancelFocusAndMetering()
+        future.addListener(
+          {
+            try {
+              future.get()
+              if (focusGeneration.get() == generation) {
+                synchronized(focusResetLock) {
+                  pendingFocusReset = null
+                }
+                onReset()
+              }
+            } catch (error: Throwable) {
+              Log.e(TAG, "Failed to automatically reset focus!", error)
+            }
+          },
+          { command -> focusResetHandler.post(command) },
+        )
+      }
+    synchronized(focusResetLock) {
+      if (focusGeneration.get() == generation) {
+        pendingFocusReset = reset
+        focusResetHandler.postDelayed(reset, (duration * 1_000).toLong())
+      }
     }
   }
 
@@ -183,6 +252,7 @@ class HybridCameraController(
   }
 
   override fun resetFocus(): Promise<Unit> {
+    beginFocusOperation()
     return Promise.async {
       camera.cameraControl
         .cancelFocusAndMetering()

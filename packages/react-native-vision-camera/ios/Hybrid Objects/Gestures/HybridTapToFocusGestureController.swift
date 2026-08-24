@@ -18,6 +18,7 @@ final class HybridTapToFocusGestureController: HybridTapToFocusGestureController
   private weak var previewView: (any HybridPreviewViewSpec)? = nil
   private var onTapListeners: [UUID: (any HybridMeteringPointSpec) -> Void] = [:]
   private var onFocusCompletedListeners: [UUID: (any HybridMeteringPointSpec) -> Void] = [:]
+  private var onFocusResetListeners: [UUID: (any HybridMeteringPointSpec) -> Void] = [:]
 
   override init() {
     super.init()
@@ -39,7 +40,24 @@ final class HybridTapToFocusGestureController: HybridTapToFocusGestureController
       let tapListeners = Array(onTapListeners.values)
       tapListeners.forEach { $0(meteringPoint) }
 
-      try controller.focusTo(point: meteringPoint, options: FocusOptions())
+      let onReset = { [weak self] in
+        DispatchQueue.main.async { [weak self] in
+          guard let self else { return }
+          let focusResetListeners = Array(self.onFocusResetListeners.values)
+          focusResetListeners.forEach { $0(meteringPoint) }
+        }
+      }
+      let focusPromise: Promise<Void>
+      if let nativeController = controller as? HybridCameraController {
+        focusPromise = nativeController.focusTo(
+          point: meteringPoint,
+          options: FocusOptions(),
+          onReset: onReset)
+      } else {
+        focusPromise = try controller.focusTo(point: meteringPoint, options: FocusOptions())
+      }
+
+      focusPromise
         .then { [weak self] _ in
           DispatchQueue.main.async { [weak self] in
             guard let self else { return }
@@ -72,6 +90,16 @@ final class HybridTapToFocusGestureController: HybridTapToFocusGestureController
     onFocusCompletedListeners[id] = onFocusCompleted
     return ListenerSubscription { [weak self] in
       self?.onFocusCompletedListeners.removeValue(forKey: id)
+    }
+  }
+
+  func addOnFocusResetListener(onFocusReset: @escaping (any HybridMeteringPointSpec) -> Void)
+    -> ListenerSubscription
+  {
+    let id = UUID()
+    onFocusResetListeners[id] = onFocusReset
+    return ListenerSubscription { [weak self] in
+      self?.onFocusResetListeners.removeValue(forKey: id)
     }
   }
 

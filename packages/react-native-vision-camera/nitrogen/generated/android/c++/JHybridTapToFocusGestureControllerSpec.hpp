@@ -59,6 +59,7 @@ namespace margelo::nitro::camera {
     // Methods
     ListenerSubscription addOnTapListener(const std::function<void(const std::shared_ptr<HybridMeteringPointSpec>& /* point */)>& onTap) override;
     ListenerSubscription addOnFocusCompletedListener(const std::function<void(const std::shared_ptr<HybridMeteringPointSpec>& /* point */)>& onFocusCompleted) override;
+    ListenerSubscription addOnFocusResetListener(const std::function<void(const std::shared_ptr<HybridMeteringPointSpec>& /* point */)>& onFocusReset) override;
 
   private:
     jni::global_ref<JHybridTapToFocusGestureControllerSpec::JavaPart> _javaPart;

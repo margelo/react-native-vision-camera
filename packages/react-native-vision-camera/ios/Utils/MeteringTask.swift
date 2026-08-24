@@ -42,6 +42,7 @@ final class MeteringTask {
   private var isFinished = false
   private var onComplete: (() -> Void)? = nil
   private var onError: ((Error) -> Void)? = nil
+  private var onReset: (() -> Void)? = nil
 
   private struct MeteringProgress {
     var settledAt: Date? = nil
@@ -87,10 +88,12 @@ final class MeteringTask {
    */
   func startListening(
     onComplete: @escaping () -> Void,
-    onError: @escaping (Error) -> Void
+    onError: @escaping (Error) -> Void,
+    onReset: (() -> Void)?
   ) {
     self.onComplete = onComplete
     self.onError = onError
+    self.onReset = onReset
     // the Timer periodically polls AE/AF/AWB state - this is how we can ensure the states have
     // been stable for 120ms+ and aren't just fluctuating.
     let pollTimer = DispatchSource.makeTimerSource(queue: queue)
@@ -171,7 +174,14 @@ final class MeteringTask {
       if case .after(let seconds) = self.autoReset {
         self.queue.asyncAfter(deadline: .now() + seconds) { [weak self] in
           guard let self else { return }
-          try? self.resetMeteringValues()
+          do {
+            try self.resetMeteringValues()
+            let onReset = self.onReset
+            self.onReset = nil
+            onReset?()
+          } catch {
+            logger.error("Failed to automatically reset metering! \(error)")
+          }
         }
       }
     }

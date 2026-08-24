@@ -28,6 +28,7 @@ class HybridTapToFocusGestureController :
   private var previewView: PreviewView? = null
   private val onTapListeners = mutableSetOf<(HybridMeteringPointSpec) -> Unit>()
   private val onFocusCompletedListeners = mutableSetOf<(HybridMeteringPointSpec) -> Unit>()
+  private val onFocusResetListeners = mutableSetOf<(HybridMeteringPointSpec) -> Unit>()
   private val context: Context
     get() = NitroModules.applicationContext ?: throw Error("Context not available!")
   private val mainHandler = Handler(Looper.getMainLooper())
@@ -50,8 +51,18 @@ class HybridTapToFocusGestureController :
           val density = context.resources.displayMetrics.density
           val meteringPoint = HybridMeteringPoint((e.x / density).toDouble(), (e.y / density).toDouble(), null, point)
           onTapListeners.toList().forEach { it(meteringPoint) }
-          controller
-            .focusTo(meteringPoint, FocusOptions(null, null, null, null))
+          val focusOptions = FocusOptions(null, null, null, null)
+          val focusPromise =
+            if (controller is HybridCameraController) {
+              controller.focusTo(meteringPoint, focusOptions) {
+                mainHandler.post {
+                  onFocusResetListeners.toList().forEach { it(meteringPoint) }
+                }
+              }
+            } else {
+              controller.focusTo(meteringPoint, focusOptions)
+            }
+          focusPromise
             .then {
               mainHandler.post {
                 onFocusCompletedListeners.toList().forEach { it(meteringPoint) }
@@ -120,6 +131,13 @@ class HybridTapToFocusGestureController :
     onFocusCompletedListeners.add(onFocusCompleted)
     return ListenerSubscription {
       onFocusCompletedListeners.remove(onFocusCompleted)
+    }
+  }
+
+  override fun addOnFocusResetListener(onFocusReset: (HybridMeteringPointSpec) -> Unit): ListenerSubscription {
+    onFocusResetListeners.add(onFocusReset)
+    return ListenerSubscription {
+      onFocusResetListeners.remove(onFocusReset)
     }
   }
 }

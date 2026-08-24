@@ -78,5 +78,10 @@ namespace margelo::nitro::camera {
     auto __result = method(_javaPart, JFunc_void_std__shared_ptr_HybridMeteringPointSpec__cxx::fromCpp(onFocusCompleted));
     return __result->toCpp();
   }
+  ListenerSubscription JHybridTapToFocusGestureControllerSpec::addOnFocusResetListener(const std::function<void(const std::shared_ptr<HybridMeteringPointSpec>& /* point */)>& onFocusReset) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JListenerSubscription>(jni::alias_ref<JFunc_void_std__shared_ptr_HybridMeteringPointSpec_::javaobject> /* onFocusReset */)>("addOnFocusResetListener_cxx");
+    auto __result = method(_javaPart, JFunc_void_std__shared_ptr_HybridMeteringPointSpec__cxx::fromCpp(onFocusReset));
+    return __result->toCpp();
+  }
 
 } // namespace margelo::nitro::camera

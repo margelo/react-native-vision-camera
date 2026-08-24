@@ -172,6 +172,14 @@ final class HybridCameraController: HybridCameraControllerSpec, NativeCameraCont
     point: any HybridMeteringPointSpec,
     options: FocusOptions
   ) -> Promise<Void> {
+    return focusTo(point: point, options: options, onReset: nil)
+  }
+
+  func focusTo(
+    point: any HybridMeteringPointSpec,
+    options: FocusOptions,
+    onReset: (() -> Void)?
+  ) -> Promise<Void> {
     return captureDevice.withLock(queue) { resolve, reject in
       guard let point = point as? HybridMeteringPoint else {
         throw RuntimeError.error(withMessage: "MeteringPoint is not of type `HybridMeteringPoint`!")
@@ -214,7 +222,8 @@ final class HybridCameraController: HybridCameraControllerSpec, NativeCameraCont
       // Start listening to updates
       task.startListening(
         onComplete: resolve,
-        onError: reject
+        onError: reject,
+        onReset: onReset
       )
       self.activeMeteringTask = task
 
