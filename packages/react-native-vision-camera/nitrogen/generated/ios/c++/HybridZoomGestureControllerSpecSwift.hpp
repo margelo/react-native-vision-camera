@@ -12,9 +12,13 @@
 // Forward declaration of `HybridZoomGestureControllerSpec_cxx` to properly resolve imports.
 namespace VisionCamera { class HybridZoomGestureControllerSpec_cxx; }
 
+// Forward declaration of `ListenerSubscription` to properly resolve imports.
+namespace margelo::nitro::camera { struct ListenerSubscription; }
 // Forward declaration of `HybridGestureControllerSpecSwift` to properly resolve imports.
 namespace margelo::nitro::camera { class HybridGestureControllerSpecSwift; }
 
+#include "ListenerSubscription.hpp"
+#include <functional>
 #include "HybridGestureControllerSpecSwift.hpp"
 
 #include "VisionCamera-Swift-Cxx-Umbrella.hpp"
@@ -68,7 +72,14 @@ namespace margelo::nitro::camera {
 
   public:
     // Methods
-    
+    inline ListenerSubscription addOnZoomChangedListener(const std::function<void(double /* zoom */)>& onZoomChanged) override {
+      auto __result = _swiftPart.addOnZoomChangedListener(onZoomChanged);
+      if (__result.hasError()) [[unlikely]] {
+        std::rethrow_exception(__result.error());
+      }
+      auto __value = std::move(__result.value());
+      return __value;
+    }
 
   private:
     VisionCamera::HybridZoomGestureControllerSpec_cxx _swiftPart;

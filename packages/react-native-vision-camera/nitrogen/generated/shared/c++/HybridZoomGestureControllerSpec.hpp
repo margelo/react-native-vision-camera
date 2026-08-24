@@ -13,9 +13,13 @@
 #error NitroModules cannot be found! Are you sure you installed NitroModules properly?
 #endif
 
+// Forward declaration of `ListenerSubscription` to properly resolve imports.
+namespace margelo::nitro::camera { struct ListenerSubscription; }
 // Forward declaration of `HybridGestureControllerSpec` to properly resolve imports.
 namespace margelo::nitro::camera { class HybridGestureControllerSpec; }
 
+#include "ListenerSubscription.hpp"
+#include <functional>
 #include <memory>
 #include "HybridGestureControllerSpec.hpp"
 
@@ -50,7 +54,7 @@ namespace margelo::nitro::camera {
 
     public:
       // Methods
-      
+      virtual ListenerSubscription addOnZoomChangedListener(const std::function<void(double /* zoom */)>& onZoomChanged) = 0;
 
     protected:
       // Hybrid Setup

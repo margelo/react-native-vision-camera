@@ -1347,6 +1347,28 @@ namespace margelo::nitro::camera::bridge::swift {
     return Func_void_std__shared_ptr_HybridMeteringPointSpec__Wrapper(std::move(value));
   }
 
+  // pragma MARK: std::function<void(double /* zoom */)>
+  /**
+   * Specialized version of `std::function<void(double)>`.
+   */
+  using Func_void_double = std::function<void(double /* zoom */)>;
+  /**
+   * Wrapper class for a `std::function<void(double / * zoom * /)>`, this can be used from Swift.
+   */
+  class Func_void_double_Wrapper final {
+  public:
+    explicit Func_void_double_Wrapper(std::function<void(double /* zoom */)>&& func): _function(std::make_unique<std::function<void(double /* zoom */)>>(std::move(func))) {}
+    inline void call(double zoom) const noexcept {
+      _function->operator()(zoom);
+    }
+  private:
+    std::unique_ptr<std::function<void(double /* zoom */)>> _function;
+  } SWIFT_NONCOPYABLE;
+  Func_void_double create_Func_void_double(void* NON_NULL swiftClosureWrapper) noexcept;
+  inline Func_void_double_Wrapper wrap_Func_void_double(Func_void_double value) noexcept {
+    return Func_void_double_Wrapper(std::move(value));
+  }
+
   // pragma MARK: std::vector<std::shared_ptr<HybridCameraDeviceSpec>>
   /**
    * Specialized version of `std::vector<std::shared_ptr<HybridCameraDeviceSpec>>`.

@@ -127,5 +127,20 @@ open class HybridZoomGestureControllerSpec_cxx : HybridGestureControllerSpec_cxx
   
 
   // Methods
-  
+  @inline(__always)
+  public final func addOnZoomChangedListener(onZoomChanged: bridge.Func_void_double) -> bridge.Result_ListenerSubscription_ {
+    do {
+      let __result = try self.__implementation.addOnZoomChangedListener(onZoomChanged: { () -> (Double) -> Void in
+        let __wrappedFunction = bridge.wrap_Func_void_double(onZoomChanged)
+        return { (__zoom: Double) -> Void in
+          __wrappedFunction.call(__zoom)
+        }
+      }())
+      let __resultCpp = __result
+      return bridge.create_Result_ListenerSubscription_(__resultCpp)
+    } catch (let __error) {
+      let __exceptionPtr = __error.toCpp()
+      return bridge.create_Result_ListenerSubscription_(__exceptionPtr)
+    }
+  }
 }

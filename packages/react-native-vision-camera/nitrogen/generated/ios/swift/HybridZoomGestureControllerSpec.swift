@@ -13,7 +13,7 @@ public protocol HybridZoomGestureControllerSpec_protocol: HybridObject, HybridGe
   
 
   // Methods
-  
+  func addOnZoomChangedListener(onZoomChanged: @escaping (_ zoom: Double) -> Void) throws -> ListenerSubscription
 }
 
 public extension HybridZoomGestureControllerSpec_protocol {

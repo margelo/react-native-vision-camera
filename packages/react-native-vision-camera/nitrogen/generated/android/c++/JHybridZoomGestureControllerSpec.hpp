@@ -57,7 +57,7 @@ namespace margelo::nitro::camera {
 
   public:
     // Methods
-    
+    ListenerSubscription addOnZoomChangedListener(const std::function<void(double /* zoom */)>& onZoomChanged) override;
 
   private:
     jni::global_ref<JHybridZoomGestureControllerSpec::JavaPart> _javaPart;
