@@ -189,10 +189,14 @@ describe('FakeCamera - Devices', () => {
       return context.skip('userPreferredCamera: iOS 17+ only')
     }
     const front = factory.getCameraForId('fake-front-wide')
+    const backWide = factory.getCameraForId('fake-back-wide')
     assert.exists(front, 'fake-front-wide is missing')
+    assert.exists(backWide, 'fake-back-wide is missing')
     factory.userPreferredCamera = front
     expect(factory.userPreferredCamera?.id).toBe('fake-front-wide')
-    factory.userPreferredCamera = undefined
-    expect(factory.userPreferredCamera).toBeUndefined()
+    // VisionCamera's setter ignores a nil value (it cannot clear the preference), so the last camera set
+    // wins — assert an overwrite rather than a clear.
+    factory.userPreferredCamera = backWide
+    expect(factory.userPreferredCamera?.id).toBe('fake-back-wide')
   })
 })

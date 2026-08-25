@@ -214,13 +214,10 @@ static void sessionAddInputWithNoConnections(id self, SEL _cmd, AVCaptureInput *
 
 static void sessionRemoveInput(id self, SEL _cmd, AVCaptureInput *input) {
   if (FakeCameraIsFakeInput(input)) {
+    // Untrack only. Do NOT walk the connection list here: AVCaptureSession's own dealloc calls removeInput:,
+    // and touching the associated connection arrays mid-teardown over-releases. Reconfigure rebuilds
+    // connections from scratch in updateConnections, so no cascade is needed.
     listRemove(self, kSessionInputsKey, input);
-    for (FakeCameraConnection *connection in FakeCameraSessionConnections(self)) {
-      if ([connection.inputPorts containsObject:FakeCameraPortForInput(input)]) {
-        detachConnection(self, connection);
-      }
-    }
-    FAKECAM_INFO("session %p: removed fake input for %{public}@", self, FakeCameraDeviceForInput(input).uniqueID);
     return;
   }
   ((void (*)(id, SEL, AVCaptureInput *))originalRemoveInput)(self, _cmd, input);
@@ -257,12 +254,15 @@ static void sessionAddOutputWithNoConnections(id self, SEL _cmd, AVCaptureOutput
 
 static void sessionRemoveOutput(id self, SEL _cmd, AVCaptureOutput *output) {
   if (FakeCameraIsFakeSession(self)) {
+    // Untrack the output and drop the fake connections it owns. The session's own connection list is rebuilt
+    // by updateConnections on the next configure; nothing walks it here (see sessionRemoveInput).
     listRemove(self, kSessionOutputsKey, output);
-    for (FakeCameraConnection *connection in FakeCameraSessionConnections(self)) {
-      if (connection.output == output) {
-        detachConnection(self, connection);
-      }
+    for (FakeCameraConnection *connection in listCopy(output, kOutputConnectionsKey)) {
+      listRemove(self, kSessionConnectionsKey, connection);
     }
+    [stateLock() lock];
+    [list(output, kOutputConnectionsKey) removeAllObjects];
+    [stateLock() unlock];
     objc_setAssociatedObject(output, kOutputSessionKey, nil, OBJC_ASSOCIATION_ASSIGN);
     return;
   }
