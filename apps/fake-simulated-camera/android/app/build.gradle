@@ -139,6 +139,10 @@ dependencies {
     implementation "androidx.camera:camera-lifecycle:${camerax_version}"
     implementation "androidx.camera:camera-video:${camerax_version}"
 
+    // Lets the fake author a real android.hardware.camera2.CameraCharacteristics via CameraMetadataNative
+    // (hidden framework API) so VisionCamera reads catalog resolutions/pixel-formats the same way it does on iOS.
+    implementation "org.lsposed.hiddenapibypass:hiddenapibypass:4.3"
+
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")
     } else {

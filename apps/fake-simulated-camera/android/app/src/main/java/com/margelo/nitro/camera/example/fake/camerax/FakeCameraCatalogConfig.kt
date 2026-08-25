@@ -79,10 +79,10 @@ object FakeCameraCatalogConfig {
     val largest = photoSizes.maxByOrNull { it.width.toLong() * it.height } ?: Size(1920, 1080)
     info.setSensorRect(Rect(0, 0, largest.width, largest.height))
 
-    // Camera2 interop: hand VisionCamera's untouched cameraId path a Camera2CameraInfo with the catalog id.
-    // Real CameraCharacteristics stay null for now (VisionCamera falls back to CameraInfo; the scene runner
-    // covers resolution/pixel-format assertions).
-    val characteristics: CameraCharacteristics? = null
+    // Camera2 interop: hand VisionCamera's untouched cameraId path a Camera2CameraInfo with the catalog id,
+    // and a real CameraCharacteristics so resolution/pixel-format reads resolve from the catalog in fake mode.
+    // Falls back to null (scene-runner coverage) if the hidden-API build fails on this emulator image.
+    val characteristics: CameraCharacteristics? = CatalogCameraCharacteristics.build(spec)
     info.setUnwrapper(
       object : FakeCameraInfoInternal.Unwrapper {
         override fun <T> unwrapAs(type: Class<T>): T? = when (type) {
