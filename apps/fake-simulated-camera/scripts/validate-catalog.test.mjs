@@ -8,7 +8,9 @@ import { validateCatalog } from './validate-catalog.mjs'
 
 const appDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const scenesDirectory = path.join(appDir, 'scenes')
-const base = JSON.parse(readFileSync(path.join(appDir, 'cameras', 'default.json'), 'utf8'))
+const base = JSON.parse(
+  readFileSync(path.join(appDir, 'cameras', 'default.json'), 'utf8'),
+)
 
 const clone = () => structuredClone(base)
 
@@ -19,13 +21,19 @@ test('the shipped default catalog is valid', () => {
 test('rejects a wrong schema version', () => {
   const catalog = clone()
   catalog.schemaVersion = 2
-  assert.throws(() => validateCatalog(catalog, { scenesDirectory }), /\$\.schemaVersion/)
+  assert.throws(
+    () => validateCatalog(catalog, { scenesDirectory }),
+    /\$\.schemaVersion/,
+  )
 })
 
 test('rejects a missing scene file', () => {
   const catalog = clone()
   catalog.scene = 'does-not-exist.png'
-  assert.throws(() => validateCatalog(catalog, { scenesDirectory }), /\$\.scene/)
+  assert.throws(
+    () => validateCatalog(catalog, { scenesDirectory }),
+    /\$\.scene/,
+  )
 })
 
 test('rejects an unknown pixel format with a path-specific message', () => {
@@ -49,7 +57,10 @@ test('rejects an inverted fps range', () => {
 test('rejects duplicate device ids', () => {
   const catalog = clone()
   catalog.devices[1].id = catalog.devices[0].id
-  assert.throws(() => validateCatalog(catalog, { scenesDirectory }), /\$\.devices\[1\]: duplicate device id/)
+  assert.throws(
+    () => validateCatalog(catalog, { scenesDirectory }),
+    /\$\.devices\[1\]: duplicate device id/,
+  )
 })
 
 test('rejects a non-positive dimension', () => {
@@ -64,5 +75,8 @@ test('rejects a non-positive dimension', () => {
 test('rejects an empty formats list', () => {
   const catalog = clone()
   catalog.devices[0].formats = []
-  assert.throws(() => validateCatalog(catalog, { scenesDirectory }), /\$\.devices\[0\]\.formats/)
+  assert.throws(
+    () => validateCatalog(catalog, { scenesDirectory }),
+    /\$\.devices\[0\]\.formats/,
+  )
 })

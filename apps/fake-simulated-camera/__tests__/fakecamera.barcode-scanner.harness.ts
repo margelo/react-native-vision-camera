@@ -1,3 +1,4 @@
+import { Platform } from 'react-native'
 import { assert, beforeAll, describe, expect, it } from 'react-native-harness'
 import type {
   CameraDevice,
@@ -27,7 +28,15 @@ describe('FakeCamera - Barcode Scanner', () => {
     backDevice = back
   })
 
-  it('scans the QR code in the camera scene', async () => {
+  // iOS fake mode streams the QR scene full-frame into the camera. On Android the fake camera produces no
+  // frames yet (frame injection is the optional slice E), and the emulator's virtual-scene poster is angled
+  // and too small for reliable detection — so the barcode E2E runs on iOS only.
+  it('scans the QR code in the camera scene', async (context) => {
+    if (Platform.OS !== 'ios') {
+      return context.skip(
+        'barcode scanning: iOS fake camera only (Android frame injection is slice E)',
+      )
+    }
     const session = await VisionCamera.createCameraSession(false)
     const firstBarcodes = deferred<Barcode[]>()
     const barcodeOutput = createBarcodeScannerOutput({

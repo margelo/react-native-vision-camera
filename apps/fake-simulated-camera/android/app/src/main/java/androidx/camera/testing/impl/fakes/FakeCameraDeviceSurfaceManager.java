@@ -110,8 +110,16 @@ public final class FakeCameraDeviceSurfaceManager implements CameraDeviceSurface
         // Populate the suggested stream specs for new use cases.
         Map<UseCaseConfig<?>, StreamSpec> suggestedStreamSpecs = new HashMap<>();
         for (UseCaseConfig<?> useCaseConfig : newUseCaseConfigs) {
-            suggestedStreamSpecs.put(useCaseConfig,
-                    getStreamSpec(cameraId, useCaseConfig.getClass(), hasVideoCapture));
+            // MODIFIED (fake-simulated-camera): pick a size the camera actually supports for this use case,
+            // instead of the hardcoded MAX_OUTPUT_SIZE — otherwise CameraX rejects the (unsupported) 4032x3024.
+            StreamSpec spec = getStreamSpec(cameraId, useCaseConfig.getClass(), hasVideoCapture);
+            List<Size> supportedSizes = newUseCaseConfigsSupportedSizeMap.get(useCaseConfig);
+            if (supportedSizes != null && !supportedSizes.isEmpty()
+                    && (mDefinedStreamSpecs.get(cameraId) == null
+                        || mDefinedStreamSpecs.get(cameraId).get(useCaseConfig.getClass()) == null)) {
+                spec = StreamSpec.builder(largestWithin(supportedSizes)).setZslDisabled(hasVideoCapture).build();
+            }
+            suggestedStreamSpecs.put(useCaseConfig, spec);
         }
 
         // Populate the stream specs for existing use cases.
@@ -124,6 +132,20 @@ public final class FakeCameraDeviceSurfaceManager implements CameraDeviceSurface
 
         return new SurfaceStreamSpecQueryResult(suggestedStreamSpecs, existingStreamSpecs,
                 MAX_SUPPORTED_FRAME_RATE);
+    }
+
+    // MODIFIED (fake-simulated-camera): largest supported size not exceeding MAX_OUTPUT_SIZE.
+    private static @NonNull Size largestWithin(@NonNull List<Size> sizes) {
+        Size best = null;
+        for (Size size : sizes) {
+            if (size.getWidth() > MAX_OUTPUT_SIZE.getWidth() || size.getHeight() > MAX_OUTPUT_SIZE.getHeight()) {
+                continue;
+            }
+            if (best == null || (long) size.getWidth() * size.getHeight() > (long) best.getWidth() * best.getHeight()) {
+                best = size;
+            }
+        }
+        return best != null ? best : sizes.get(0);
     }
 
     private @NonNull StreamSpec getStreamSpec(@NonNull String cameraId, @NonNull Class<?> classType,

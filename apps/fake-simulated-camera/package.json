@@ -17,7 +17,7 @@
     "test:harness": "react-native-harness",
     "test:harness:ios": "react-native-harness --harnessRunner ios",
     "test:harness:android": "react-native-harness --harnessRunner android --testPathPatterns 'devices|session|constraints'",
-    "test:harness:android-scene": "react-native-harness --harnessRunner android-scene --testPathPatterns 'barcode-scanner|scene'"
+    "test:harness:android-scene": "react-native-harness --harnessRunner android-scene --testPathPatterns 'scene'"
   },
   "dependencies": {
     "react": "19.2.3",
