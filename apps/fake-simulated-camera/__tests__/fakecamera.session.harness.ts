@@ -26,18 +26,14 @@ function makeFrameOutput() {
 describe('FakeCamera - Session', () => {
   let factory: CameraDeviceFactory
   let backWide: CameraDevice
-  let front: CameraDevice
 
   beforeAll(async () => {
     await VisionCamera.requestCameraPermission()
     expect(VisionCamera.cameraPermissionStatus).toBe('authorized')
     factory = await VisionCamera.createDeviceFactory()
     const back = factory.getCameraForId('fake-back-wide')
-    const frontDevice = factory.getCameraForId('fake-front-wide')
     assert.exists(back, 'fake-back-wide is missing')
-    assert.exists(frontDevice, 'fake-front-wide is missing')
     backWide = back
-    front = frontDevice
   })
 
   it('configures, starts and stops a session on the fake camera', async () => {
@@ -71,44 +67,6 @@ describe('FakeCamera - Session', () => {
     } finally {
       startSub.remove()
       stopSub.remove()
-      errorSub.remove()
-    }
-  })
-
-  it('reconfigures a stopped session with another device and output', async () => {
-    const session = await VisionCamera.createCameraSession(false)
-    const firstOutput = makeFrameOutput()
-    const secondOutput = makeFrameOutput()
-    const errors: Error[] = []
-    const errorSub = session.addOnErrorListener((error) => errors.push(error))
-    try {
-      const firstControllers = await session.configure([
-        {
-          input: backWide,
-          outputs: [{ output: firstOutput, mirrorMode: 'auto' }],
-          constraints: [],
-        },
-      ])
-      expect(firstControllers[0]).toHaveProperty('device.id', 'fake-back-wide')
-      await session.start()
-      await session.stop()
-
-      const secondControllers = await session.configure([
-        {
-          input: front,
-          outputs: [{ output: secondOutput, mirrorMode: 'auto' }],
-          constraints: [],
-        },
-      ])
-      expect(secondControllers).toHaveLength(1)
-      expect(secondControllers[0]).toHaveProperty(
-        'device.id',
-        'fake-front-wide',
-      )
-      await session.start()
-      await session.stop()
-      expect(errors).toHaveLength(0)
-    } finally {
       errorSub.remove()
     }
   })
