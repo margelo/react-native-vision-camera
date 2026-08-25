@@ -16,6 +16,7 @@ static const double kMaxFramesPerSecond = 60.0;
   __weak AVCaptureSession *_session;
   dispatch_queue_t _queue;
   dispatch_source_t _timer;
+  BOOL _stopped;
   double _framesPerSecond;
   CVPixelBufferRef _frame;
   CMVideoFormatDescriptionRef _frameDescription;
@@ -48,12 +49,14 @@ static const double kMaxFramesPerSecond = 60.0;
 
 - (void)start {
   dispatch_async(_queue, ^{
+    self->_stopped = NO;
     [self armTimer];
   });
 }
 
 - (void)stop {
   dispatch_async(_queue, ^{
+    self->_stopped = YES;
     if (self->_timer) {
       dispatch_source_cancel(self->_timer);
       self->_timer = nil;
@@ -81,6 +84,9 @@ static const double kMaxFramesPerSecond = 60.0;
 }
 
 - (void)armTimer {
+  if (_stopped) {
+    return;
+  }
   double fps = [self desiredFramesPerSecond];
   if (_timer && fps == _framesPerSecond) {
     return;
@@ -101,6 +107,9 @@ static const double kMaxFramesPerSecond = 60.0;
 }
 
 - (void)tick {
+  if (_stopped) {
+    return;
+  }
   FakeCameraDevice *device = self.device;
   AVCaptureSession *session = _session;
   if (device == nil || session == nil) {
