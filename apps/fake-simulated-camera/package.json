@@ -1,0 +1,48 @@
+{
+  "name": "fake-simulated-camera",
+  "private": true,
+  "description": "Harness test app that injects a catalog-defined fake camera into the iOS Simulator and Android Emulator.",
+  "author": "Marc Rousavy <me@mrousavy.com> (https://github.com/mrousavy)",
+  "scripts": {
+    "android": "react-native run-android",
+    "ios": "react-native run-ios",
+    "bundle-install": "bundle install",
+    "pods": "cd ios && bundle exec pod install",
+    "start": "react-native start --client-logs",
+    "validate-catalog": "node scripts/validate-catalog.mjs",
+    "check-packages-untouched": "bash scripts/check-packages-untouched.sh",
+    "build:android": "cd android && ./gradlew assembleDebug --no-daemon --console=plain",
+    "build:ios-simulator": "bash scripts/build-ios-simulator.sh",
+    "test:harness": "react-native-harness",
+    "test:harness:ios": "react-native-harness --harnessRunner ios",
+    "test:harness:android": "react-native-harness --harnessRunner android --testPathPatterns 'devices|session|constraints'",
+    "test:harness:android-scene": "react-native-harness --harnessRunner android-scene --testPathPatterns 'barcode-scanner|scene'"
+  },
+  "dependencies": {
+    "react": "19.2.3",
+    "react-native": "0.85.3",
+    "react-native-nitro-image": "0.15.2",
+    "react-native-nitro-modules": "0.37.0",
+    "react-native-vision-camera": "../../packages/react-native-vision-camera",
+    "react-native-vision-camera-barcode-scanner": "../../packages/react-native-vision-camera-barcode-scanner"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.29.7",
+    "@babel/preset-env": "^7.29.7",
+    "@babel/runtime": "^7.29.7",
+    "@react-native-community/cli": "20.1.3",
+    "@react-native-community/cli-platform-android": "20.1.3",
+    "@react-native-community/cli-platform-ios": "20.1.3",
+    "@react-native-harness/platform-android": "1.4.0-rc.1",
+    "@react-native-harness/platform-apple": "1.4.0-rc.1",
+    "@react-native/babel-preset": "0.85.3",
+    "@react-native/metro-config": "0.85.3",
+    "@react-native/typescript-config": "0.85.3",
+    "@types/react": "19.2.15",
+    "react-native-harness": "1.4.0-rc.1",
+    "typescript": "6.0.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
