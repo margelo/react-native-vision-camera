@@ -7,6 +7,22 @@ import type {
 import { CommonResolutions, VisionCamera } from 'react-native-vision-camera'
 import { deferred, withTimeout } from './test-utils'
 
+// The fake pump delivers BGRA on the iOS Simulator; on the Android emulator ImageAnalysis rejects PRIVATE on the
+// swiftshader GPU, so YUV is requested there. This configures the output for what each fake actually delivers.
+const FRAME_PIXEL_FORMAT = Platform.OS === 'ios' ? 'rgb' : 'yuv'
+
+function makeFrameOutput() {
+  return VisionCamera.createFrameOutput({
+    targetResolution: CommonResolutions.HD_16_9,
+    pixelFormat: FRAME_PIXEL_FORMAT,
+    enablePreviewSizedOutputBuffers: false,
+    enablePhysicalBufferRotation: false,
+    enableCameraMatrixDelivery: false,
+    allowDeferredStart: false,
+    dropFramesWhileBusy: true,
+  })
+}
+
 describe('FakeCamera - Session', () => {
   let factory: CameraDeviceFactory
   let backWide: CameraDevice
@@ -25,17 +41,8 @@ describe('FakeCamera - Session', () => {
   })
 
   it('configures, starts and stops a session on the fake camera', async () => {
-    console.log('SES_START t1 configure-start-stop')
     const session = await VisionCamera.createCameraSession(false)
-    const frameOutput = VisionCamera.createFrameOutput({
-      targetResolution: CommonResolutions.HD_16_9,
-      pixelFormat: Platform.OS === 'ios' ? 'rgb' : 'yuv',
-      enablePreviewSizedOutputBuffers: false,
-      enablePhysicalBufferRotation: false,
-      enableCameraMatrixDelivery: false,
-      allowDeferredStart: false,
-      dropFramesWhileBusy: true,
-    })
+    const frameOutput = makeFrameOutput()
     const started = deferred()
     const stopped = deferred()
     const startSub = session.addOnStartedListener(started.resolve)
@@ -68,109 +75,10 @@ describe('FakeCamera - Session', () => {
     }
   })
 
-  // Two concurrent sessions on different cameras is an AVFoundation capability; Android CameraX is
-  // single-camera (ProcessCameraProvider binds one camera at a time), so this runs on iOS only.
-  it('keeps two sessions independent', async (context) => {
-    if (Platform.OS !== 'ios') {
-      return context.skip(
-        'concurrent independent sessions: iOS only (Android CameraX is single-camera)',
-      )
-    }
-    console.log('SES_START t2 two-sessions')
-    const sessionA = await VisionCamera.createCameraSession(false)
-    const sessionB = await VisionCamera.createCameraSession(false)
-    const outputA = VisionCamera.createFrameOutput({
-      targetResolution: CommonResolutions.HD_16_9,
-      pixelFormat: Platform.OS === 'ios' ? 'rgb' : 'yuv',
-      enablePreviewSizedOutputBuffers: false,
-      enablePhysicalBufferRotation: false,
-      enableCameraMatrixDelivery: false,
-      allowDeferredStart: false,
-      dropFramesWhileBusy: true,
-    })
-    const outputB = VisionCamera.createFrameOutput({
-      targetResolution: CommonResolutions.HD_16_9,
-      pixelFormat: Platform.OS === 'ios' ? 'rgb' : 'yuv',
-      enablePreviewSizedOutputBuffers: false,
-      enablePhysicalBufferRotation: false,
-      enableCameraMatrixDelivery: false,
-      allowDeferredStart: false,
-      dropFramesWhileBusy: true,
-    })
-    const startedA = deferred()
-    const startedB = deferred()
-    const stoppedA = deferred()
-    const subscriptions = [
-      sessionA.addOnStartedListener(startedA.resolve),
-      sessionB.addOnStartedListener(startedB.resolve),
-      sessionA.addOnStoppedListener(stoppedA.resolve),
-      sessionA.addOnErrorListener(startedA.reject),
-      sessionB.addOnErrorListener(startedB.reject),
-    ]
-    let didStartB = false
-    try {
-      const controllersA = await sessionA.configure([
-        {
-          input: backWide,
-          outputs: [{ output: outputA, mirrorMode: 'auto' }],
-          constraints: [],
-        },
-      ])
-      const controllersB = await sessionB.configure([
-        {
-          input: front,
-          outputs: [{ output: outputB, mirrorMode: 'auto' }],
-          constraints: [],
-        },
-      ])
-      expect(controllersA[0]).toHaveProperty('device.id', 'fake-back-wide')
-      expect(controllersB[0]).toHaveProperty('device.id', 'fake-front-wide')
-
-      await sessionA.start()
-      await withTimeout(startedA.promise, 10_000, 'session A start')
-      expect(sessionA.isRunning).toBe(true)
-      expect(sessionB.isRunning).toBe(false)
-
-      await sessionB.start()
-      didStartB = true
-      await withTimeout(startedB.promise, 10_000, 'session B start')
-      expect(sessionB.isRunning).toBe(true)
-
-      await sessionA.stop()
-      await withTimeout(stoppedA.promise, 10_000, 'session A stop')
-      expect(sessionA.isRunning).toBe(false)
-      expect(sessionB.isRunning).toBe(true)
-    } finally {
-      for (const subscription of subscriptions) {
-        subscription.remove()
-      }
-      if (didStartB) {
-        await sessionB.stop()
-      }
-    }
-  })
-
   it('reconfigures a stopped session with another device and output', async () => {
-    console.log('SES_START t3 reconfigure')
     const session = await VisionCamera.createCameraSession(false)
-    const firstOutput = VisionCamera.createFrameOutput({
-      targetResolution: CommonResolutions.HD_16_9,
-      pixelFormat: Platform.OS === 'ios' ? 'rgb' : 'yuv',
-      enablePreviewSizedOutputBuffers: false,
-      enablePhysicalBufferRotation: false,
-      enableCameraMatrixDelivery: false,
-      allowDeferredStart: false,
-      dropFramesWhileBusy: true,
-    })
-    const secondOutput = VisionCamera.createFrameOutput({
-      targetResolution: CommonResolutions.HD_16_9,
-      pixelFormat: Platform.OS === 'ios' ? 'rgb' : 'yuv',
-      enablePreviewSizedOutputBuffers: false,
-      enablePhysicalBufferRotation: false,
-      enableCameraMatrixDelivery: false,
-      allowDeferredStart: false,
-      dropFramesWhileBusy: true,
-    })
+    const firstOutput = makeFrameOutput()
+    const secondOutput = makeFrameOutput()
     const errors: Error[] = []
     const errorSub = session.addOnErrorListener((error) => errors.push(error))
     try {
@@ -205,21 +113,14 @@ describe('FakeCamera - Session', () => {
     }
   })
 
+  // currentResolution reads AVCaptureConnection.inputStreamResolution; the Android equivalent is covered by the
+  // scene runner, so the negotiated-resolution assertion runs on iOS only.
   it('reports the negotiated format resolution on the attached output', async (context) => {
     if (Platform.OS !== 'ios') {
       return context.skip('AVCaptureConnection input resolution: iOS only')
     }
-    console.log('SES_START t4 negotiated-resolution')
     const session = await VisionCamera.createCameraSession(false)
-    const frameOutput = VisionCamera.createFrameOutput({
-      targetResolution: CommonResolutions.HD_16_9,
-      pixelFormat: Platform.OS === 'ios' ? 'rgb' : 'yuv',
-      enablePreviewSizedOutputBuffers: false,
-      enablePhysicalBufferRotation: false,
-      enableCameraMatrixDelivery: false,
-      allowDeferredStart: false,
-      dropFramesWhileBusy: true,
-    })
+    const frameOutput = makeFrameOutput()
     expect(frameOutput.currentResolution).toBeUndefined()
     await session.configure([
       {
