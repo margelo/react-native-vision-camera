@@ -61,6 +61,9 @@ jobs:
       - name: Validate camera catalogs
         run: node apps/fake-simulated-camera/scripts/validate-catalog.mjs
 
+      - name: Run catalog validator unit tests
+        run: node --test apps/fake-simulated-camera/scripts/validate-catalog.test.mjs
+
   test-ios-simulator:
     name: Test iOS Simulator
     runs-on: macos-latest
@@ -164,7 +167,12 @@ jobs:
             echo "No Harness suites yet — build-only run."
             exit 0
           fi
-          timeout --foreground --kill-after=30s 1500 bun run test:harness:ios
+          # macOS runners have no GNU `timeout`; use gtimeout when present, otherwise rely on the job timeout.
+          if command -v gtimeout >/dev/null 2>&1; then
+            gtimeout --foreground --kill-after=30s 1500 bun run test:harness:ios
+          else
+            bun run test:harness:ios
+          fi
 
       - name: Collect iOS diagnostics
         if: always()

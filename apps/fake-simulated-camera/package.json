@@ -10,6 +10,7 @@
     "pods": "cd ios && bundle exec pod install",
     "start": "react-native start --client-logs",
     "validate-catalog": "node scripts/validate-catalog.mjs",
+    "test:catalog": "node --test scripts/validate-catalog.test.mjs",
     "check-packages-untouched": "bash scripts/check-packages-untouched.sh",
     "build:android": "cd android && ./gradlew assembleDebug --no-daemon --console=plain",
     "build:ios-simulator": "bash scripts/build-ios-simulator.sh",
