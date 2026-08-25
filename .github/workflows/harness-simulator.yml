@@ -181,8 +181,10 @@ jobs:
           mkdir -p ios-diagnostics
           cp -R apps/fake-simulated-camera/.harness ios-diagnostics/harness 2>/dev/null
           cp build-ios.log ios-diagnostics/ 2>/dev/null
-          xcrun simctl spawn booted log show --last 20m --predicate 'subsystem == "com.margelo.fakecamera" OR process == "FakeSimulatedCamera"' > ios-diagnostics/fakecamera.log 2>/dev/null
+          xcrun simctl spawn booted log show --info --debug --last 20m --predicate 'subsystem == "com.margelo.fakecamera" OR process == "FakeSimulatedCamera"' > ios-diagnostics/fakecamera.log 2>/dev/null
           cp -R ~/Library/Logs/DiagnosticReports ios-diagnostics/DiagnosticReports 2>/dev/null
+          mkdir -p ios-diagnostics/SimulatorCrashes
+          find ~/Library/Developer/CoreSimulator/Devices -path '*/DiagnosticReports/*' \( -name '*.ips' -o -name '*.crash' \) -exec cp {} ios-diagnostics/SimulatorCrashes/ \; 2>/dev/null
           true
 
       - name: Upload iOS diagnostics
