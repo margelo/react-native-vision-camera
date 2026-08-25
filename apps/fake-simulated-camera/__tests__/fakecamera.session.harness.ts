@@ -29,7 +29,7 @@ describe('FakeCamera - Session', () => {
     const session = await VisionCamera.createCameraSession(false)
     const frameOutput = VisionCamera.createFrameOutput({
       targetResolution: CommonResolutions.HD_16_9,
-      pixelFormat: 'yuv',
+      pixelFormat: Platform.OS === 'ios' ? 'rgb' : 'yuv',
       enablePreviewSizedOutputBuffers: false,
       enablePhysicalBufferRotation: false,
       enableCameraMatrixDelivery: false,
@@ -81,7 +81,7 @@ describe('FakeCamera - Session', () => {
     const sessionB = await VisionCamera.createCameraSession(false)
     const outputA = VisionCamera.createFrameOutput({
       targetResolution: CommonResolutions.HD_16_9,
-      pixelFormat: 'yuv',
+      pixelFormat: Platform.OS === 'ios' ? 'rgb' : 'yuv',
       enablePreviewSizedOutputBuffers: false,
       enablePhysicalBufferRotation: false,
       enableCameraMatrixDelivery: false,
@@ -90,7 +90,7 @@ describe('FakeCamera - Session', () => {
     })
     const outputB = VisionCamera.createFrameOutput({
       targetResolution: CommonResolutions.HD_16_9,
-      pixelFormat: 'yuv',
+      pixelFormat: Platform.OS === 'ios' ? 'rgb' : 'yuv',
       enablePreviewSizedOutputBuffers: false,
       enablePhysicalBufferRotation: false,
       enableCameraMatrixDelivery: false,
@@ -155,7 +155,7 @@ describe('FakeCamera - Session', () => {
     const session = await VisionCamera.createCameraSession(false)
     const firstOutput = VisionCamera.createFrameOutput({
       targetResolution: CommonResolutions.HD_16_9,
-      pixelFormat: 'yuv',
+      pixelFormat: Platform.OS === 'ios' ? 'rgb' : 'yuv',
       enablePreviewSizedOutputBuffers: false,
       enablePhysicalBufferRotation: false,
       enableCameraMatrixDelivery: false,
@@ -164,7 +164,7 @@ describe('FakeCamera - Session', () => {
     })
     const secondOutput = VisionCamera.createFrameOutput({
       targetResolution: CommonResolutions.HD_16_9,
-      pixelFormat: 'yuv',
+      pixelFormat: Platform.OS === 'ios' ? 'rgb' : 'yuv',
       enablePreviewSizedOutputBuffers: false,
       enablePhysicalBufferRotation: false,
       enableCameraMatrixDelivery: false,
@@ -213,7 +213,7 @@ describe('FakeCamera - Session', () => {
     const session = await VisionCamera.createCameraSession(false)
     const frameOutput = VisionCamera.createFrameOutput({
       targetResolution: CommonResolutions.HD_16_9,
-      pixelFormat: 'yuv',
+      pixelFormat: Platform.OS === 'ios' ? 'rgb' : 'yuv',
       enablePreviewSizedOutputBuffers: false,
       enablePhysicalBufferRotation: false,
       enableCameraMatrixDelivery: false,
