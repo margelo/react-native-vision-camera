@@ -7,6 +7,9 @@ BUNDLE_ID="${HARNESS_ANDROID_BUNDLE_ID:?HARNESS_ANDROID_BUNDLE_ID is required}"
 HARNESS_TIMEOUT_SECONDS="${HARNESS_ANDROID_TEST_TIMEOUT_SECONDS:-900}"
 LOG_DIR="./android"
 
+echo "Emulator virtual-scene poster support:"
+emulator -help-virtualscene-poster || echo "warning: emulator does not advertise -virtualscene-poster"
+
 echo "Waiting for emulator..."
 adb wait-for-device
 adb shell settings put global hidden_api_policy 1

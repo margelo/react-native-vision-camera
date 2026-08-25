@@ -2,6 +2,13 @@ apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
 
+// The vendored AOSP CameraX fakes call @RestrictTo(LIBRARY_GROUP) APIs on purpose; keep lint from failing on it.
+android {
+    lint {
+        disable 'RestrictedApi'
+    }
+}
+
 /**
  * This is the configuration block to customize your React Native Android app.
  * By default you don't need to apply any configuration, just uncomment the lines you need.
@@ -121,6 +128,16 @@ preBuild.dependsOn "generateFakeCameraAssets"
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
+
+    // VisionCamera pulls these as `implementation`, so they are not on this app's compile classpath;
+    // the vendored CameraX fakes and the interop bridge need them directly. Keep in sync with the
+    // library's camerax_version.
+    def camerax_version = "1.7.0-alpha03"
+    implementation "androidx.camera:camera-core:${camerax_version}"
+    implementation "androidx.camera:camera-camera2:${camerax_version}"
+    implementation "androidx.camera:camera-camera2-pipe:${camerax_version}"
+    implementation "androidx.camera:camera-lifecycle:${camerax_version}"
+    implementation "androidx.camera:camera-video:${camerax_version}"
 
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")

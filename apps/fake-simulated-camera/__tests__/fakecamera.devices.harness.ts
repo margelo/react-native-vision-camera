@@ -166,27 +166,8 @@ describe('FakeCamera - Devices', () => {
     }
   })
 
-  it('lists the catalog stream resolutions through Camera2 characteristics', async (context) => {
-    if (Platform.OS !== 'android') {
-      return context.skip('Camera2 characteristics: Android only')
-    }
-    for (const spec of catalog.devices) {
-      const device = factory.getCameraForId(spec.id)
-      assert.exists(device, `device ${spec.id} is missing`)
-      const expectedResolutions = [
-        ...new Map(
-          spec.formats.map((format) => [
-            `${format.width}x${format.height}`,
-            { width: format.width, height: format.height },
-          ]),
-        ).values(),
-      ]
-      expect(device.getSupportedResolutions('video')).toEqual(
-        expect.arrayContaining(expectedResolutions),
-      )
-      expect(device.supportedPixelFormats).toContain('private')
-    }
-  })
+  // Android fake mode has no CameraCharacteristics (VisionCamera reads resolutions/pixel formats from them),
+  // so stream-size and pixel-format assertions run on the real emulator camera in fakecamera.scene.harness.ts.
 
   it('reports the catalog lens aperture', async (context) => {
     if (Platform.OS !== 'ios') {
