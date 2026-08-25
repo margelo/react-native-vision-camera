@@ -134,18 +134,34 @@ public final class FakeCameraDeviceSurfaceManager implements CameraDeviceSurface
                 MAX_SUPPORTED_FRAME_RATE);
     }
 
-    // MODIFIED (fake-simulated-camera): largest supported size not exceeding MAX_OUTPUT_SIZE.
+    // MODIFIED (fake-simulated-camera): largest supported size not exceeding ANALYSIS_MAX_SIZE. ImageAnalysis
+    // (VisionCamera's frame + barcode outputs) rejects streams above ~1080p, so cap there rather than at the
+    // sensor's full resolution.
+    private static final Size ANALYSIS_MAX_SIZE = new Size(1920, 1080);
+
     private static @NonNull Size largestWithin(@NonNull List<Size> sizes) {
         Size best = null;
         for (Size size : sizes) {
-            if (size.getWidth() > MAX_OUTPUT_SIZE.getWidth() || size.getHeight() > MAX_OUTPUT_SIZE.getHeight()) {
+            long area = (long) size.getWidth() * size.getHeight();
+            if (area > (long) ANALYSIS_MAX_SIZE.getWidth() * ANALYSIS_MAX_SIZE.getHeight()) {
                 continue;
             }
-            if (best == null || (long) size.getWidth() * size.getHeight() > (long) best.getWidth() * best.getHeight()) {
+            if (best == null || area > (long) best.getWidth() * best.getHeight()) {
                 best = size;
             }
         }
-        return best != null ? best : sizes.get(0);
+        if (best != null) {
+            return best;
+        }
+        // No size within the cap: fall back to the smallest available.
+        Size smallest = sizes.get(0);
+        for (Size size : sizes) {
+            if ((long) size.getWidth() * size.getHeight()
+                    < (long) smallest.getWidth() * smallest.getHeight()) {
+                smallest = size;
+            }
+        }
+        return smallest;
     }
 
     private @NonNull StreamSpec getStreamSpec(@NonNull String cameraId, @NonNull Class<?> classType,
