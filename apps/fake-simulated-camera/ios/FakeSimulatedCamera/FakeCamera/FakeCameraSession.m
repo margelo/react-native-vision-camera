@@ -117,6 +117,9 @@ static FakeCameraFramePump *pumpForSession(AVCaptureSession *session, BOOL creat
 static void markSessionFake(AVCaptureSession *session) {
   if (!FakeCameraIsFakeSession(session)) {
     objc_setAssociatedObject(session, kSessionFakeKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    // Retain forever like every other fake: a fake session is a real AVCaptureSession whose graph was bypassed,
+    // so its -dealloc walks a fake graph and crashes. Never letting it dealloc during the process avoids that.
+    [FakeCameraRegistry.shared retainForever:session];
     FAKECAM_INFO("session %p is now fake", session);
   }
 }
