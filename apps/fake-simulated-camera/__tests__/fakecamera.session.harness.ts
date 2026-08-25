@@ -25,6 +25,7 @@ describe('FakeCamera - Session', () => {
   })
 
   it('configures, starts and stops a session on the fake camera', async () => {
+    console.log('SES_START t1 configure-start-stop')
     const session = await VisionCamera.createCameraSession(false)
     const frameOutput = VisionCamera.createFrameOutput({
       targetResolution: CommonResolutions.HD_16_9,
@@ -75,6 +76,7 @@ describe('FakeCamera - Session', () => {
         'concurrent independent sessions: iOS only (Android CameraX is single-camera)',
       )
     }
+    console.log('SES_START t2 two-sessions')
     const sessionA = await VisionCamera.createCameraSession(false)
     const sessionB = await VisionCamera.createCameraSession(false)
     const outputA = VisionCamera.createFrameOutput({
@@ -149,6 +151,7 @@ describe('FakeCamera - Session', () => {
   })
 
   it('reconfigures a stopped session with another device and output', async () => {
+    console.log('SES_START t3 reconfigure')
     const session = await VisionCamera.createCameraSession(false)
     const firstOutput = VisionCamera.createFrameOutput({
       targetResolution: CommonResolutions.HD_16_9,
@@ -206,6 +209,7 @@ describe('FakeCamera - Session', () => {
     if (Platform.OS !== 'ios') {
       return context.skip('AVCaptureConnection input resolution: iOS only')
     }
+    console.log('SES_START t4 negotiated-resolution')
     const session = await VisionCamera.createCameraSession(false)
     const frameOutput = VisionCamera.createFrameOutput({
       targetResolution: CommonResolutions.HD_16_9,
