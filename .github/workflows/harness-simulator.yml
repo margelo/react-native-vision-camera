@@ -162,17 +162,32 @@ jobs:
         env:
           CI: "true"
         run: |
-          set -euo pipefail
+          set -uo pipefail
           if ! ls __tests__/*.harness.ts >/dev/null 2>&1; then
             echo "No Harness suites yet — build-only run."
             exit 0
           fi
-          # macOS runners have no GNU `timeout`; use gtimeout when present, otherwise rely on the job timeout.
-          if command -v gtimeout >/dev/null 2>&1; then
-            gtimeout --foreground --kill-after=30s 1500 bun run test:harness:ios
-          else
-            bun run test:harness:ios
+          # Pre-boot the simulator the harness will use, then stream the fake's os_log to a file for the whole
+          # run. The harness shuts the simulator down afterwards, so a post-hoc `log show` finds nothing; a live
+          # stream is the only way to capture the fake-camera fault that precedes an "app bridge disconnected".
+          UDID=$(xcrun simctl list devices -j | python3 -c "import json,sys,os; d=json.load(sys.stdin)['devices']; name=os.environ.get('HARNESS_IOS_SIMULATOR',''); ver=os.environ.get('HARNESS_IOS_SIMULATOR_VERSION','').replace('.','-'); rts=[k for k in d if ('iOS-'+ver) in k]; print(next((x['udid'] for k in rts for x in d[k] if x['name']==name), ''))" 2>/dev/null || true)
+          echo "resolved simulator udid: ${UDID:-<none>}"
+          STREAM_PID=""
+          if [ -n "${UDID:-}" ]; then
+            xcrun simctl boot "$UDID" 2>/dev/null || true
+            xcrun simctl spawn "$UDID" log stream --level debug --style compact \
+              --predicate 'subsystem == "com.margelo.fakecamera"' > fakecam-stream.log 2>&1 &
+            STREAM_PID=$!
           fi
+          RC=0
+          if command -v gtimeout >/dev/null 2>&1; then
+            gtimeout --foreground --kill-after=30s 1500 bun run test:harness:ios || RC=$?
+          else
+            bun run test:harness:ios || RC=$?
+          fi
+          [ -n "$STREAM_PID" ] && kill "$STREAM_PID" 2>/dev/null || true
+          echo "=== fakecam-stream.log tail ==="; tail -60 fakecam-stream.log 2>/dev/null || true
+          exit $RC
 
       - name: Collect iOS diagnostics
         if: always()
@@ -181,6 +196,7 @@ jobs:
           mkdir -p ios-diagnostics
           cp -R apps/fake-simulated-camera/.harness ios-diagnostics/harness 2>/dev/null
           cp build-ios.log ios-diagnostics/ 2>/dev/null
+          cp apps/fake-simulated-camera/fakecam-stream.log ios-diagnostics/ 2>/dev/null
           xcrun simctl spawn booted log show --info --debug --last 20m --predicate 'subsystem == "com.margelo.fakecamera" OR process == "FakeSimulatedCamera"' > ios-diagnostics/fakecamera.log 2>/dev/null
           cp -R ~/Library/Logs/DiagnosticReports ios-diagnostics/DiagnosticReports 2>/dev/null
           mkdir -p ios-diagnostics/SimulatorCrashes
