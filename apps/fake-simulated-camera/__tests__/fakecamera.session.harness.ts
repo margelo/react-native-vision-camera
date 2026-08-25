@@ -67,7 +67,14 @@ describe('FakeCamera - Session', () => {
     }
   })
 
-  it('keeps two sessions independent', async () => {
+  // Two concurrent sessions on different cameras is an AVFoundation capability; Android CameraX is
+  // single-camera (ProcessCameraProvider binds one camera at a time), so this runs on iOS only.
+  it('keeps two sessions independent', async (context) => {
+    if (Platform.OS !== 'ios') {
+      return context.skip(
+        'concurrent independent sessions: iOS only (Android CameraX is single-camera)',
+      )
+    }
     const sessionA = await VisionCamera.createCameraSession(false)
     const sessionB = await VisionCamera.createCameraSession(false)
     const outputA = VisionCamera.createFrameOutput({
