@@ -48,7 +48,7 @@ describe('FakeCamera - Constraints', () => {
 
   const frameOutputOptions = {
     targetResolution: CommonResolutions.HD_16_9,
-    pixelFormat: 'native',
+    pixelFormat: 'yuv',
     enablePreviewSizedOutputBuffers: false,
     enablePhysicalBufferRotation: false,
     enableCameraMatrixDelivery: false,
@@ -91,6 +91,61 @@ describe('FakeCamera - Constraints', () => {
       [{ fps: 60 }],
     )
     expect(config.selectedFPS).toBe(30)
+  })
+
+  const videoOutputOptions = {
+    targetResolution: CommonResolutions.HD_16_9,
+    enableAudio: false,
+  } as const
+
+  // The output type feeds the resolver: a photo output appends the highest-photo-quality internal constraints,
+  // and each output's streamType decides whether resolutionBias measures photo or video dimensions. So changing
+  // only the output changes the resolved format — observable through the public CameraSessionConfig.
+  it('resolves different formats when only the attached output type changes', async (context) => {
+    if (Platform.OS !== 'ios') {
+      return context.skip('format selection: iOS only')
+    }
+    const frameOutput = VisionCamera.createFrameOutput(frameOutputOptions)
+    const videoOutput = VisionCamera.createVideoOutput(videoOutputOptions)
+    const photoOutput = VisionCamera.createPhotoOutput(photoOutputOptions)
+
+    const frameConfig = await VisionCamera.resolveConstraints(
+      backWide,
+      [{ output: frameOutput, mirrorMode: 'auto' }],
+      [],
+    )
+    const videoConfig = await VisionCamera.resolveConstraints(
+      backWide,
+      [{ output: videoOutput, mirrorMode: 'auto' }],
+      [],
+    )
+    const photoConfig = await VisionCamera.resolveConstraints(
+      backWide,
+      [{ output: photoOutput, mirrorMode: 'auto' }],
+      [],
+    )
+
+    // Frame and video are both video-stream outputs → same baseline format.
+    expect(videoConfig.nativePixelFormat).toBe(frameConfig.nativePixelFormat)
+    expect(videoConfig.nativePixelFormat).toBe('yuv-420-8-bit-video')
+    expect(videoConfig.isPhotoHDREnabled).toBe(false)
+
+    // The photo output pulls the resolver to the highest-quality format instead.
+    expect(photoConfig.nativePixelFormat).toBe('yuv-420-8-bit-full')
+    expect(photoConfig.isPhotoHDREnabled).toBe(true)
+    expect(photoConfig.nativePixelFormat).not.toBe(
+      frameConfig.nativePixelFormat,
+    )
+  })
+
+  it('resolves fps: 60 for a video output', async () => {
+    const videoOutput = VisionCamera.createVideoOutput(videoOutputOptions)
+    const config = await VisionCamera.resolveConstraints(
+      backWide,
+      [{ output: videoOutput, mirrorMode: 'auto' }],
+      [{ fps: 60 }],
+    )
+    expect(config.selectedFPS).toBe(60)
   })
 
   it('resolves the same config via resolveConstraints and session.configure', async () => {

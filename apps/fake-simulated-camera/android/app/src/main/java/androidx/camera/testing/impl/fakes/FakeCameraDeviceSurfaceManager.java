@@ -57,7 +57,9 @@ public final class FakeCameraDeviceSurfaceManager implements CameraDeviceSurface
     private static final String TAG = "FakeCameraDeviceSurfaceManager";
 
     public static final Size MAX_OUTPUT_SIZE = new Size(4032, 3024); // 12.2 MP
-    public static final int MAX_SUPPORTED_FRAME_RATE = 60;
+    // MODIFIED (fake-simulated-camera): raised from 60 so the catalog's 240 fps format is reachable; per-camera
+    // frame-rate limits still come from FakeCameraInfoInternal.getSupportedFrameRateRanges.
+    public static final int MAX_SUPPORTED_FRAME_RATE = 240;
 
     private final Map<String, Map<Class<? extends UseCaseConfig<?>>, StreamSpec>>
             mDefinedStreamSpecs = new HashMap<>();
