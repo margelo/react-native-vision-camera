@@ -358,6 +358,13 @@ static BOOL sessionIsRunning(id self, SEL _cmd) {
   return ((BOOL(*)(id, SEL))originalIsRunning)(self, _cmd);
 }
 
+// begin/commit are no-ops: the Simulator has no real capture graph, and the real commitConfiguration walks the
+// fake input/output/connection objects and crashes in -_validateProResRawVideoConfiguration:. VisionCamera brackets
+// its configuration in begin/commit but drives the fake graph purely through the tracked associated objects.
+static void sessionBeginConfiguration(id self, SEL _cmd) {}
+
+static void sessionCommitConfiguration(id self, SEL _cmd) {}
+
 // Presets are stored for every session: the Simulator has no capture service, so the real setter rejects
 // `inputPriority` before any input exists and VisionCamera sets it in `HybridCameraSession.init`.
 static AVCaptureSessionPreset sessionPreset(id self, SEL _cmd) {
@@ -539,6 +546,8 @@ static void installSessionClass(Class cls) {
   originalInputs = FakeCameraReplaceInstanceMethod(cls, @selector(inputs), (IMP)sessionInputs, "@@:");
   originalOutputs = FakeCameraReplaceInstanceMethod(cls, @selector(outputs), (IMP)sessionOutputs, "@@:");
   originalConnections = FakeCameraReplaceInstanceMethod(cls, @selector(connections), (IMP)sessionConnections, "@@:");
+  FakeCameraReplaceInstanceMethod(cls, @selector(beginConfiguration), (IMP)sessionBeginConfiguration, "v@:");
+  FakeCameraReplaceInstanceMethod(cls, @selector(commitConfiguration), (IMP)sessionCommitConfiguration, "v@:");
   originalStartRunning = FakeCameraReplaceInstanceMethod(cls, @selector(startRunning), (IMP)sessionStartRunning, "v@:");
   originalStopRunning = FakeCameraReplaceInstanceMethod(cls, @selector(stopRunning), (IMP)sessionStopRunning, "v@:");
   originalIsRunning = FakeCameraReplaceInstanceMethod(cls, @selector(isRunning), (IMP)sessionIsRunning, "B@:");
