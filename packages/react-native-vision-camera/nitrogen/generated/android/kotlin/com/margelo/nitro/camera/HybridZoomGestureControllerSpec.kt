@@ -29,7 +29,14 @@ abstract class HybridZoomGestureControllerSpec: HybridGestureControllerSpec() {
   
 
   // Methods
+  abstract fun addOnZoomChangedListener(onZoomChanged: (zoom: Double) -> Unit): ListenerSubscription
   
+  @DoNotStrip
+  @Keep
+  private fun addOnZoomChangedListener_cxx(onZoomChanged: Func_void_double): ListenerSubscription {
+    val __result = addOnZoomChangedListener(onZoomChanged)
+    return __result
+  }
 
   // Default implementation of `HybridObject.toString()`
   override fun toString(): String {

@@ -25,6 +25,7 @@
 #include "JHybridTapToFocusGestureControllerSpec.hpp"
 #include "JFunc_void_std__shared_ptr_HybridMeteringPointSpec_.hpp"
 #include "JHybridZoomGestureControllerSpec.hpp"
+#include "JFunc_void_double.hpp"
 #include "JHybridCameraDeviceSpec.hpp"
 #include "JHybridCameraDeviceFactorySpec.hpp"
 #include "JFunc_void_std__vector_std__shared_ptr_HybridCameraDeviceSpec__.hpp"
@@ -134,6 +135,7 @@ void registerAllNatives() {
   margelo::nitro::camera::JHybridTapToFocusGestureControllerSpec::CxxPart::registerNatives();
   margelo::nitro::camera::JFunc_void_std__shared_ptr_HybridMeteringPointSpec__cxx::registerNatives();
   margelo::nitro::camera::JHybridZoomGestureControllerSpec::CxxPart::registerNatives();
+  margelo::nitro::camera::JFunc_void_double_cxx::registerNatives();
   margelo::nitro::camera::JHybridCameraDeviceSpec::CxxPart::registerNatives();
   margelo::nitro::camera::JHybridCameraDeviceFactorySpec::CxxPart::registerNatives();
   margelo::nitro::camera::JFunc_void_std__vector_std__shared_ptr_HybridCameraDeviceSpec___cxx::registerNatives();

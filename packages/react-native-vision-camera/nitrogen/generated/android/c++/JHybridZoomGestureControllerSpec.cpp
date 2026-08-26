@@ -7,9 +7,17 @@
 
 #include "JHybridZoomGestureControllerSpec.hpp"
 
+// Forward declaration of `ListenerSubscription` to properly resolve imports.
+namespace margelo::nitro::camera { struct ListenerSubscription; }
 // Forward declaration of `HybridCameraControllerSpec` to properly resolve imports.
 namespace margelo::nitro::camera { class HybridCameraControllerSpec; }
 
+#include "ListenerSubscription.hpp"
+#include "JListenerSubscription.hpp"
+#include <functional>
+#include "JFunc_void.hpp"
+#include <NitroModules/JNICallable.hpp>
+#include "JFunc_void_double.hpp"
 #include <memory>
 #include "HybridCameraControllerSpec.hpp"
 #include <optional>
@@ -56,6 +64,10 @@ namespace margelo::nitro::camera {
   }
 
   // Methods
-  
+  ListenerSubscription JHybridZoomGestureControllerSpec::addOnZoomChangedListener(const std::function<void(double /* zoom */)>& onZoomChanged) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JListenerSubscription>(jni::alias_ref<JFunc_void_double::javaobject> /* onZoomChanged */)>("addOnZoomChangedListener_cxx");
+    auto __result = method(_javaPart, JFunc_void_double_cxx::fromCpp(onZoomChanged));
+    return __result->toCpp();
+  }
 
 } // namespace margelo::nitro::camera
