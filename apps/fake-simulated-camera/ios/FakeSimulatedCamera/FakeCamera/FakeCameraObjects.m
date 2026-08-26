@@ -388,11 +388,9 @@ FAKECAM_FORWARDING_NET
 }
 
 - (void)setActiveFormat:(AVCaptureDeviceFormat *)activeFormat {
-  FakeCameraFileLog([NSString stringWithFormat:@"device %@: setActiveFormat begin", _spec.uniqueID]);
   FakeCameraFormat *format = (FakeCameraFormat *)activeFormat;
   NSAssert([_fakeFormats containsObject:format], @"activeFormat %@ is not a format of %@", activeFormat, self);
   _activeFormat = format;
-  FakeCameraFileLog([NSString stringWithFormat:@"device %@: setActiveFormat end", _spec.uniqueID]);
 }
 
 - (AVCaptureDeviceFormat *)activeDepthDataFormat {
@@ -424,12 +422,10 @@ FAKECAM_FORWARDING_NET
 }
 
 - (BOOL)lockForConfiguration:(NSError **)error {
-  FakeCameraFileLog([NSString stringWithFormat:@"device %@: lockForConfiguration", _spec.uniqueID]);
   return YES;
 }
 
 - (void)unlockForConfiguration {
-  FakeCameraFileLog([NSString stringWithFormat:@"device %@: unlockForConfiguration", _spec.uniqueID]);
 }
 
 // MARK: Device topology

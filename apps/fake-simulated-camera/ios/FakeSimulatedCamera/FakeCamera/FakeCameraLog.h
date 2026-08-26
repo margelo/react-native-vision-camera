@@ -5,10 +5,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 os_log_t FakeCameraLog(void);
 
-/// Synchronous trace to a file in the app container (flushed every call). os_log can drop the last entries before a
-/// hard crash, so this is the reliable channel for finding the last call before a native crash. Debug-only.
-void FakeCameraFileLog(NSString *message);
-
 #define FAKECAM_INFO(fmt, ...) os_log(FakeCameraLog(), fmt, ##__VA_ARGS__)
 #define FAKECAM_FAULT(fmt, ...) os_log_fault(FakeCameraLog(), fmt, ##__VA_ARGS__)
 
@@ -20,8 +16,6 @@ void FakeCameraFileLog(NSString *message);
     return signature ?: [NSMethodSignature signatureWithObjCTypes:"@@:"];                                 \
   }                                                                                                       \
   -(void)forwardInvocation : (NSInvocation *)invocation {                                                 \
-    FakeCameraFileLog([NSString stringWithFormat:@"%@ does not implement %@", NSStringFromClass([self class]), \
-                                                 NSStringFromSelector(invocation.selector)]);             \
     FAKECAM_FAULT("%{public}@ does not implement %{public}@", NSStringFromClass([self class]),            \
                   NSStringFromSelector(invocation.selector));                                             \
     NSAssert(NO, @"FakeCamera: %@ does not implement %@", NSStringFromClass([self class]),                \
