@@ -388,6 +388,7 @@ FAKECAM_FORWARDING_NET
 }
 
 - (void)setActiveFormat:(AVCaptureDeviceFormat *)activeFormat {
+  FAKECAM_INFO("device %{public}@: setActiveFormat", _spec.uniqueID);
   FakeCameraFormat *format = (FakeCameraFormat *)activeFormat;
   NSAssert([_fakeFormats containsObject:format], @"activeFormat %@ is not a format of %@", activeFormat, self);
   _activeFormat = format;

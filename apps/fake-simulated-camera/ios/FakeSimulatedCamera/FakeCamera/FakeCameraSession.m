@@ -217,6 +217,7 @@ static void sessionAddInputWithNoConnections(id self, SEL _cmd, AVCaptureInput *
 
 static void sessionRemoveInput(id self, SEL _cmd, AVCaptureInput *input) {
   if (FakeCameraIsFakeInput(input)) {
+    FAKECAM_INFO("session %p: removeInput", self);
     // Untrack only. Do NOT walk the connection list here: AVCaptureSession's own dealloc calls removeInput:,
     // and touching the associated connection arrays mid-teardown over-releases. Reconfigure rebuilds
     // connections from scratch in updateConnections, so no cascade is needed.
@@ -257,6 +258,7 @@ static void sessionAddOutputWithNoConnections(id self, SEL _cmd, AVCaptureOutput
 
 static void sessionRemoveOutput(id self, SEL _cmd, AVCaptureOutput *output) {
   if (FakeCameraIsFakeSession(self)) {
+    FAKECAM_INFO("session %p: removeOutput %{public}@", self, NSStringFromClass([output class]));
     // Untrack the output and drop the fake connections it owns. The session's own connection list is rebuilt
     // by updateConnections on the next configure; nothing walks it here (see sessionRemoveInput).
     listRemove(self, kSessionOutputsKey, output);
@@ -295,6 +297,7 @@ static void sessionAddConnection(id self, SEL _cmd, AVCaptureConnection *connect
 
 static void sessionRemoveConnection(id self, SEL _cmd, AVCaptureConnection *connection) {
   if ([connection isKindOfClass:[FakeCameraConnection class]]) {
+    FAKECAM_INFO("session %p: removeConnection", self);
     detachConnection(self, (FakeCameraConnection *)connection);
     return;
   }
