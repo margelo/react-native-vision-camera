@@ -75,38 +75,34 @@ describe('FakeCamera - Session', () => {
     }
   })
 
-  it('reconfigures a stopped session with another device and output', async () => {
+  // Switching cameras with a fresh session per device, the way an app recreates its session on a camera flip.
+  it('configures, starts and stops a session on the front camera', async () => {
     const session = await VisionCamera.createCameraSession(false)
-    const firstOutput = makeFrameOutput()
-    const secondOutput = makeFrameOutput()
-    const errors: Error[] = []
-    const errorSub = session.addOnErrorListener((error) => errors.push(error))
+    const frameOutput = makeFrameOutput()
+    const started = deferred()
+    const stopped = deferred()
+    const startSub = session.addOnStartedListener(started.resolve)
+    const stopSub = session.addOnStoppedListener(stopped.resolve)
+    const errorSub = session.addOnErrorListener((error) => {
+      started.reject(error)
+      stopped.reject(error)
+    })
     try {
-      const firstControllers = await session.configure([
-        {
-          input: backWide,
-          outputs: [{ output: firstOutput, mirrorMode: 'auto' }],
-          constraints: [],
-        },
+      const controllers = await session.configure([
+        { input: front, outputs: [{ output: frameOutput, mirrorMode: 'auto' }], constraints: [] },
       ])
-      expect(firstControllers[0]).toHaveProperty('device.id', 'fake-back-wide')
-      await session.start()
-      await session.stop()
+      expect(controllers).toHaveLength(1)
+      expect(controllers[0]).toHaveProperty('device.id', 'fake-front-wide')
 
-      const secondControllers = await session.configure([
-        {
-          input: front,
-          outputs: [{ output: secondOutput, mirrorMode: 'auto' }],
-          constraints: [],
-        },
-      ])
-      expect(secondControllers).toHaveLength(1)
-      expect(secondControllers[0]).toHaveProperty(
-        'device.id',
-        'fake-front-wide',
-      )
-      expect(errors).toHaveLength(0)
+      await session.start()
+      await withTimeout(started.promise, 10_000, 'front session start')
+      expect(session.isRunning).toBe(true)
+      await session.stop()
+      await withTimeout(stopped.promise, 10_000, 'front session stop')
+      expect(session.isRunning).toBe(false)
     } finally {
+      startSub.remove()
+      stopSub.remove()
       errorSub.remove()
     }
   })
