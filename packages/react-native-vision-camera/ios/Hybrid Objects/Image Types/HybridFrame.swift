@@ -151,8 +151,8 @@ final class HybridFrame: HybridFrameSpec, NativeFrame, LazyLockableBuffer {
     }
     let matrix = FrameCoordinateSystemConverter.getCameraToFrameMatrix(
       pixelBuffer: pixelBuffer,
-      orientation: orientation,
-      isMirrored: isMirrored)
+      bufferOrientation: metadata.bufferOrientation,
+      isBufferMirrored: metadata.isBufferMirrored)
     return cameraPoint.applying(matrix)
   }
 
@@ -162,8 +162,8 @@ final class HybridFrame: HybridFrameSpec, NativeFrame, LazyLockableBuffer {
     }
     let matrix = FrameCoordinateSystemConverter.getFrameToCameraMatrix(
       pixelBuffer: pixelBuffer,
-      orientation: orientation,
-      isMirrored: isMirrored)
+      bufferOrientation: metadata.bufferOrientation,
+      isBufferMirrored: metadata.isBufferMirrored)
     return framePoint.applying(matrix)
   }
 }

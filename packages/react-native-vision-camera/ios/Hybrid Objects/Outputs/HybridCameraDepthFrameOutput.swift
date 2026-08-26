@@ -106,7 +106,9 @@ final class HybridCameraDepthFrameOutput: HybridCameraDepthFrameOutputSpec, Nati
     return MediaSampleMetadata(
       timestamp: timestamp,
       orientation: relativeOrientation,
-      isMirrored: isMirrored)
+      isMirrored: isMirrored,
+      bufferOrientation: bufferOrientation,
+      isBufferMirrored: isBufferMirrored)
   }
 
   func setOnDepthFrameCallback(onDepthFrame: ((any HybridDepthSpec) -> Bool)?) throws {

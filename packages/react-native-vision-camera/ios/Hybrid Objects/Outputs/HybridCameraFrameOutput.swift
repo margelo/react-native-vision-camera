@@ -142,7 +142,9 @@ final class HybridCameraFrameOutput: HybridCameraFrameOutputSpec, NativeCameraOu
     return MediaSampleMetadata(
       timestamp: timestamp,
       orientation: relativeOrientation,
-      isMirrored: isMirrored)
+      isMirrored: isMirrored,
+      bufferOrientation: bufferOrientation,
+      isBufferMirrored: isBufferMirrored)
   }
 
   func setOnFrameCallback(onFrame: ((any HybridFrameSpec) -> Bool)?) throws {

@@ -152,8 +152,8 @@ final class HybridDepth: HybridDepthSpec, NativeDepth, LazyLockableBuffer {
     }
     let matrix = FrameCoordinateSystemConverter.getCameraToFrameMatrix(
       pixelBuffer: pixelBuffer,
-      orientation: orientation,
-      isMirrored: isMirrored)
+      bufferOrientation: metadata.bufferOrientation,
+      isBufferMirrored: metadata.isBufferMirrored)
     return cameraPoint.applying(matrix)
   }
 
@@ -163,8 +163,8 @@ final class HybridDepth: HybridDepthSpec, NativeDepth, LazyLockableBuffer {
     }
     let matrix = FrameCoordinateSystemConverter.getFrameToCameraMatrix(
       pixelBuffer: pixelBuffer,
-      orientation: orientation,
-      isMirrored: isMirrored)
+      bufferOrientation: metadata.bufferOrientation,
+      isBufferMirrored: metadata.isBufferMirrored)
     return depthPoint.applying(matrix)
   }
 
