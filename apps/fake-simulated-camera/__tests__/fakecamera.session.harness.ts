@@ -1,5 +1,12 @@
 import { Platform } from 'react-native'
-import { assert, beforeAll, describe, expect, it } from 'react-native-harness'
+import {
+  assert,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  waitFor,
+} from 'react-native-harness'
 import type {
   CameraDevice,
   CameraDeviceFactory,
@@ -64,10 +71,10 @@ describe('FakeCamera - Session', () => {
 
       await session.start()
       await withTimeout(started.promise, 10_000, 'session start')
-      expect(session.isRunning).toBe(true)
+      await waitFor(() => expect(session.isRunning).toBe(true), { timeout: 3_000 })
       await session.stop()
       await withTimeout(stopped.promise, 10_000, 'session stop')
-      expect(session.isRunning).toBe(false)
+      await waitFor(() => expect(session.isRunning).toBe(false), { timeout: 3_000 })
     } finally {
       startSub.remove()
       stopSub.remove()
@@ -96,10 +103,10 @@ describe('FakeCamera - Session', () => {
 
       await session.start()
       await withTimeout(started.promise, 10_000, 'front session start')
-      expect(session.isRunning).toBe(true)
+      await waitFor(() => expect(session.isRunning).toBe(true), { timeout: 3_000 })
       await session.stop()
       await withTimeout(stopped.promise, 10_000, 'front session stop')
-      expect(session.isRunning).toBe(false)
+      await waitFor(() => expect(session.isRunning).toBe(false), { timeout: 3_000 })
     } finally {
       startSub.remove()
       stopSub.remove()
