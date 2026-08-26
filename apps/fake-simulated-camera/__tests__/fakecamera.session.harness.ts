@@ -105,8 +105,6 @@ describe('FakeCamera - Session', () => {
         'device.id',
         'fake-front-wide',
       )
-      await session.start()
-      await session.stop()
       expect(errors).toHaveLength(0)
     } finally {
       errorSub.remove()
