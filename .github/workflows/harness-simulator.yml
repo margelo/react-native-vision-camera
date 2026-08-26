@@ -186,7 +186,16 @@ jobs:
             bun run test:harness:ios || RC=$?
           fi
           [ -n "$STREAM_PID" ] && kill "$STREAM_PID" 2>/dev/null || true
-          echo "=== fakecam-stream.log tail ==="; tail -60 fakecam-stream.log 2>/dev/null || true
+          echo "=== fakecam-stream.log tail ==="; tail -40 fakecam-stream.log 2>/dev/null || true
+          if [ -n "${UDID:-}" ]; then
+            CONT=$(xcrun simctl get_app_container "$UDID" com.margelo.nitro.camera.example.fake data 2>/dev/null || true)
+            if [ -n "$CONT" ] && [ -f "$CONT/tmp/fakecam-trace.log" ]; then
+              cp "$CONT/tmp/fakecam-trace.log" fakecam-trace.log
+              echo "=== fakecam-trace.log tail (synchronous) ==="; tail -80 fakecam-trace.log
+            else
+              echo "no fakecam-trace.log (container=${CONT:-<none>})"
+            fi
+          fi
           exit $RC
 
       - name: Collect iOS diagnostics

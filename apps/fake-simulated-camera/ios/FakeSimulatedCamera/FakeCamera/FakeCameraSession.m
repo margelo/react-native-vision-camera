@@ -217,7 +217,7 @@ static void sessionAddInputWithNoConnections(id self, SEL _cmd, AVCaptureInput *
 
 static void sessionRemoveInput(id self, SEL _cmd, AVCaptureInput *input) {
   if (FakeCameraIsFakeInput(input)) {
-    FAKECAM_INFO("session %p: removeInput", self);
+    FakeCameraFileLog([NSString stringWithFormat:@"session %p: removeInput", self]);
     // Untrack only. Do NOT walk the connection list here: AVCaptureSession's own dealloc calls removeInput:,
     // and touching the associated connection arrays mid-teardown over-releases. Reconfigure rebuilds
     // connections from scratch in updateConnections, so no cascade is needed.
@@ -258,7 +258,7 @@ static void sessionAddOutputWithNoConnections(id self, SEL _cmd, AVCaptureOutput
 
 static void sessionRemoveOutput(id self, SEL _cmd, AVCaptureOutput *output) {
   if (FakeCameraIsFakeSession(self)) {
-    FAKECAM_INFO("session %p: removeOutput %{public}@", self, NSStringFromClass([output class]));
+    FakeCameraFileLog([NSString stringWithFormat:@"session %p: removeOutput %@", self, NSStringFromClass([output class])]);
     // Untrack the output and drop the fake connections it owns. The session's own connection list is rebuilt
     // by updateConnections on the next configure; nothing walks it here (see sessionRemoveInput).
     listRemove(self, kSessionOutputsKey, output);
@@ -297,7 +297,7 @@ static void sessionAddConnection(id self, SEL _cmd, AVCaptureConnection *connect
 
 static void sessionRemoveConnection(id self, SEL _cmd, AVCaptureConnection *connection) {
   if ([connection isKindOfClass:[FakeCameraConnection class]]) {
-    FAKECAM_INFO("session %p: removeConnection", self);
+    FakeCameraFileLog([NSString stringWithFormat:@"session %p: removeConnection", self]);
     detachConnection(self, (FakeCameraConnection *)connection);
     return;
   }
@@ -326,6 +326,7 @@ static void postOnMain(AVCaptureSession *session, NSNotificationName name) {
 }
 
 static void sessionStartRunning(id self, SEL _cmd) {
+  FakeCameraFileLog([NSString stringWithFormat:@"session %p: startRunning", self]);
   if (!FakeCameraIsFakeSession(self)) {
     ((void (*)(id, SEL))originalStartRunning)(self, _cmd);
     return;
@@ -367,9 +368,13 @@ static BOOL sessionIsRunning(id self, SEL _cmd) {
 // begin/commit are no-ops: the Simulator has no real capture graph, and the real commitConfiguration walks the
 // fake input/output/connection objects and crashes in -_validateProResRawVideoConfiguration:. VisionCamera brackets
 // its configuration in begin/commit but drives the fake graph purely through the tracked associated objects.
-static void sessionBeginConfiguration(id self, SEL _cmd) {}
+static void sessionBeginConfiguration(id self, SEL _cmd) {
+  FakeCameraFileLog([NSString stringWithFormat:@"session %p: beginConfiguration", self]);
+}
 
-static void sessionCommitConfiguration(id self, SEL _cmd) {}
+static void sessionCommitConfiguration(id self, SEL _cmd) {
+  FakeCameraFileLog([NSString stringWithFormat:@"session %p: commitConfiguration", self]);
+}
 
 // Presets are stored for every session: the Simulator has no capture service, so the real setter rejects
 // `inputPriority` before any input exists and VisionCamera sets it in `HybridCameraSession.init`.
@@ -427,6 +432,7 @@ static NSArray *outputConnections(id self, SEL _cmd) {
 }
 
 static AVCaptureConnection *outputConnectionWithMediaType(id self, SEL _cmd, AVMediaType mediaType) {
+  FakeCameraFileLog([NSString stringWithFormat:@"output %@: connectionWithMediaType %@", NSStringFromClass([self class]), mediaType]);
   if ([mediaType isEqualToString:AVMediaTypeVideo]) {
     AVCaptureConnection *fake = listCopy(self, kOutputConnectionsKey).firstObject;
     if (fake != nil) {
