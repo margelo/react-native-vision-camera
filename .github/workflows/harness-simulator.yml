@@ -195,6 +195,12 @@ jobs:
             else
               echo "no fakecam-trace.log (container=${CONT:-<none>})"
             fi
+            REPORTS="$HOME/Library/Developer/CoreSimulator/Devices/$UDID/data/Library/Logs/DiagnosticReports"
+            for f in "$REPORTS"/FakeSimulated*.ips "$REPORTS"/FakeSimulated*.crash; do
+              [ -f "$f" ] || continue
+              echo "=== crash report $f (head) ==="; head -70 "$f"
+              cp "$f" . 2>/dev/null || true
+            done
           fi
           exit $RC
 
