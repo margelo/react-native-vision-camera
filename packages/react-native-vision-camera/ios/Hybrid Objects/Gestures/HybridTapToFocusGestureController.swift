@@ -16,6 +16,8 @@ final class HybridTapToFocusGestureController: HybridTapToFocusGestureController
   weak var controller: (any HybridCameraControllerSpec)? = nil
 
   private weak var previewView: (any HybridPreviewViewSpec)? = nil
+  private var onTapListeners: [UUID: (any HybridMeteringPointSpec) -> Void] = [:]
+  private var onFocusCompletedListeners: [UUID: (any HybridMeteringPointSpec) -> Void] = [:]
 
   override init() {
     super.init()
@@ -34,9 +36,42 @@ final class HybridTapToFocusGestureController: HybridTapToFocusGestureController
         viewX: viewPoint.x,
         viewY: viewPoint.y,
         size: nil)
-      _ = try controller.focusTo(point: meteringPoint, options: FocusOptions())
+      let tapListeners = Array(onTapListeners.values)
+      tapListeners.forEach { $0(meteringPoint) }
+
+      try controller.focusTo(point: meteringPoint, options: FocusOptions())
+        .then { [weak self] _ in
+          DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            let focusCompletedListeners = Array(self.onFocusCompletedListeners.values)
+            focusCompletedListeners.forEach { $0(meteringPoint) }
+          }
+        }
+        .catch { error in
+          logger.error("Failed to focus! \(error)")
+        }
     } catch {
       logger.error("Failed to focus! \(error)")
+    }
+  }
+
+  func addOnTapListener(onTap: @escaping (any HybridMeteringPointSpec) -> Void)
+    -> ListenerSubscription
+  {
+    let id = UUID()
+    onTapListeners[id] = onTap
+    return ListenerSubscription { [weak self] in
+      self?.onTapListeners.removeValue(forKey: id)
+    }
+  }
+
+  func addOnFocusCompletedListener(
+    onFocusCompleted: @escaping (any HybridMeteringPointSpec) -> Void
+  ) -> ListenerSubscription {
+    let id = UUID()
+    onFocusCompletedListeners[id] = onFocusCompleted
+    return ListenerSubscription { [weak self] in
+      self?.onFocusCompletedListeners.removeValue(forKey: id)
     }
   }
 

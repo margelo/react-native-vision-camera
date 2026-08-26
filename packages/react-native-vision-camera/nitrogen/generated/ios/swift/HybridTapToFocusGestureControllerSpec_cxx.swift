@@ -127,5 +127,43 @@ open class HybridTapToFocusGestureControllerSpec_cxx : HybridGestureControllerSp
   
 
   // Methods
+  @inline(__always)
+  public final func addOnTapListener(onTap: bridge.Func_void_std__shared_ptr_HybridMeteringPointSpec_) -> bridge.Result_ListenerSubscription_ {
+    do {
+      let __result = try self.__implementation.addOnTapListener(onTap: { () -> ((any HybridMeteringPointSpec)) -> Void in
+        let __wrappedFunction = bridge.wrap_Func_void_std__shared_ptr_HybridMeteringPointSpec_(onTap)
+        return { (__point: (any HybridMeteringPointSpec)) -> Void in
+          __wrappedFunction.call({ () -> bridge.std__shared_ptr_HybridMeteringPointSpec_ in
+            let __cxxWrapped = __point.getCxxWrapper()
+            return __cxxWrapped.getCxxPart()
+          }())
+        }
+      }())
+      let __resultCpp = __result
+      return bridge.create_Result_ListenerSubscription_(__resultCpp)
+    } catch (let __error) {
+      let __exceptionPtr = __error.toCpp()
+      return bridge.create_Result_ListenerSubscription_(__exceptionPtr)
+    }
+  }
   
+  @inline(__always)
+  public final func addOnFocusCompletedListener(onFocusCompleted: bridge.Func_void_std__shared_ptr_HybridMeteringPointSpec_) -> bridge.Result_ListenerSubscription_ {
+    do {
+      let __result = try self.__implementation.addOnFocusCompletedListener(onFocusCompleted: { () -> ((any HybridMeteringPointSpec)) -> Void in
+        let __wrappedFunction = bridge.wrap_Func_void_std__shared_ptr_HybridMeteringPointSpec_(onFocusCompleted)
+        return { (__point: (any HybridMeteringPointSpec)) -> Void in
+          __wrappedFunction.call({ () -> bridge.std__shared_ptr_HybridMeteringPointSpec_ in
+            let __cxxWrapped = __point.getCxxWrapper()
+            return __cxxWrapped.getCxxPart()
+          }())
+        }
+      }())
+      let __resultCpp = __result
+      return bridge.create_Result_ListenerSubscription_(__resultCpp)
+    } catch (let __error) {
+      let __exceptionPtr = __error.toCpp()
+      return bridge.create_Result_ListenerSubscription_(__exceptionPtr)
+    }
+  }
 }
