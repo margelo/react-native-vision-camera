@@ -33,6 +33,10 @@ static const double kMaxFramesPerSecond = 60.0;
 }
 
 - (void)dealloc {
+  if (_timer) {
+    dispatch_source_cancel(_timer);
+    _timer = nil;
+  }
   [self releaseFrame];
 }
 

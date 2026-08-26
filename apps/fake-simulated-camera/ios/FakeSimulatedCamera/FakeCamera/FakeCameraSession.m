@@ -351,10 +351,13 @@ static void sessionStopRunning(id self, SEL _cmd) {
     return;
   }
   [pumpForSession(self, NO) stop];
+  // Release the pump so a stopped session keeps no live streaming object; the next start builds a fresh one.
+  // The pending stop block retains the pump until it has cancelled the timer, so this cannot dangle.
+  objc_setAssociatedObject(self, kSessionPumpKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
   [self willChangeValueForKey:@"running"];
   objc_setAssociatedObject(self, kSessionRunningKey, @NO, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
   [self didChangeValueForKey:@"running"];
-  FAKECAM_INFO("session %p: stopRunning", self);
+  FakeCameraFileLog([NSString stringWithFormat:@"session %p: stopRunning done", self]);
   postOnMain(self, AVCaptureSessionDidStopRunningNotification);
 }
 
