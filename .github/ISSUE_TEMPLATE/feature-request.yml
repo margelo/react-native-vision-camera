@@ -9,7 +9,7 @@ body:
       label: Prerequisites
       description: Please confirm you've done each of these. Every box must be ticked.
       options:
-        - label: I have searched [existing issues](https://github.com/mrousavy/react-native-vision-camera/issues?q=is%3Aissue) for a similar request.
+        - label: I have searched [existing issues](https://github.com/margelo/react-native-vision-camera/issues?q=is%3Aissue) for a similar request.
           required: true
 
   - type: textarea

@@ -1,4 +1,4 @@
-package com.mrousavy.camera.react.extensions
+package com.margelo.nitro.camera.extensions
 
 import android.view.View
 import android.view.ViewGroup

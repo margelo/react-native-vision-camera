@@ -24,7 +24,7 @@ body:
           required: true
         - label: I did a clean build — deleted `node_modules`, `ios/Pods`, `ios/build`, and Xcode's DerivedData, then reinstalled.
           required: true
-        - label: I searched [existing build-error issues](https://github.com/mrousavy/react-native-vision-camera/issues?q=is%3Aissue+label%3A%22%F0%9F%9B%A0%EF%B8%8F+build-error%22) and found nothing matching.
+        - label: I searched [existing build-error issues](https://github.com/margelo/react-native-vision-camera/issues?q=is%3Aissue+label%3A%22%F0%9F%9B%A0%EF%B8%8F+build-error%22) and found nothing matching.
           required: true
 
   - type: textarea
@@ -45,7 +45,7 @@ body:
       label: VisionCamera version
       description: |
         Exact version from `package.json` (e.g. `5.2.1`).
-        See [Releases](https://github.com/mrousavy/react-native-vision-camera/releases) for the full list.
+        See [Releases](https://github.com/margelo/react-native-vision-camera/releases) for the full list.
       placeholder: "5.2.1"
     validations:
       required: true

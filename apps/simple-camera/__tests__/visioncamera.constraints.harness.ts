@@ -289,7 +289,7 @@ describe('VisionCamera - Constraints', () => {
     expect(previewEdges.long).toBeLessThanOrEqual(maxAllowedEdges.long)
   })
 
-  // Regression test for https://github.com/mrousavy/react-native-vision-camera/issues/4073:
+  // Regression test for https://github.com/margelo/react-native-vision-camera/issues/4073:
   // an explicitly listed resolutionBias for a recording output has a higher
   // priority than the auto-appended preview bias, so an app requesting
   // 1080p must record 1080p - not silently upgrade to 4k because the
