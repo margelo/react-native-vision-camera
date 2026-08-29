@@ -70,9 +70,10 @@ const iosAppLaunchOptions = iosMetroHostPort
   : undefined
 
 const isCI = process.env.CI === 'true'
-const bundleStartTimeout = isCI ? 90_000 : 15_000
-const bridgeTimeout = isCI ? 120_000 : 45_000
-const maxAppRestarts = isCI ? 4 : 2
+const bundleStartTimeout = isCI ? 30_000 : 15_000
+const bridgeTimeout = 45_000
+const platformReadyTimeout = 60_000
+const maxAppRestarts = isCI ? 1 : 2
 
 const useEmulator = androidDeviceMode === 'emulator'
 
@@ -113,6 +114,7 @@ const config = {
   defaultRunner: 'android',
   bridgeTimeout,
   bundleStartTimeout,
+  platformReadyTimeout,
   maxAppRestarts,
   detectNativeCrashes: true,
   resetEnvironmentBetweenTestFiles: true,
