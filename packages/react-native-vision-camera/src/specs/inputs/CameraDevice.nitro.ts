@@ -579,6 +579,19 @@ export interface CameraDevice
    */
   readonly maxZoom: number
   /**
+   * The zoom factor at which this Camera appears naturally zoomed (`1x`)
+   * to the user.
+   *
+   * For physical Cameras and Android devices this is typically `1.0`.
+   * On iOS virtual Cameras that include an ultra-wide-angle lens, this can
+   * be greater than `1.0` because AVFoundation's internal zoom scale starts
+   * at the widest constituent lens.
+   *
+   * Use this value as the initial zoom if the Camera should start on its
+   * standard wide-angle lens while still allowing the user to zoom out.
+   */
+  readonly neutralZoom: number
+  /**
    * If this {@linkcode CameraDevice} is a virtual device,
    * this returns a list of zoom factors at which the virtual
    * device may switch to another physical camera.

@@ -435,6 +435,13 @@ open class HybridCameraDeviceSpec_cxx {
     }
   }
   
+  public final var neutralZoom: Double {
+    @inline(__always)
+    get {
+      return self.__implementation.neutralZoom
+    }
+  }
+
   public final var zoomLensSwitchFactors: bridge.std__vector_double_ {
     @inline(__always)
     get {

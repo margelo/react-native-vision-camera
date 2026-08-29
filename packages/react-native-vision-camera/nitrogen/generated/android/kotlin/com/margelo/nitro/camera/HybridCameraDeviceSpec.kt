@@ -180,6 +180,10 @@ abstract class HybridCameraDeviceSpec: HybridObject() {
   
   @get:DoNotStrip
   @get:Keep
+  abstract val neutralZoom: Double
+
+  @get:DoNotStrip
+  @get:Keep
   abstract val zoomLensSwitchFactors: DoubleArray
   
   @get:DoNotStrip

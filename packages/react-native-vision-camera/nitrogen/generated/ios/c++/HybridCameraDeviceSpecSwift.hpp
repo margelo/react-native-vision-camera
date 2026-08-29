@@ -236,6 +236,9 @@ namespace margelo::nitro::camera {
     inline double getMaxZoom() noexcept override {
       return _swiftPart.getMaxZoom();
     }
+    inline double getNeutralZoom() noexcept override {
+      return _swiftPart.getNeutralZoom();
+    }
     inline std::vector<double> getZoomLensSwitchFactors() noexcept override {
       auto __result = _swiftPart.getZoomLensSwitchFactors();
       return __result;

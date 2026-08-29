@@ -338,6 +338,11 @@ namespace margelo::nitro::camera {
     auto __result = method(_javaPart);
     return __result;
   }
+  double JHybridCameraDeviceSpec::getNeutralZoom() {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<double()>("getNeutralZoom");
+    auto __result = method(_javaPart);
+    return __result;
+  }
   std::vector<double> JHybridCameraDeviceSpec::getZoomLensSwitchFactors() {
     static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<jni::JArrayDouble>()>("getZoomLensSwitchFactors");
     auto __result = method(_javaPart);

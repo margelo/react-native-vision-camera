@@ -13,7 +13,7 @@ The [`<Camera />`](/api/react-native-vision-camera/views/Camera) view allows adj
 ```tsx
 function App() {
   // [!code ++]
-  const zoom = useSharedValue(device.minZoom)
+  const zoom = useSharedValue(device.neutralZoom)
 
   return (
     <Camera
@@ -48,7 +48,7 @@ To zoom on a [`CameraController`](/api/react-native-vision-camera/hybrid-objects
 const device = ...
 const controller = ...
 // [!code ++]
-await controller.setZoom(device.minZoom)
+await controller.setZoom(device.neutralZoom)
 ```
 </Tab>
 </Tabs>
@@ -97,12 +97,15 @@ for (const switchOverFactor of device.zoomLensSwitchFactors) {
 
 #### Default Zoom
 
-To provide a natural user experience, always start at zoom `1`.
-If a virtual Camera contains an [`'ultra-wide-angle'`](/api/react-native-vision-camera/type-aliases/DeviceType) Camera (the "0.5x Camera"), the user may zoom out to less than `1` (here `0.5`) instead.
+To provide a natural user experience, start at the Camera's [`neutralZoom`](/api/react-native-vision-camera/hybrid-objects/CameraDevice#neutralzoom).
+This is the internal zoom factor that appears as `1x` to the user and selects the standard wide-angle lens.
 
-- [`minZoom`](/api/react-native-vision-camera/hybrid-objects/CameraDevice#minzoom) &lt;= `1` (e.g. 0.5x)
-- natural zoom = `1`
-- [`maxZoom`](/api/react-native-vision-camera/hybrid-objects/CameraDevice#maxzoom) &gt;= `1` (e.g. 3x)
+On most Cameras `neutralZoom` is `1`, but iOS virtual Cameras that contain an [`'ultra-wide-angle'`](/api/react-native-vision-camera/type-aliases/DeviceType) lens can use a larger internal factor, such as `2`.
+In that case the user can still zoom out below `neutralZoom` to reach the ultra-wide-angle lens.
+
+- [`minZoom`](/api/react-native-vision-camera/hybrid-objects/CameraDevice#minzoom) &lt;= [`neutralZoom`](/api/react-native-vision-camera/hybrid-objects/CameraDevice#neutralzoom)
+- natural zoom = [`neutralZoom`](/api/react-native-vision-camera/hybrid-objects/CameraDevice#neutralzoom) (displayed as `1x`)
+- [`maxZoom`](/api/react-native-vision-camera/hybrid-objects/CameraDevice#maxzoom) &gt;= [`neutralZoom`](/api/react-native-vision-camera/hybrid-objects/CameraDevice#neutralzoom)
 
 ### Getting current zoom values
 
