@@ -23,6 +23,7 @@ class HybridFrame(
   override val image: ImageProxy,
   override val orientation: CameraOrientation,
   override val isMirrored: Boolean,
+  override val cameraIntrinsicMatrix: DoubleArray?,
 ) : HybridFrameSpec(),
   NativeFrame {
   override val timestamp: Double
@@ -56,10 +57,6 @@ class HybridFrame(
     get() = image.hasPixelBuffer
   override val hasNativeBuffer: Boolean
     get() = image.hasNativeBuffer
-
-  // TODO: Implement `cameraIntrinsicMatrix`
-  override val cameraIntrinsicMatrix: DoubleArray?
-    get() = null
 
   override val memorySize: Long
     get() = image.width * image.height * 4L

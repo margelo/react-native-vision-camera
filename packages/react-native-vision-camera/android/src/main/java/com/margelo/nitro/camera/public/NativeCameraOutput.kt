@@ -1,6 +1,7 @@
 package com.margelo.nitro.camera.public
 
 import android.util.Range
+import androidx.camera.core.CameraInfo
 import androidx.camera.core.UseCase
 import com.margelo.nitro.camera.MirrorMode
 import com.margelo.nitro.camera.TargetDynamicRange
@@ -17,6 +18,7 @@ interface NativeCameraOutput {
     val videoStabilizationMode: TargetStabilizationMode?,
     val videoDynamicRange: TargetDynamicRange?,
     val photoHDR: Boolean?,
+    val cameraInfo: CameraInfo? = null,
   )
 
   /**
