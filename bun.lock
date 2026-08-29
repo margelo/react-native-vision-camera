@@ -245,6 +245,7 @@
     "@shopify/react-native-skia",
   ],
   "patchedDependencies": {
+    "@react-native-harness/bridge@1.4.0-rc.1": "patches/@react-native-harness%2Fbridge@1.4.0-rc.1.patch",
     "react-native@0.85.3": "patches/react-native@0.85.3.patch",
   },
   "packages": {
