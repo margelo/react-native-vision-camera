@@ -1,8 +1,15 @@
 import { ArrowRight } from 'lucide-react'
+import { cn } from '@/lib/cn'
 
-export function LetsTalkWidget() {
+type LetsTalkWidgetProps = {
+  className?: string
+}
+
+export function LetsTalkWidget({ className }: LetsTalkWidgetProps) {
   return (
-    <aside className="mt-6 rounded-lg border bg-fd-card p-4 text-sm">
+    <aside
+      className={cn('mt-6 rounded-lg border bg-fd-card p-4 text-sm', className)}
+    >
       <p className="font-semibold text-fd-foreground">
         Building something ambitious?
       </p>
