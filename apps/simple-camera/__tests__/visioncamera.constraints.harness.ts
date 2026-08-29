@@ -19,6 +19,9 @@ import {
   CommonResolutions,
   VisionCamera,
 } from 'react-native-vision-camera'
+import { provider as workletsProvider } from 'react-native-vision-camera-worklets'
+import { scheduleOnRN } from 'react-native-worklets'
+import { deferred, withTimeout } from './test-utils'
 
 describe('VisionCamera - Constraints', () => {
   let factory: CameraDeviceFactory
@@ -31,6 +34,100 @@ describe('VisionCamera - Constraints', () => {
     const back = factory.getDefaultCamera('back')
     assert.exists(back, 'no back camera')
     backDevice = back
+  })
+
+  // Reproduces: a capture output's `targetResolution` is ignored when a preview
+  // is attached. `<Camera>` always injects a preview output and auto-appends one
+  // `{ resolutionBias }` per output (useCameraController.ts). The preview output's
+  // bias is `.min(screenSize)`, which gives every >=screen-size format (e.g. 4K)
+  // zero penalty and penalizes the capture output's `.closestTo(720p)`. Because
+  // ConstraintResolver sums every bias into the total penalty, the preview's bias
+  // dominates and the resolver negotiates the device's max (4K) format.
+  //
+  // `CameraSessionConfig` exposes no resolution and `onRecordingFinished` returns
+  // only (path, reason), so a delivered Frame's width/height is the only
+  // device-readable proof of the negotiated format. A Frame output streams at
+  // that negotiated format, so an over-selected 4K format yields ~4K frames.
+  it('keeps the negotiated resolution near a capture output target when a preview is attached', async (context) => {
+    // Only reproducible on devices that expose a format larger than ~1080p, so a
+    // 4K over-selection is even possible. Skip otherwise.
+    const longestEdge = Math.max(
+      ...backDevice
+        .getSupportedResolutions('video')
+        .map((r) => Math.max(r.width, r.height)),
+    )
+    if (longestEdge <= 1920) {
+      return context.skip(
+        `device max video resolution is ${longestEdge}px long edge; cannot reproduce 4K over-selection`,
+      )
+    }
+
+    const session = await VisionCamera.createCameraSession(false)
+    const previewOutput = VisionCamera.createPreviewOutput()
+    const frameOutput = VisionCamera.createFrameOutput({
+      targetResolution: CommonResolutions.HD_16_9, // 1280x720
+      pixelFormat: 'native',
+      enablePreviewSizedOutputBuffers: false,
+      enablePhysicalBufferRotation: false,
+      enableCameraMatrixDelivery: false,
+      allowDeferredStart: false,
+      dropFramesWhileBusy: true,
+    })
+
+    // Exactly what <Camera> builds under the hood: preview output first, and one
+    // resolutionBias per output, so the preview's `.min(screenSize)` bias has the
+    // highest priority.
+    await session.configure([
+      {
+        input: backDevice,
+        outputs: [
+          { output: previewOutput, mirrorMode: 'auto' },
+          { output: frameOutput, mirrorMode: 'auto' },
+        ],
+        constraints: [
+          { resolutionBias: previewOutput },
+          { resolutionBias: frameOutput },
+        ],
+      },
+    ])
+
+    const firstFrame = deferred<{ width: number; height: number }>()
+    const reportFrame = (width: number, height: number) =>
+      firstFrame.resolve({ width, height })
+    const errorSub = session.addOnErrorListener(firstFrame.reject)
+
+    const runtime = workletsProvider.createRuntimeForThread(frameOutput.thread)
+    runtime.setOnFrameCallback(frameOutput, (frame) => {
+      'worklet'
+      scheduleOnRN(reportFrame, frame.width, frame.height)
+      frame.dispose()
+    })
+
+    await session.start()
+    let negotiated: { width: number; height: number }
+    try {
+      negotiated = await withTimeout(
+        firstFrame.promise,
+        15_000,
+        'receive frame',
+      )
+    } finally {
+      runtime.setOnFrameCallback(frameOutput, undefined)
+      errorSub.remove()
+      await session.stop()
+    }
+
+    const negotiatedLongEdge = Math.max(negotiated.width, negotiated.height)
+    const negotiatedShortEdge = Math.min(negotiated.width, negotiated.height)
+    console.log(
+      `target=1280x720 negotiated=${negotiated.width}x${negotiated.height}`,
+    )
+
+    // A 1280x720 target must not negotiate a 4K (3840x2160) format just because a
+    // preview is attached. Allow up to 1080p to tolerate devices without an exact
+    // 720p format; fail on anything approaching 4K.
+    expect(negotiatedLongEdge).toBeLessThanOrEqual(1920)
+    expect(negotiatedShortEdge).toBeLessThanOrEqual(1080)
   })
 
   it('resolves a baseline config with no constraints', async () => {
