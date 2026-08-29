@@ -126,6 +126,9 @@
     }
   },
   "patchedDependencies": {
+    "@react-native-harness/bridge@1.4.0-rc.1": "patches/@react-native-harness%2Fbridge@1.4.0-rc.1.patch",
+    "@react-native-harness/cli@1.4.0-rc.1": "patches/@react-native-harness%2Fcli@1.4.0-rc.1.patch",
+    "@react-native-harness/platform-apple@1.4.0-rc.1": "patches/@react-native-harness%2Fplatform-apple@1.4.0-rc.1.patch",
     "react-native@0.85.3": "patches/react-native@0.85.3.patch"
   },
   "version": "5.2.3"
