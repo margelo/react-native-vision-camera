@@ -126,7 +126,8 @@
     }
   },
   "patchedDependencies": {
-    "react-native@0.85.3": "patches/react-native@0.85.3.patch"
+    "react-native@0.85.3": "patches/react-native@0.85.3.patch",
+    "@react-native-harness/jest@1.4.0-rc.1": "patches/@react-native-harness%2Fjest@1.4.0-rc.1.patch"
   },
   "version": "5.2.3"
 }
