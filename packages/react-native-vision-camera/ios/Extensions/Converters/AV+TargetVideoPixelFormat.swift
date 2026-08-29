@@ -14,7 +14,7 @@ extension TargetVideoPixelFormat {
     case .native:
       return .native
     case .yuv:
-      return .specific(kCVPixelFormatType_420YpCbCr8BiPlanarFullRange)
+      return .specific(kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange)
     case .rgb:
       return .specific(kCVPixelFormatType_32BGRA)
     }
