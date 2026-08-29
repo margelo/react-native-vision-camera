@@ -38,10 +38,11 @@ export function useCameraSession({
 
   // session teardown
   useEffect(() => {
-    return () => {
-      // remove all connections
-      session?.stop()
+    return () => { 
+      // Detach outputswhile the session is still running so AVFoundation                                                                                                         
+      // drains each output's figCaptureSession pointer synchronously.  
       session?.configure([])
+      session?.stop()
     }
   }, [session])
 
