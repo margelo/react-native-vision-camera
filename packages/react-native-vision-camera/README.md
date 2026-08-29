@@ -6,7 +6,7 @@ This is VisionCamera Core. Install it through npm:
 npm install react-native-vision-camera
 ```
 
-VisionCamera Core depends on [react-native-nitro-modules](https://github.com/mrousavy/nitro) and [react-native-nitro-image](https://github.com/mrousavy/react-native-nitro-image) - install those dependencies:
+VisionCamera Core depends on [react-native-nitro-modules](https://github.com/margelo/nitro) and [react-native-nitro-image](https://github.com/mrousavy/react-native-nitro-image) - install those dependencies:
 
 ```sh
 npm install react-native-nitro-modules react-native-nitro-image

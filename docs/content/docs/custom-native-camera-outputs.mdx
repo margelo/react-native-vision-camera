@@ -5,7 +5,7 @@ description: Custom Swift/Kotlin CameraOutputs can be implemented in third-party
 
 import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
 
-Third-party libraries can implement the [`CameraOutput`](/api/react-native-vision-camera/hybrid-objects/CameraOutput) class in native code to build a custom camera output that can be connected to the Camera just like any other output. This is achieved using [Nitro Modules](https://github.com/mrousavy/nitro) Hybrid Object inheritance - simply implement the native `HybridCameraOutputSpec`, and conform to the `NativeCameraOutput` interface/protocol:
+Third-party libraries can implement the [`CameraOutput`](/api/react-native-vision-camera/hybrid-objects/CameraOutput) class in native code to build a custom camera output that can be connected to the Camera just like any other output. This is achieved using [Nitro Modules](https://github.com/margelo/nitro) Hybrid Object inheritance - simply implement the native `HybridCameraOutputSpec`, and conform to the `NativeCameraOutput` interface/protocol:
 
 <Tabs items={["Swift (iOS)", "Kotlin (Android)"]} groupId="native-language">
 <Tab value="Swift (iOS)">
@@ -34,7 +34,7 @@ class MyCustomOutput: HybridCameraOutputSpec(), NativeCameraOutput {
 > The `NativeCameraOutput` interface/protocol requires you to implement methods and properties that expose the actual native `AVCaptureOutput`/`UseCase`, which will get used by the [`CameraSession`](/api/react-native-vision-camera/hybrid-objects/CameraSession).
 > Additionally, you can participate in resolution negotiations, and input/format requirements via these.
 
-Then, create a [Nitro Modules](https://github.com/mrousavy/nitro) `HybridObject` that returns a [`CameraOutput`](/api/react-native-vision-camera/hybrid-objects/CameraOutput):
+Then, create a [Nitro Modules](https://github.com/margelo/nitro) `HybridObject` that returns a [`CameraOutput`](/api/react-native-vision-camera/hybrid-objects/CameraOutput):
 
 ```ts
 import type { CameraOutput } from 'react-native-vision-camera'

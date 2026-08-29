@@ -21,7 +21,7 @@ const frameOutput = useFrameOutput({
 
 ### Implementation
 
-Native Frame Processor Plugins are [Nitro Modules](https://github.com/mrousavy/nitro).
+Native Frame Processor Plugins are [Nitro Modules](https://github.com/margelo/nitro).
 
 #### 1. Bootstrap a Nitro Module
 
@@ -197,14 +197,14 @@ const frameOutput = useFrameOutput({
 })
 ```
 
-Thanks to [Nitro](https://github.com/mrousavy/nitro)'s powerful architecture, your Native Frame Processor Plugin can accept any kinds of arguments, return any kind of values (even a [`Frame`](/api/react-native-vision-camera/hybrid-objects/Frame)!), and even be asynchronous.
+Thanks to [Nitro](https://github.com/margelo/nitro)'s powerful architecture, your Native Frame Processor Plugin can accept any kinds of arguments, return any kind of values (even a [`Frame`](/api/react-native-vision-camera/hybrid-objects/Frame)!), and even be asynchronous.
 
 > [!TIP]
 > If your `HybridObject` needs arguments, you should create a separate `HybridObject` that acts as a factory and has a create-function for your `HybridObject` with arguments.
 
 ### C++ Plugins
 
-Because [Nitro](https://github.com/mrousavy/nitro) supports C++, you can also implement your Frame Processor Plugin in pure C++.
+Because [Nitro](https://github.com/margelo/nitro) supports C++, you can also implement your Frame Processor Plugin in pure C++.
 
 ```cpp title="HybridMyNativePlugin.hpp"
 #include <VisionCamera/HybridFrameSpec.hpp>

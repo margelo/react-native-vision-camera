@@ -402,7 +402,7 @@ describe('VisionCamera - Coordinates', () => {
     }
   })
 
-  // Repro for https://github.com/mrousavy/react-native-vision-camera/issues/3871
+  // Repro for https://github.com/margelo/react-native-vision-camera/issues/3871
   it('round-trips Frame center -> Camera -> View center end-to-end', async () => {
     const session = await VisionCamera.createCameraSession(false)
     const previewOutput = VisionCamera.createPreviewOutput()
@@ -644,7 +644,7 @@ describe('VisionCamera - Coordinates', () => {
   // image space, while Frame.convertFramePointToCameraPoint consumes raw
   // buffer-space points. The center-only test above cannot catch an
   // off-center rectangle drifting after orientation is applied.
-  // See https://github.com/mrousavy/react-native-vision-camera/pull/3878.
+  // See https://github.com/margelo/react-native-vision-camera/pull/3878.
   it('maps oriented Frame rectangles into the same Camera bounds', async (context) => {
     const session = await VisionCamera.createCameraSession(false)
     const frameOutput = VisionCamera.createFrameOutput({
