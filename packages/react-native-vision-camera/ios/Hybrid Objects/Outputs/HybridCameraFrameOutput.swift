@@ -120,7 +120,8 @@ final class HybridCameraFrameOutput: HybridCameraFrameOutputSpec, NativeCameraOu
   private func getMediaSampleMetadata(
     at timestamp: CMTime,
     orientation bufferOrientation: CameraOrientation,
-    isMirrored isBufferMirrored: Bool
+    isMirrored isBufferMirrored: Bool,
+    physicalBufferRotation: CameraOrientation
   ) -> MediaSampleMetadata {
     // `isMirrored` is relative; if the buffer is already mirrored & we want mirror, good.
     // If not, we need to counter-mirror.
@@ -142,7 +143,9 @@ final class HybridCameraFrameOutput: HybridCameraFrameOutputSpec, NativeCameraOu
     return MediaSampleMetadata(
       timestamp: timestamp,
       orientation: relativeOrientation,
-      isMirrored: isMirrored)
+      isMirrored: isMirrored,
+      physicalBufferRotation: physicalBufferRotation,
+      isPhysicalBufferMirrored: isBufferMirrored)
   }
 
   func setOnFrameCallback(onFrame: ((any HybridFrameSpec) -> Bool)?) throws {
@@ -151,12 +154,14 @@ final class HybridCameraFrameOutput: HybridCameraFrameOutputSpec, NativeCameraOu
         withMessage: "setOnFrameCallback(...) must be called on the FrameOutput's `thread`!")
     }
     if let onFrame {
-      delegate.onFrame = { (sampleBuffer, timestamp, bufferOrientation, isBufferMirrored) in
+      delegate.onFrame = {
+        (sampleBuffer, timestamp, bufferOrientation, isBufferMirrored, physicalBufferRotation) in
         // Prepare Frame + Metadata
         let metadata = self.getMediaSampleMetadata(
           at: timestamp,
           orientation: bufferOrientation,
-          isMirrored: isBufferMirrored)
+          isMirrored: isBufferMirrored,
+          physicalBufferRotation: physicalBufferRotation)
         let frame = HybridFrame(
           buffer: sampleBuffer,
           metadata: metadata)
