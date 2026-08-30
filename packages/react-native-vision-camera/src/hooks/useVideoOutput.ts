@@ -7,6 +7,7 @@ import type { Recorder } from '../specs/outputs/Recorder.nitro'
 import { CommonResolutions } from '../utils/CommonResolutions'
 import { VisionCamera } from '../VisionCamera'
 import type { Camera } from '../views/Camera'
+import { useMemoizedSize } from './internal/useMemoizedSize'
 
 /**
  * Use a {@linkcode CameraVideoOutput} for recording videos.
@@ -42,10 +43,13 @@ export function useVideoOutput({
   enableAudio,
   fileType,
 }: Partial<VideoOutputOptions> = {}): CameraVideoOutput {
+  // `targetResolution` is usually an inline object literal - memoize it by value.
+  const memoizedTargetResolution = useMemoizedSize(targetResolution)
+
   const videoOutput = useMemo(
     () =>
       VisionCamera.createVideoOutput({
-        targetResolution: targetResolution,
+        targetResolution: memoizedTargetResolution,
         targetBitRate: targetBitRate,
         enablePersistentRecorder: enablePersistentRecorder,
         enableAudio: enableAudio,
@@ -55,7 +59,7 @@ export function useVideoOutput({
       enablePersistentRecorder,
       targetBitRate,
       enableAudio,
-      targetResolution,
+      memoizedTargetResolution,
       fileType,
     ],
   )

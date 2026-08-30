@@ -13,7 +13,8 @@ public protocol HybridTapToFocusGestureControllerSpec_protocol: HybridObject, Hy
   
 
   // Methods
-  
+  func addOnTapListener(onTap: @escaping (_ point: (any HybridMeteringPointSpec)) -> Void) throws -> ListenerSubscription
+  func addOnFocusCompletedListener(onFocusCompleted: @escaping (_ point: (any HybridMeteringPointSpec)) -> Void) throws -> ListenerSubscription
 }
 
 public extension HybridTapToFocusGestureControllerSpec_protocol {

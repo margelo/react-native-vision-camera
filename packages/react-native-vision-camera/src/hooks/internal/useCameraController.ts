@@ -9,6 +9,7 @@ import type { CameraSession } from '../../specs/session/CameraSession.nitro'
 import type { CameraSessionConfig } from '../../specs/session/CameraSessionConfig.nitro'
 import type { CameraSessionConfiguration } from '../../specs/session/CameraSessionConfiguration'
 import { useMemoizedArray } from './useMemoizedArray'
+import { useMemoizedConstraints } from './useMemoizedConstraints'
 import { useStableCallback } from './useStableCallback'
 
 interface Config extends CameraSessionConfiguration {
@@ -61,14 +62,13 @@ export function useCameraController(
   )
   const stableOnError = useStableCallback(onError)
 
-  // TODO: Can we use something like useSyncExternalStore or whatever to avoid "wrong" dependencies?
-  // biome-ignore lint/correctness/useExhaustiveDependencies: It's an array of objects, we either have to deep-memo or just stringify.
+  const stableUserConstraints = useMemoizedConstraints(constraints)
   const stableConstraints = useMemo<Constraint[]>(() => {
     return [
-      ...constraints,
+      ...stableUserConstraints,
       ...stableOutputs.map<Constraint>((o) => ({ resolutionBias: o })),
     ]
-  }, [JSON.stringify(constraints), stableOutputs])
+  }, [stableUserConstraints, stableOutputs])
 
   // This effect re-configures the CameraSession and returns a `controller`.
   // This is expensive and should only be done if any inputs change.

@@ -7,6 +7,7 @@ import type {
 import { CommonResolutions } from '../utils/CommonResolutions'
 import { VisionCamera } from '../VisionCamera'
 import type { Camera } from '../views/Camera'
+import { useMemoizedSize } from './internal/useMemoizedSize'
 
 /**
  * Use a {@linkcode CameraPhotoOutput} for capturing {@linkcode Photo}s.
@@ -35,22 +36,26 @@ export function usePhotoOutput({
   qualityPrioritization = 'balanced',
   previewImageTargetSize = undefined,
 }: Partial<PhotoOutputOptions> = {}): CameraPhotoOutput {
-  // 1. Create photo output
+  // 1. `Size`s are usually inline object literals - memoize them by value.
+  const memoizedTargetResolution = useMemoizedSize(targetResolution)
+  const memoizedPreviewImageTargetSize = useMemoizedSize(previewImageTargetSize)
+
+  // 2. Create photo output
   const photoOutput = useMemo(
     () =>
       VisionCamera.createPhotoOutput({
-        targetResolution: targetResolution,
+        targetResolution: memoizedTargetResolution,
         containerFormat: containerFormat,
         quality: quality,
         qualityPrioritization: qualityPrioritization,
-        previewImageTargetSize: previewImageTargetSize,
+        previewImageTargetSize: memoizedPreviewImageTargetSize,
       }),
     [
-      targetResolution,
+      memoizedTargetResolution,
       containerFormat,
       quality,
       qualityPrioritization,
-      previewImageTargetSize,
+      memoizedPreviewImageTargetSize,
     ],
   )
 

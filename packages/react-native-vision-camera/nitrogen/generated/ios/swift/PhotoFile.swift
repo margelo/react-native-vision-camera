@@ -18,12 +18,47 @@ public extension PhotoFile {
   /**
    * Create a new instance of `PhotoFile`.
    */
-  init(filePath: String) {
-    self.init(std.string(filePath))
+  init(filePath: String, width: Double, height: Double, orientation: CameraOrientation, isMirrored: Bool, timestamp: Double, isRawPhoto: Bool, containerFormat: PhotoContainerFormat) {
+    self.init(std.string(filePath), width, height, orientation, isMirrored, timestamp, isRawPhoto, containerFormat)
   }
 
   @inline(__always)
   var filePath: String {
     return String(self.__filePath)
+  }
+
+  @inline(__always)
+  var width: Double {
+    return self.__width
+  }
+
+  @inline(__always)
+  var height: Double {
+    return self.__height
+  }
+
+  @inline(__always)
+  var orientation: CameraOrientation {
+    return self.__orientation
+  }
+
+  @inline(__always)
+  var isMirrored: Bool {
+    return self.__isMirrored
+  }
+
+  @inline(__always)
+  var timestamp: Double {
+    return self.__timestamp
+  }
+
+  @inline(__always)
+  var isRawPhoto: Bool {
+    return self.__isRawPhoto
+  }
+
+  @inline(__always)
+  var containerFormat: PhotoContainerFormat {
+    return self.__containerFormat
   }
 }

@@ -53,12 +53,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mrousavy/react-native-vision-camera.git"
+    "url": "git+https://github.com/margelo/react-native-vision-camera.git"
   },
   "author": "Marc Rousavy <me@mrousavy.com> (https://github.com/mrousavy)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/mrousavy/react-native-vision-camera/issues"
+    "url": "https://github.com/margelo/react-native-vision-camera/issues"
   },
   "homepage": "https://visioncamera.margelo.com/api/react-native-vision-camera-worklets",
   "publishConfig": {

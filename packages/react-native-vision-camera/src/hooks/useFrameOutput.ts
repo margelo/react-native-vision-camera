@@ -14,6 +14,7 @@ import type {
 import { VisionCameraWorkletsProxy } from '../third-party/VisionCameraWorkletsProxy'
 import { CommonResolutions } from '../utils/CommonResolutions'
 import { VisionCamera } from '../VisionCamera'
+import { useMemoizedSize } from './internal/useMemoizedSize'
 
 export interface UseFrameOutputProps extends Partial<FrameOutputOptions> {
   /**
@@ -129,11 +130,14 @@ export function useFrameOutput({
   onFrame,
   onFrameDropped,
 }: UseFrameOutputProps): CameraFrameOutput {
-  // 1. Create frame output
+  // 1. `targetResolution` is usually an inline object literal - memoize it by value.
+  const memoizedTargetResolution = useMemoizedSize(targetResolution)
+
+  // 2. Create frame output
   const frameOutput = useMemo(
     () =>
       VisionCamera.createFrameOutput({
-        targetResolution: targetResolution,
+        targetResolution: memoizedTargetResolution,
         pixelFormat: pixelFormat,
         enablePhysicalBufferRotation: enablePhysicalBufferRotation,
         enableCameraMatrixDelivery: enableCameraMatrixDelivery,
@@ -142,7 +146,7 @@ export function useFrameOutput({
         dropFramesWhileBusy: dropFramesWhileBusy,
       }),
     [
-      targetResolution,
+      memoizedTargetResolution,
       pixelFormat,
       dropFramesWhileBusy,
       enableCameraMatrixDelivery,
@@ -152,7 +156,7 @@ export function useFrameOutput({
     ],
   )
 
-  // 2. Add Frame dropped warner
+  // 3. Add Frame dropped warner
   const onFrameDroppedRef = useRef(onFrameDropped)
   onFrameDroppedRef.current = onFrameDropped
   useEffect(() => {
@@ -163,16 +167,16 @@ export function useFrameOutput({
     })
   }, [frameOutput])
 
-  // 3. Create Worklet Runtime for NativeThread
+  // 4. Create Worklet Runtime for NativeThread
   const runtime = useMemo(
     () => VisionCameraWorkletsProxy.createRuntimeForThread(frameOutput.thread),
     [frameOutput.thread],
   )
-  // 4. Update onFrame() callback if it changed
+  // 5. Update onFrame() callback if it changed
   useEffect(() => {
     runtime.setOnFrameCallback(frameOutput, onFrame)
   }, [runtime, frameOutput, onFrame])
 
-  // 5. Return :)
+  // 6. Return :)
   return frameOutput
 }

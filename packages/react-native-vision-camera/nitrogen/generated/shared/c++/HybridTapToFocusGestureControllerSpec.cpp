@@ -15,7 +15,8 @@ namespace margelo::nitro::camera {
     HybridGestureControllerSpec::loadHybridMethods();
     // load custom methods/properties
     registerHybrids(this, [](Prototype& prototype) {
-      
+      prototype.registerHybridMethod("addOnTapListener", &HybridTapToFocusGestureControllerSpec::addOnTapListener);
+      prototype.registerHybridMethod("addOnFocusCompletedListener", &HybridTapToFocusGestureControllerSpec::addOnFocusCompletedListener);
     });
   }
 

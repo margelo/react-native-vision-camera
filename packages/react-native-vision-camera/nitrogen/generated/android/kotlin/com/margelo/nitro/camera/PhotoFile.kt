@@ -20,7 +20,28 @@ import java.util.Objects
 data class PhotoFile(
   @DoNotStrip
   @Keep
-  val filePath: String
+  val filePath: String,
+  @DoNotStrip
+  @Keep
+  val width: Double,
+  @DoNotStrip
+  @Keep
+  val height: Double,
+  @DoNotStrip
+  @Keep
+  val orientation: CameraOrientation,
+  @DoNotStrip
+  @Keep
+  val isMirrored: Boolean,
+  @DoNotStrip
+  @Keep
+  val timestamp: Double,
+  @DoNotStrip
+  @Keep
+  val isRawPhoto: Boolean,
+  @DoNotStrip
+  @Keep
+  val containerFormat: PhotoContainerFormat
 ) {
   /* primary constructor */
 
@@ -28,11 +49,25 @@ data class PhotoFile(
     if (this === other) return true
     if (other !is PhotoFile) return false
     return Objects.deepEquals(this.filePath, other.filePath)
+      && Objects.deepEquals(this.width, other.width)
+      && Objects.deepEquals(this.height, other.height)
+      && Objects.deepEquals(this.orientation, other.orientation)
+      && Objects.deepEquals(this.isMirrored, other.isMirrored)
+      && Objects.deepEquals(this.timestamp, other.timestamp)
+      && Objects.deepEquals(this.isRawPhoto, other.isRawPhoto)
+      && Objects.deepEquals(this.containerFormat, other.containerFormat)
   }
 
   override fun hashCode(): Int {
     return arrayOf<Any?>(
-      filePath
+      filePath,
+      width,
+      height,
+      orientation,
+      isMirrored,
+      timestamp,
+      isRawPhoto,
+      containerFormat
     ).contentDeepHashCode()
   }
 
@@ -44,8 +79,8 @@ data class PhotoFile(
     @Keep
     @Suppress("unused")
     @JvmStatic
-    private fun fromCpp(filePath: String): PhotoFile {
-      return PhotoFile(filePath)
+    private fun fromCpp(filePath: String, width: Double, height: Double, orientation: CameraOrientation, isMirrored: Boolean, timestamp: Double, isRawPhoto: Boolean, containerFormat: PhotoContainerFormat): PhotoFile {
+      return PhotoFile(filePath, width, height, orientation, isMirrored, timestamp, isRawPhoto, containerFormat)
     }
   }
 }

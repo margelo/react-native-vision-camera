@@ -126,6 +126,8 @@ namespace margelo::nitro::camera { enum class MeteringMode; }
 namespace margelo::nitro::camera { enum class MirrorMode; }
 // Forward declaration of `NativeBuffer` to properly resolve imports.
 namespace margelo::nitro::camera { struct NativeBuffer; }
+// Forward declaration of `PhotoContainerFormat` to properly resolve imports.
+namespace margelo::nitro::camera { enum class PhotoContainerFormat; }
 // Forward declaration of `PhotoFile` to properly resolve imports.
 namespace margelo::nitro::camera { struct PhotoFile; }
 // Forward declaration of `PhotoHDRConstraint` to properly resolve imports.
@@ -311,6 +313,7 @@ namespace VisionCamera { class HybridZoomGestureControllerSpec_cxx; }
 #include "MeteringMode.hpp"
 #include "MirrorMode.hpp"
 #include "NativeBuffer.hpp"
+#include "PhotoContainerFormat.hpp"
 #include "PhotoFile.hpp"
 #include "PhotoHDRConstraint.hpp"
 #include "PixelFormat.hpp"
@@ -1322,6 +1325,50 @@ namespace margelo::nitro::camera::bridge::swift {
     return optional.value();
   }
   
+  // pragma MARK: std::function<void(const std::shared_ptr<HybridMeteringPointSpec>& /* point */)>
+  /**
+   * Specialized version of `std::function<void(const std::shared_ptr<HybridMeteringPointSpec>&)>`.
+   */
+  using Func_void_std__shared_ptr_HybridMeteringPointSpec_ = std::function<void(const std::shared_ptr<HybridMeteringPointSpec>& /* point */)>;
+  /**
+   * Wrapper class for a `std::function<void(const std::shared_ptr<HybridMeteringPointSpec>& / * point * /)>`, this can be used from Swift.
+   */
+  class Func_void_std__shared_ptr_HybridMeteringPointSpec__Wrapper final {
+  public:
+    explicit Func_void_std__shared_ptr_HybridMeteringPointSpec__Wrapper(std::function<void(const std::shared_ptr<HybridMeteringPointSpec>& /* point */)>&& func): _function(std::make_unique<std::function<void(const std::shared_ptr<HybridMeteringPointSpec>& /* point */)>>(std::move(func))) {}
+    inline void call(std::shared_ptr<HybridMeteringPointSpec> point) const noexcept {
+      _function->operator()(point);
+    }
+  private:
+    std::unique_ptr<std::function<void(const std::shared_ptr<HybridMeteringPointSpec>& /* point */)>> _function;
+  } SWIFT_NONCOPYABLE;
+  Func_void_std__shared_ptr_HybridMeteringPointSpec_ create_Func_void_std__shared_ptr_HybridMeteringPointSpec_(void* NON_NULL swiftClosureWrapper) noexcept;
+  inline Func_void_std__shared_ptr_HybridMeteringPointSpec__Wrapper wrap_Func_void_std__shared_ptr_HybridMeteringPointSpec_(Func_void_std__shared_ptr_HybridMeteringPointSpec_ value) noexcept {
+    return Func_void_std__shared_ptr_HybridMeteringPointSpec__Wrapper(std::move(value));
+  }
+
+  // pragma MARK: std::function<void(double /* zoom */)>
+  /**
+   * Specialized version of `std::function<void(double)>`.
+   */
+  using Func_void_double = std::function<void(double /* zoom */)>;
+  /**
+   * Wrapper class for a `std::function<void(double / * zoom * /)>`, this can be used from Swift.
+   */
+  class Func_void_double_Wrapper final {
+  public:
+    explicit Func_void_double_Wrapper(std::function<void(double /* zoom */)>&& func): _function(std::make_unique<std::function<void(double /* zoom */)>>(std::move(func))) {}
+    inline void call(double zoom) const noexcept {
+      _function->operator()(zoom);
+    }
+  private:
+    std::unique_ptr<std::function<void(double /* zoom */)>> _function;
+  } SWIFT_NONCOPYABLE;
+  Func_void_double create_Func_void_double(void* NON_NULL swiftClosureWrapper) noexcept;
+  inline Func_void_double_Wrapper wrap_Func_void_double(Func_void_double value) noexcept {
+    return Func_void_double_Wrapper(std::move(value));
+  }
+
   // pragma MARK: std::vector<std::shared_ptr<HybridCameraDeviceSpec>>
   /**
    * Specialized version of `std::vector<std::shared_ptr<HybridCameraDeviceSpec>>`.

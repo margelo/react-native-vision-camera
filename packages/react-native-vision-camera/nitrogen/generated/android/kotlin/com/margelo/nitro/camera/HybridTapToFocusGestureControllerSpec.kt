@@ -29,7 +29,23 @@ abstract class HybridTapToFocusGestureControllerSpec: HybridGestureControllerSpe
   
 
   // Methods
+  abstract fun addOnTapListener(onTap: (point: HybridMeteringPointSpec) -> Unit): ListenerSubscription
   
+  @DoNotStrip
+  @Keep
+  private fun addOnTapListener_cxx(onTap: Func_void_std__shared_ptr_HybridMeteringPointSpec_): ListenerSubscription {
+    val __result = addOnTapListener(onTap)
+    return __result
+  }
+
+  abstract fun addOnFocusCompletedListener(onFocusCompleted: (point: HybridMeteringPointSpec) -> Unit): ListenerSubscription
+
+  @DoNotStrip
+  @Keep
+  private fun addOnFocusCompletedListener_cxx(onFocusCompleted: Func_void_std__shared_ptr_HybridMeteringPointSpec_): ListenerSubscription {
+    val __result = addOnFocusCompletedListener(onFocusCompleted)
+    return __result
+  }
 
   // Default implementation of `HybridObject.toString()`
   override fun toString(): String {

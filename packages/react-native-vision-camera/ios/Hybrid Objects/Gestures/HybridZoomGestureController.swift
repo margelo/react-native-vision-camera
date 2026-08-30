@@ -15,6 +15,7 @@ final class HybridZoomGestureController: HybridZoomGestureControllerSpec, Native
 
   private let MAX_ZOOM_FACTOR = 15.0
   private var initialZoomFactor = 1.0
+  private var onZoomChangedListeners: [UUID: (Double) -> Void] = [:]
 
   override init() {
     super.init()
@@ -36,6 +37,9 @@ final class HybridZoomGestureController: HybridZoomGestureControllerSpec, Native
       let minZoom = device.minAvailableVideoZoomFactor
       let maxZoom = min(device.maxAvailableVideoZoomFactor, MAX_ZOOM_FACTOR)
       let zoom = min(max(targetFactor, minZoom), maxZoom)
+      let listeners = Array(onZoomChangedListeners.values)
+
+      listeners.forEach { $0(zoom) }
 
       controller.queue.async {
         do {
@@ -48,6 +52,16 @@ final class HybridZoomGestureController: HybridZoomGestureControllerSpec, Native
       }
     default:
       break
+    }
+  }
+
+  func addOnZoomChangedListener(onZoomChanged: @escaping (Double) -> Void)
+    -> ListenerSubscription
+  {
+    let id = UUID()
+    onZoomChangedListeners[id] = onZoomChanged
+    return ListenerSubscription { [weak self] in
+      self?.onZoomChangedListeners.removeValue(forKey: id)
     }
   }
 }

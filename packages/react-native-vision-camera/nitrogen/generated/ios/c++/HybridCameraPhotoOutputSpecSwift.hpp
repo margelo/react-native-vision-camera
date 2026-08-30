@@ -26,6 +26,10 @@ namespace margelo::nitro::camera { struct CapturePhotoCallbacks; }
 namespace margelo::nitro::image { class HybridImageSpec; }
 // Forward declaration of `PhotoFile` to properly resolve imports.
 namespace margelo::nitro::camera { struct PhotoFile; }
+// Forward declaration of `CameraOrientation` to properly resolve imports.
+namespace margelo::nitro::camera { enum class CameraOrientation; }
+// Forward declaration of `PhotoContainerFormat` to properly resolve imports.
+namespace margelo::nitro::camera { enum class PhotoContainerFormat; }
 // Forward declaration of `HybridCameraOutputSpecSwift` to properly resolve imports.
 namespace margelo::nitro::camera { class HybridCameraOutputSpecSwift; }
 
@@ -41,6 +45,8 @@ namespace margelo::nitro::camera { class HybridCameraOutputSpecSwift; }
 #include <NitroImage/HybridImageSpec.hpp>
 #include "PhotoFile.hpp"
 #include <string>
+#include "CameraOrientation.hpp"
+#include "PhotoContainerFormat.hpp"
 #include <vector>
 #include "HybridCameraOutputSpecSwift.hpp"
 
