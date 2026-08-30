@@ -6,10 +6,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.modules.core.PermissionAwareActivity
-import com.facebook.react.modules.core.PermissionListener
 import com.margelo.nitro.camera.PermissionStatus
-import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 
 fun ReactApplicationContext.getPermissionStatus(permission: String): PermissionStatus {
   val status = ContextCompat.checkSelfPermission(this, permission)
@@ -43,34 +40,32 @@ fun ReactApplicationContext.getPermissionStatus(permission: String): PermissionS
   }
 }
 
-private var permissionRequestCode: Int = 3682
-
 suspend fun ReactApplicationContext.requestPermission(permission: String): Boolean {
-  return suspendCoroutine { continuation ->
-    val activity = currentActivity ?: throw Error("No Activity!")
-    if (activity is PermissionAwareActivity) {
-      PermissionStateStore.setHasRequestedPermission(this, permission, true)
-      val currentRequestCode = permissionRequestCode++
-      val listener =
-        PermissionListener { requestCode: Int, _: Array<String>, grantResults: IntArray ->
-          if (requestCode == currentRequestCode) {
-            val permissionStatus = grantResults.firstOrNull() ?: PackageManager.PERMISSION_DENIED
-            val hasPermission = permissionStatus == PackageManager.PERMISSION_GRANTED
-            if (hasPermission) {
-              PermissionStateStore.setHasRequestedPermission(this, permission, false)
-              PermissionStateStore.setPermissionPermanentlyDenied(this, permission, false)
-            } else {
-              val canRequestAgain = ActivityCompat.shouldShowRequestPermissionRationale(activity, permission)
-              PermissionStateStore.setPermissionPermanentlyDenied(this, permission, !canRequestAgain)
-            }
-            continuation.resume(hasPermission)
-            return@PermissionListener true
-          }
-          return@PermissionListener false
-        }
-      activity.requestPermissions(arrayOf(permission), currentRequestCode, listener)
-    } else {
-      throw Error("Activity is not a PermissionAwareActivity!")
-    }
+  val activity = currentActivity ?: throw Error("No Activity!")
+  if (activity !is PermissionAwareActivity) {
+    throw Error("Activity is not a PermissionAwareActivity!")
   }
+
+  PermissionStateStore.setHasRequestedPermission(this, permission, true)
+  val grantResults = PermissionRequestDispatcher.request(activity, permission)
+  val grantResult = grantResults.singleOrNull()
+  if (grantResult == null) {
+    // We asked for exactly one permission, so anything but exactly one result means the request never
+    // reached the user - Android reports a cancellation as an empty array. Roll the "has requested"
+    // marker back before bailing out: otherwise `getPermissionStatus(...)` sees a permission that has
+    // been requested, is not permanently denied, and has no rationale to show (because it was never
+    // presented), and reports it as `DENIED` instead of `NOT_DETERMINED`.
+    PermissionStateStore.setHasRequestedPermission(this, permission, false)
+    throw Error("Permission request for \"$permission\" was cancelled by Android! (got ${grantResults.size} results)")
+  }
+
+  val hasPermission = grantResult == PackageManager.PERMISSION_GRANTED
+  if (hasPermission) {
+    PermissionStateStore.setHasRequestedPermission(this, permission, false)
+    PermissionStateStore.setPermissionPermanentlyDenied(this, permission, false)
+  } else {
+    val canRequestAgain = ActivityCompat.shouldShowRequestPermissionRationale(activity, permission)
+    PermissionStateStore.setPermissionPermanentlyDenied(this, permission, !canRequestAgain)
+  }
+  return hasPermission
 }
