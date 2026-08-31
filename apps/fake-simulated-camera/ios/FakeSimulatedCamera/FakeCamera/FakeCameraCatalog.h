@@ -55,7 +55,8 @@ FOUNDATION_EXPORT NSErrorDomain const FakeCameraErrorDomain;
 @property (nonatomic, copy, readonly) NSURL *sceneURL;
 @property (nonatomic, copy, readonly) NSArray<FakeCameraDeviceSpec *> *devices;
 
-/// Loads and validates `cameras/<name>.json` from `bundle`. Returns nil with a path-specific error on any violation.
+/// Builds the natively-authored catalog for `name` (`"variants"` selects the robustness set, otherwise default) and
+/// resolves its scene from `bundle`. Returns nil with an error only if the scene asset is missing.
 + (nullable instancetype)catalogNamed:(NSString *)name bundle:(NSBundle *)bundle error:(NSError **)error;
 @end
 

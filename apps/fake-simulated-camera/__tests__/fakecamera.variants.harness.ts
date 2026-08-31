@@ -59,16 +59,25 @@ describe('FakeCamera - Variants catalog', () => {
     // The one authored difference:
     expect(a.maxZoom).toBe(4)
     expect(b.maxZoom).toBe(6)
-    // Everything else is identical between the two near-identical devices:
+    // Everything else is identical between the two near-identical devices — the difference is exactly maxZoom:
     expect(a.position).toBe(b.position)
     expect(a.type).toBe(b.type)
     expect(a.hasFlash).toBe(b.hasFlash)
     expect(a.hasTorch).toBe(b.hasTorch)
     expect(a.minZoom).toBe(b.minZoom)
+    expect(a.lensAperture).toBeCloseTo(b.lensAperture, 3)
+    expect(a.focalLength).toBe(b.focalLength)
     expect(a.supportedFPSRanges).toEqual(b.supportedFPSRanges)
+    expect(a.supportedPixelFormats).toEqual(b.supportedPixelFormats)
+    expect(a.supportedVideoDynamicRanges.map((r) => r.bitDepth)).toEqual(
+      b.supportedVideoDynamicRanges.map((r) => r.bitDepth),
+    )
+    expect(a.getSupportedResolutions('video')).toEqual(b.getSupportedResolutions('video'))
     expect(a.supportsFPS(60)).toBe(true)
     expect(b.supportsFPS(60)).toBe(true)
     expect(a.position).toBe('back')
     expect(a.type).toBe('wide-angle')
+    // They are distinct objects/ids, never deduped despite being near-identical:
+    expect(a.id).not.toBe(b.id)
   })
 })

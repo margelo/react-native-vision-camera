@@ -36,8 +36,8 @@ void FakeCameraInstall(void) {
     NSError *error;
     FakeCameraCatalog *catalog = [FakeCameraCatalog catalogNamed:name bundle:NSBundle.mainBundle error:&error];
     if (catalog == nil) {
-      FAKECAM_FAULT("catalog %{public}@ rejected: %{public}@", name, error.localizedDescription);
-      [NSException raise:@"FakeCameraCatalog" format:@"cameras/%@.json rejected: %@", name, error.localizedDescription];
+      FAKECAM_FAULT("catalog %{public}@ unavailable: %{public}@", name, error.localizedDescription);
+      [NSException raise:@"FakeCameraCatalog" format:@"catalog %@ unavailable: %@", name, error.localizedDescription];
     }
     NSData *sceneData = [NSData dataWithContentsOfURL:catalog.sceneURL];
     UIImage *scene = [UIImage imageWithData:sceneData];
