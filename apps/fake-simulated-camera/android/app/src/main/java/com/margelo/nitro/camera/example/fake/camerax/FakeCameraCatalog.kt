@@ -67,9 +67,23 @@ private fun twin(id: String, name: String, maxZoom: Double) = FakeCameraDeviceSp
 
 // A DIFFERENT count and shape than `default` (4 devices vs 3): near-identical twins differing only in maxZoom,
 // a telephoto (different type), and a front camera. Proves the pipeline is not hardcoded to the default set.
+private fun twinWithFormat(id: String, name: String, format: FakeCameraFormat) = FakeCameraDeviceSpec(
+  id = id, name = name, modelID = "FakeCamera,1", type = "wide-angle", position = "back",
+  hasFlash = true, hasTorch = true, zoom = 1.0 to 4.0, lensAperture = 1.8, focalLength = 26.0,
+  exposureBias = -8 to 8, supportsFocus = true, supportsExposure = true, supportsWhiteBalance = true,
+  supportsLowLightBoost = false, formats = listOf(format),
+)
+
 private fun fakeCameraVariantDevices(): List<FakeCameraDeviceSpec> = listOf(
   twin("fake-twin-a", "Fake Twin A", 4.0),
   twin("fake-twin-b", "Fake Twin B", 6.0),
+  // Near-identical to twin-a but its one format tops out at 30 fps — supportsFPS(60) differs.
+  twinWithFormat("fake-slow-fps", "Fake Slow FPS", fmt("1080p30", 1920, 1080, "yuv-420-8-bit-video", listOf(1 to 30),
+    listOf(Size(1920, 1080)), "phase-detection", listOf("standard"), false, false, listOf("srgb"), false, false, true)),
+  // Near-identical to twin-a but its one format is HDR (10-bit) — supportedVideoDynamicRanges differs.
+  twinWithFormat("fake-hdr-variant", "Fake HDR Variant", fmt("1080p30-hdr", 1920, 1080, "yuv-420-10-bit-video",
+    listOf(1 to 30), listOf(Size(1920, 1080)), "phase-detection", listOf("standard"), false, true,
+    listOf("srgb", "hlg-bt2020"), false, false, false)),
   FakeCameraDeviceSpec(
     id = "fake-variant-tele", name = "Fake Variant Telephoto", modelID = "FakeCamera,1", type = "telephoto",
     position = "back", hasFlash = true, hasTorch = true, zoom = 1.0 to 3.0, lensAperture = 2.8, focalLength = 77.0,

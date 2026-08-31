@@ -150,6 +150,22 @@ static NSArray<FakeCameraDeviceSpec *> *fakeCameraVariantDevices(void) {
   FakeCameraDeviceSpec *twinB = makeDevice(@"fake-twin-b", @"Fake Twin B", AVCaptureDeviceTypeBuiltInWideAngleCamera,
                                            AVCaptureDevicePositionBack, YES, YES, 1, 6, 1.8f, 26, YES,
                                            @[ variantFormat() ]);
+  // Near-identical to twin-a but its one format tops out at 30 fps instead of 60 — supportsFPS(60) differs.
+  FakeCameraDeviceSpec *slowFps = makeDevice(
+      @"fake-slow-fps", @"Fake Slow FPS", AVCaptureDeviceTypeBuiltInWideAngleCamera, AVCaptureDevicePositionBack, YES,
+      YES, 1, 4, 1.8f, 26, YES,
+      @[ makeFormat(@"1080p30", 1920, 1080, kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange, @[ @[ @1, @30 ] ],
+                    @[ dimensions(1920, 1080) ], AVCaptureAutoFocusSystemPhaseDetection,
+                    @[ @(AVCaptureVideoStabilizationModeStandard) ], NO, NO, @[ @(AVCaptureColorSpace_sRGB) ], NO, NO,
+                    YES) ]);
+  // Near-identical to twin-a but its one format is HDR (10-bit) — supportedVideoDynamicRanges differs.
+  FakeCameraDeviceSpec *hdr = makeDevice(
+      @"fake-hdr-variant", @"Fake HDR Variant", AVCaptureDeviceTypeBuiltInWideAngleCamera, AVCaptureDevicePositionBack,
+      YES, YES, 1, 4, 1.8f, 26, YES,
+      @[ makeFormat(@"1080p30-hdr", 1920, 1080, kCVPixelFormatType_420YpCbCr10BiPlanarVideoRange, @[ @[ @1, @30 ] ],
+                    @[ dimensions(1920, 1080) ], AVCaptureAutoFocusSystemPhaseDetection,
+                    @[ @(AVCaptureVideoStabilizationModeStandard) ], NO, YES,
+                    @[ @(AVCaptureColorSpace_sRGB), @(AVCaptureColorSpace_HLG_BT2020) ], NO, NO, NO) ]);
   FakeCameraDeviceSpec *tele = makeDevice(@"fake-variant-tele", @"Fake Variant Telephoto",
                                           AVCaptureDeviceTypeBuiltInTelephotoCamera, AVCaptureDevicePositionBack, YES,
                                           YES, 1, 3, 2.8f, 77, YES, @[ variantFormat() ]);
@@ -160,7 +176,7 @@ static NSArray<FakeCameraDeviceSpec *> *fakeCameraVariantDevices(void) {
                                                          kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange, @[ @[ @1, @60 ] ],
                                                          @[ dimensions(1920, 1080) ], AVCaptureAutoFocusSystemNone, @[], NO,
                                                          NO, @[ @(AVCaptureColorSpace_sRGB) ], NO, NO, NO) ]);
-  return @[ twinA, twinB, tele, front ];
+  return @[ twinA, twinB, slowFps, hdr, tele, front ];
 }
 
 @implementation FakeCameraCatalog {

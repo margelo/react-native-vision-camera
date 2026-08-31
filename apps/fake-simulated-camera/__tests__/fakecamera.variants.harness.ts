@@ -19,11 +19,29 @@ describe('FakeCamera - Variants catalog', () => {
     expect(ids).toEqual([
       'fake-twin-a',
       'fake-twin-b',
+      'fake-slow-fps',
+      'fake-hdr-variant',
       'fake-variant-tele',
       'fake-variant-front',
     ])
-    // Default catalog has 3 devices; this one has 4 — the pipeline is not hardcoded to a device count.
-    expect(ids).toHaveLength(4)
+    // Default catalog has 3 devices; this one has 6 — the pipeline is not hardcoded to a device count.
+    expect(ids).toHaveLength(6)
+  })
+
+  it('distinguishes near-identical devices that differ only in one format field', () => {
+    const base = factory.getCameraForId('fake-twin-a')
+    const slow = factory.getCameraForId('fake-slow-fps')
+    const hdr = factory.getCameraForId('fake-hdr-variant')
+    assert.exists(base, 'fake-twin-a is missing')
+    assert.exists(slow, 'fake-slow-fps is missing')
+    assert.exists(hdr, 'fake-hdr-variant is missing')
+    // Differ only by the format's fps ceiling:
+    expect(base.supportsFPS(60)).toBe(true)
+    expect(slow.supportsFPS(60)).toBe(false)
+    expect(slow.supportsFPS(30)).toBe(true)
+    // Differ only by the format being HDR:
+    expect(base.supportedVideoDynamicRanges.map((r) => r.bitDepth)).not.toContain('hdr-10-bit')
+    expect(hdr.supportedVideoDynamicRanges.map((r) => r.bitDepth)).toContain('hdr-10-bit')
   })
 
   it('reports the telephoto device type', () => {
