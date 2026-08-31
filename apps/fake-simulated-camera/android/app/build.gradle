@@ -114,11 +114,10 @@ android {
     }
 }
 
-// The catalog + scene live next to the app so iOS, Android and the tests share them; copy them into a
-// generated asset tree so they land at assets/cameras/* and assets/scenes/* (not at the asset root).
+// The barcode scene lives next to the app so iOS, Android and the tests share it; copy it into a generated
+// asset tree so it lands at assets/scenes/* (not at the asset root). Camera devices are authored natively.
 def fakeCameraAssetsDir = layout.buildDirectory.dir("generated/fakeCameraAssets")
 tasks.register("generateFakeCameraAssets", Copy) {
-    from("$rootDir/../cameras") { into "cameras" }
     from("$rootDir/../scenes") { into "scenes" }
     into fakeCameraAssetsDir
 }

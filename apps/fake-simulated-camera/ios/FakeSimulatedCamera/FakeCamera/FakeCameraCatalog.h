@@ -5,7 +5,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 FOUNDATION_EXPORT NSErrorDomain const FakeCameraErrorDomain;
 
-/// One `AVCaptureDevice.Format` of the catalog (`cameras/schema.md`).
+/// One `AVCaptureDevice.Format` of a fake device (authored in `FakeCameraCatalog.m`).
 @interface FakeCameraFormatSpec : NSObject
 @property (nonatomic, copy) NSString *name;
 @property (nonatomic) int32_t width;

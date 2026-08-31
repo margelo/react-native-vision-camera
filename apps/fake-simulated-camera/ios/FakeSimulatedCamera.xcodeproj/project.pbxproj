@@ -15,7 +15,6 @@
 		BC166B2D49F1E6BCF5790B05 /* FakeCameraDiscovery.m in Sources */ = {isa = PBXBuildFile; fileRef = 9E3088216CD8A88C62A9BDFA /* FakeCameraDiscovery.m */; };
 		59388627D5D94CD5C3724C22 /* FakeCameraSession.m in Sources */ = {isa = PBXBuildFile; fileRef = 3128DDB161F08F790D435D9C /* FakeCameraSession.m */; };
 		BC45F8C6D178CA6B17411982 /* FakeCameraFramePump.m in Sources */ = {isa = PBXBuildFile; fileRef = 3DFDE51161EA11E600116B45 /* FakeCameraFramePump.m */; };
-		BFE8E39C2A6DE8F26E86EB84 /* cameras in Resources */ = {isa = PBXBuildFile; fileRef = 3133A2569A636EF53D65F0D7 /* cameras */; };
 		49937B93BD82AB95F5CF8173 /* scenes in Resources */ = {isa = PBXBuildFile; fileRef = 70802467FB48775DC9961992 /* scenes */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
@@ -42,7 +41,6 @@
 		0D97930B488D6078322E7CF7 /* FakeCameraSession.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = FakeCameraSession.h; path = FakeSimulatedCamera/FakeCamera/FakeCameraSession.h; sourceTree = "<group>"; };
 		F2A15B7C4274D3C06CC8A64C /* FakeCameraFramePump.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = FakeCameraFramePump.h; path = FakeSimulatedCamera/FakeCamera/FakeCameraFramePump.h; sourceTree = "<group>"; };
 		5980AA6B6651E1C37CEA755A /* FakeSimulatedCamera-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "FakeSimulatedCamera-Bridging-Header.h"; path = "FakeSimulatedCamera/FakeSimulatedCamera-Bridging-Header.h"; sourceTree = "<group>"; };
-		3133A2569A636EF53D65F0D7 /* cameras */ = {isa = PBXFileReference; lastKnownFileType = folder; name = cameras; path = ../cameras; sourceTree = "<group>"; };
 		70802467FB48775DC9961992 /* scenes */ = {isa = PBXFileReference; lastKnownFileType = folder; name = scenes; path = ../scenes; sourceTree = "<group>"; };
 		0BC3913005B45C281440831B /* Pods-FakeSimulatedCamera.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FakeSimulatedCamera.release.xcconfig"; path = "Target Support Files/Pods-FakeSimulatedCamera/Pods-FakeSimulatedCamera.release.xcconfig"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* FakeSimulatedCamera.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FakeSimulatedCamera.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -125,7 +123,6 @@
 			isa = PBXGroup;
 			children = (
 				13B07FAE1A68108700A75B9A /* FakeSimulatedCamera */,
-				3133A2569A636EF53D65F0D7 /* cameras */,
 				70802467FB48775DC9961992 /* scenes */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
@@ -217,7 +214,6 @@
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				7942A3BA92A2F4C28D623278 /* PrivacyInfo.xcprivacy in Resources */,
-				BFE8E39C2A6DE8F26E86EB84 /* cameras in Resources */,
 				49937B93BD82AB95F5CF8173 /* scenes in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

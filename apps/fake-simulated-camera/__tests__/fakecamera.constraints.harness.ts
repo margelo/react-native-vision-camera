@@ -20,7 +20,7 @@ import {
   VisionCamera,
 } from 'react-native-vision-camera'
 
-// Catalog (cameras/default.json), fake-back-wide formats in resolver order:
+// fake-back-wide formats (authored in FakeCameraCatalog.m / .kt) in resolver order:
 //   1080p60        1920x1080 yuv-420-8-bit-video  1-60 fps   phase-detection    standard+cinematic
 //   4k30           3840x2160 yuv-420-8-bit-full   1-30 fps   phase-detection    standard            highest photo quality
 //   1080p30-hdr    1920x1080 yuv-420-10-bit-video 1-30 fps   phase-detection    standard+cinematic  HDR

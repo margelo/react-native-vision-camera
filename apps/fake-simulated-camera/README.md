@@ -12,13 +12,12 @@ The injection lives entirely inside this app. `packages/react-native-vision-came
 | Android Emulator (`android` runner) | `MainApplication` implements `CameraXConfig.Provider` and supplies a catalog-driven fake CameraX backend (vendored AOSP `camera-testing` fakes) plus a Camera2 interop bridge | `android/app/src/main/java/.../fake/` |
 | Android Emulator (`android-scene` runner) | No injection (`fakeCameraCatalog=off`): the emulator's real virtual-scene camera looks at the scene image via `emulator -virtualscene-poster wall=<scenes/…>` | emulator flag |
 
-The cameras are described in [`cameras/default.json`](cameras/default.json) — see [`cameras/schema.md`](cameras/schema.md) for every field and its per-platform projection. Add another `cameras/<name>.json` and launch with `FAKE_CAMERA_CATALOG=<name>` to emulate a different camera.
+The cameras are authored natively — in `ios/FakeSimulatedCamera/FakeCamera/FakeCameraCatalog.m` (AVFoundation) and `android/.../camerax/FakeCameraCatalog.kt` (CameraX) — so each fake is expressed directly in the type the library reads. Add a device by adding a spec entry; select an alternate catalog with `FAKE_CAMERA_CATALOG=<name>`.
 
 ## Running
 
 ```sh
 bun install                      # repo root
-bun fake validate-catalog        # schema check for cameras/*.json
 bun fake pods                    # once, CocoaPods
 
 # iOS Simulator

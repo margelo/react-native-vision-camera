@@ -46,29 +46,10 @@ env:
   HARNESS_ANDROID_TEST_TIMEOUT_SECONDS: 900
 
 jobs:
-  validate:
-    name: Validate catalog
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 1
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: '24'
-      - name: Validate camera catalogs
-        run: node apps/fake-simulated-camera/scripts/validate-catalog.mjs
-
-      - name: Run catalog validator unit tests
-        run: node --test apps/fake-simulated-camera/scripts/validate-catalog.test.mjs
-
   test-ios-simulator:
     name: Test iOS Simulator
     runs-on: macos-latest
     timeout-minutes: 90
-    needs: validate
     steps:
       - uses: actions/checkout@v6
         with:
@@ -223,7 +204,6 @@ jobs:
     name: Test Android Emulator
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    needs: validate
     steps:
       - uses: actions/checkout@v6
         with:
@@ -266,7 +246,7 @@ jobs:
         run: |
           set -euo pipefail
           test -f ${{ env.HARNESS_ANDROID_APP_BUILD_OUTPUT }}
-          unzip -l ${{ env.HARNESS_ANDROID_APP_BUILD_OUTPUT }} | grep -E 'assets/(cameras/default.json|scenes/qr-code-margelo.png)'
+          unzip -l ${{ env.HARNESS_ANDROID_APP_BUILD_OUTPUT }} | grep -E 'assets/scenes/qr-code-margelo.png'
 
       - name: Enable KVM group perms
         run: |

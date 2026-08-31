@@ -8,7 +8,7 @@ import {
   appleSimulator,
 } from '@react-native-harness/platform-apple'
 
-// Name of the catalog in `cameras/<name>.json` the app injects on launch.
+// Name of the natively-authored catalog the app injects on launch (see FakeCameraCatalog.m / .kt).
 const fakeCameraCatalog = process.env.FAKE_CAMERA_CATALOG ?? 'default'
 
 const androidEmulatorName =
