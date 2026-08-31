@@ -28,11 +28,12 @@ fi
 run_mode() {
   local script="$1"
   local label="$2"
-  echo "=== ${label} ==="
+  local catalog="${3:-default}"
+  echo "=== ${label} (catalog: ${catalog}) ==="
   adb shell am force-stop "${BUNDLE_ID}" || true
   adb logcat -c || true
   set +e
-  timeout --foreground --kill-after=30s "${HARNESS_TIMEOUT_SECONDS}" bun run "${script}"
+  FAKE_CAMERA_CATALOG="${catalog}" timeout --foreground --kill-after=30s "${HARNESS_TIMEOUT_SECONDS}" bun run "${script}"
   local exit_code=$?
   set -e
   adb logcat -d > "${LOG_DIR}/logcat-${label}.txt" || true
@@ -47,7 +48,8 @@ run_mode() {
 
 status=0
 if [[ -f android/app/src/main/java/com/margelo/nitro/camera/example/fake/camerax/FakeCameraCatalogConfig.kt ]]; then
-  run_mode test:harness:android fake-catalog || status=1
+  run_mode test:harness:android fake-catalog default || status=1
+  run_mode test:harness:android-variants variants-catalog variants || status=1
 else
   echo "Android fake catalog not implemented yet — skipping the fake-catalog runner."
 fi

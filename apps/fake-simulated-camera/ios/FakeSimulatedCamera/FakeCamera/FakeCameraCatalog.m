@@ -132,6 +132,37 @@ static NSArray<FakeCameraDeviceSpec *> *fakeCameraDevices(void) {
   return @[ backWide, ultraWide, front ];
 }
 
+// A second catalog that exercises catalog robustness: two near-identical back cameras that differ ONLY in
+// maxZoom, plus a front camera. A different device set than `default` proves nothing is hardcoded to it.
+static FakeCameraFormatSpec *variantFormat(void) {
+  return makeFormat(@"1080p60", 1920, 1080, kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange, @[ @[ @1, @60 ] ],
+                    @[ dimensions(1920, 1080) ], AVCaptureAutoFocusSystemPhaseDetection,
+                    @[ @(AVCaptureVideoStabilizationModeStandard) ], NO, NO, @[ @(AVCaptureColorSpace_sRGB) ], NO, NO,
+                    YES);
+}
+
+static NSArray<FakeCameraDeviceSpec *> *fakeCameraVariantDevices(void) {
+  // A DIFFERENT count and shape than `default` (4 devices vs 3): near-identical twins differing only in maxZoom,
+  // a telephoto (different type), and a front camera. Proves the pipeline is not hardcoded to the default set.
+  FakeCameraDeviceSpec *twinA = makeDevice(@"fake-twin-a", @"Fake Twin A", AVCaptureDeviceTypeBuiltInWideAngleCamera,
+                                           AVCaptureDevicePositionBack, YES, YES, 1, 4, 1.8f, 26, YES,
+                                           @[ variantFormat() ]);
+  FakeCameraDeviceSpec *twinB = makeDevice(@"fake-twin-b", @"Fake Twin B", AVCaptureDeviceTypeBuiltInWideAngleCamera,
+                                           AVCaptureDevicePositionBack, YES, YES, 1, 6, 1.8f, 26, YES,
+                                           @[ variantFormat() ]);
+  FakeCameraDeviceSpec *tele = makeDevice(@"fake-variant-tele", @"Fake Variant Telephoto",
+                                          AVCaptureDeviceTypeBuiltInTelephotoCamera, AVCaptureDevicePositionBack, YES,
+                                          YES, 1, 3, 2.8f, 77, YES, @[ variantFormat() ]);
+  FakeCameraDeviceSpec *front = makeDevice(@"fake-variant-front", @"Fake Variant Front",
+                                           AVCaptureDeviceTypeBuiltInWideAngleCamera, AVCaptureDevicePositionFront, NO,
+                                           NO, 1, 1, 2.2f, 23, NO,
+                                           @[ makeFormat(@"1080p60", 1920, 1080,
+                                                         kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange, @[ @[ @1, @60 ] ],
+                                                         @[ dimensions(1920, 1080) ], AVCaptureAutoFocusSystemNone, @[], NO,
+                                                         NO, @[ @(AVCaptureColorSpace_sRGB) ], NO, NO, NO) ]);
+  return @[ twinA, twinB, tele, front ];
+}
+
 @implementation FakeCameraCatalog {
   NSString *_name;
   NSString *_sceneFileName;
@@ -152,7 +183,7 @@ static NSArray<FakeCameraDeviceSpec *> *fakeCameraDevices(void) {
     }
     return nil;
   }
-  catalog->_devices = fakeCameraDevices();
+  catalog->_devices = [name isEqualToString:@"variants"] ? fakeCameraVariantDevices() : fakeCameraDevices();
   return catalog;
 }
 

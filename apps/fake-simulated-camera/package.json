@@ -13,8 +13,10 @@
     "build:android": "cd android && ./gradlew assembleDebug --no-daemon --console=plain",
     "build:ios-simulator": "bash scripts/build-ios-simulator.sh",
     "test:harness": "react-native-harness",
-    "test:harness:ios": "react-native-harness --harnessRunner ios",
+    "test:harness:ios": "react-native-harness --harnessRunner ios --testPathIgnorePatterns 'variants'",
+    "test:harness:ios-variants": "react-native-harness --harnessRunner ios --testPathPatterns 'variants'",
     "test:harness:android": "react-native-harness --harnessRunner android --testPathPatterns 'devices|session|constraints'",
+    "test:harness:android-variants": "react-native-harness --harnessRunner android --testPathPatterns 'variants'",
     "test:harness:android-scene": "react-native-harness --harnessRunner android-scene --testPathPatterns 'scene'"
   },
   "dependencies": {

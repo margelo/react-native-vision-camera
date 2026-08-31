@@ -46,9 +46,47 @@ data class FakeCameraCatalog(val scene: String, val devices: List<FakeCameraDevi
   companion object {
     private const val SCENE = "qr-code-margelo.png"
 
-    fun load(context: Context, name: String): FakeCameraCatalog = FakeCameraCatalog(SCENE, fakeCameraDevices())
+    fun load(context: Context, name: String): FakeCameraCatalog =
+      FakeCameraCatalog(SCENE, if (name == "variants") fakeCameraVariantDevices() else fakeCameraDevices())
   }
 }
+
+// A second catalog exercising catalog robustness: two near-identical back cameras that differ ONLY in maxZoom,
+// plus a front camera. A different device set than `default` proves nothing is hardcoded to it.
+private fun variantFormat() = fmt(
+  "1080p60", 1920, 1080, "yuv-420-8-bit-video", listOf(1 to 60), listOf(Size(1920, 1080)),
+  "phase-detection", listOf("standard"), false, false, listOf("srgb"), false, false, true,
+)
+
+private fun twin(id: String, name: String, maxZoom: Double) = FakeCameraDeviceSpec(
+  id = id, name = name, modelID = "FakeCamera,1", type = "wide-angle", position = "back",
+  hasFlash = true, hasTorch = true, zoom = 1.0 to maxZoom, lensAperture = 1.8, focalLength = 26.0,
+  exposureBias = -8 to 8, supportsFocus = true, supportsExposure = true, supportsWhiteBalance = true,
+  supportsLowLightBoost = false, formats = listOf(variantFormat()),
+)
+
+// A DIFFERENT count and shape than `default` (4 devices vs 3): near-identical twins differing only in maxZoom,
+// a telephoto (different type), and a front camera. Proves the pipeline is not hardcoded to the default set.
+private fun fakeCameraVariantDevices(): List<FakeCameraDeviceSpec> = listOf(
+  twin("fake-twin-a", "Fake Twin A", 4.0),
+  twin("fake-twin-b", "Fake Twin B", 6.0),
+  FakeCameraDeviceSpec(
+    id = "fake-variant-tele", name = "Fake Variant Telephoto", modelID = "FakeCamera,1", type = "telephoto",
+    position = "back", hasFlash = true, hasTorch = true, zoom = 1.0 to 3.0, lensAperture = 2.8, focalLength = 77.0,
+    exposureBias = -8 to 8, supportsFocus = true, supportsExposure = true, supportsWhiteBalance = true,
+    supportsLowLightBoost = false, formats = listOf(variantFormat()),
+  ),
+  FakeCameraDeviceSpec(
+    id = "fake-variant-front", name = "Fake Variant Front", modelID = "FakeCamera,1", type = "wide-angle",
+    position = "front", hasFlash = false, hasTorch = false, zoom = 1.0 to 1.0, lensAperture = 2.2, focalLength = 23.0,
+    exposureBias = -8 to 8, supportsFocus = false, supportsExposure = true, supportsWhiteBalance = true,
+    supportsLowLightBoost = false,
+    formats = listOf(
+      fmt("1080p60", 1920, 1080, "yuv-420-8-bit-video", listOf(1 to 60), listOf(Size(1920, 1080)),
+        "none", emptyList(), false, false, listOf("srgb"), false, false, false),
+    ),
+  ),
+)
 
 private fun fmt(
   name: String,

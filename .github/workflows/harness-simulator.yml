@@ -166,6 +166,10 @@ jobs:
           else
             bun run test:harness:ios || RC=$?
           fi
+          # Robustness: a second app launch with the variants catalog runs the variant-only suite.
+          RCV=0
+          FAKE_CAMERA_CATALOG=variants bun run test:harness:ios-variants || RCV=$?
+          [ "$RCV" -ne 0 ] && [ "$RC" -eq 0 ] && RC=$RCV
           [ -n "$STREAM_PID" ] && kill "$STREAM_PID" 2>/dev/null || true
           if [ "$RC" -ne 0 ]; then
             echo "=== fakecam-stream.log tail ==="; tail -60 fakecam-stream.log 2>/dev/null || true

@@ -1,0 +1,74 @@
+import { assert, beforeAll, describe, expect, it } from 'react-native-harness'
+import type { CameraDeviceFactory } from 'react-native-vision-camera'
+import { VisionCamera } from 'react-native-vision-camera'
+
+// Runs only when the app is launched with FAKE_CAMERA_CATALOG=variants. This catalog is a robustness fixture:
+// two near-identical back cameras that differ ONLY in maxZoom, plus a front camera — a different device set than
+// `default`, which proves the fake pipeline is catalog-agnostic (not hardcoded to the default devices).
+describe('FakeCamera - Variants catalog', () => {
+  let factory: CameraDeviceFactory
+
+  beforeAll(async () => {
+    await VisionCamera.requestCameraPermission()
+    expect(VisionCamera.cameraPermissionStatus).toBe('authorized')
+    factory = await VisionCamera.createDeviceFactory()
+  })
+
+  it('enumerates exactly the variant devices in order (different count than default)', () => {
+    const ids = factory.cameraDevices.map((device) => device.id)
+    expect(ids).toEqual([
+      'fake-twin-a',
+      'fake-twin-b',
+      'fake-variant-tele',
+      'fake-variant-front',
+    ])
+    // Default catalog has 3 devices; this one has 4 — the pipeline is not hardcoded to a device count.
+    expect(ids).toHaveLength(4)
+  })
+
+  it('reports the telephoto device type', () => {
+    const tele = factory.getCameraForId('fake-variant-tele')
+    assert.exists(tele, 'fake-variant-tele is missing')
+    expect(tele.type).toBe('telephoto')
+    expect(tele.position).toBe('back')
+    expect(tele.maxZoom).toBe(3)
+  })
+
+  it('does not expose the default catalog devices (catalog was switched)', () => {
+    expect(factory.getCameraForId('fake-back-wide')).toBeUndefined()
+    expect(factory.getCameraForId('fake-back-ultra-wide')).toBeUndefined()
+    expect(factory.getCameraForId('fake-front-wide')).toBeUndefined()
+    expect(factory.getCameraForId('not-a-real-camera')).toBeUndefined()
+  })
+
+  it('selects the first back and the front as defaults', () => {
+    expect(factory.getDefaultCamera('back')?.id).toBe('fake-twin-a')
+    expect(factory.getDefaultCamera('front')?.id).toBe('fake-variant-front')
+  })
+
+  it('round-trips both near-identical twins distinctly', () => {
+    expect(factory.getCameraForId('fake-twin-a')?.id).toBe('fake-twin-a')
+    expect(factory.getCameraForId('fake-twin-b')?.id).toBe('fake-twin-b')
+  })
+
+  it('reports the twins as identical except maxZoom', () => {
+    const a = factory.getCameraForId('fake-twin-a')
+    const b = factory.getCameraForId('fake-twin-b')
+    assert.exists(a, 'fake-twin-a is missing')
+    assert.exists(b, 'fake-twin-b is missing')
+    // The one authored difference:
+    expect(a.maxZoom).toBe(4)
+    expect(b.maxZoom).toBe(6)
+    // Everything else is identical between the two near-identical devices:
+    expect(a.position).toBe(b.position)
+    expect(a.type).toBe(b.type)
+    expect(a.hasFlash).toBe(b.hasFlash)
+    expect(a.hasTorch).toBe(b.hasTorch)
+    expect(a.minZoom).toBe(b.minZoom)
+    expect(a.supportedFPSRanges).toEqual(b.supportedFPSRanges)
+    expect(a.supportsFPS(60)).toBe(true)
+    expect(b.supportsFPS(60)).toBe(true)
+    expect(a.position).toBe('back')
+    expect(a.type).toBe('wide-angle')
+  })
+})
