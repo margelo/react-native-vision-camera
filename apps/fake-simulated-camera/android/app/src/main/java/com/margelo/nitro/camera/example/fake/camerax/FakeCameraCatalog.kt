@@ -74,6 +74,14 @@ private fun twinWithFormat(id: String, name: String, format: FakeCameraFormat) =
   supportsLowLightBoost = false, formats = listOf(format),
 )
 
+// Identical in every capability, differing ONLY in id/name — must both enumerate and never be deduped.
+private fun clone(id: String, name: String) = FakeCameraDeviceSpec(
+  id = id, name = name, modelID = "FakeCamera,1", type = "wide-angle", position = "back",
+  hasFlash = true, hasTorch = true, zoom = 1.0 to 5.0, lensAperture = 2.0, focalLength = 28.0,
+  exposureBias = -8 to 8, supportsFocus = true, supportsExposure = true, supportsWhiteBalance = true,
+  supportsLowLightBoost = false, formats = listOf(variantFormat()),
+)
+
 private fun fakeCameraVariantDevices(): List<FakeCameraDeviceSpec> = listOf(
   twin("fake-twin-a", "Fake Twin A", 4.0),
   twin("fake-twin-b", "Fake Twin B", 6.0),
@@ -100,6 +108,8 @@ private fun fakeCameraVariantDevices(): List<FakeCameraDeviceSpec> = listOf(
         "none", emptyList(), false, false, listOf("srgb"), false, false, false),
     ),
   ),
+  clone("fake-clone-a", "Fake Clone A"),
+  clone("fake-clone-b", "Fake Clone B"),
 )
 
 private fun fmt(

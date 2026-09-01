@@ -176,7 +176,15 @@ static NSArray<FakeCameraDeviceSpec *> *fakeCameraVariantDevices(void) {
                                                          kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange, @[ @[ @1, @60 ] ],
                                                          @[ dimensions(1920, 1080) ], AVCaptureAutoFocusSystemNone, @[], NO,
                                                          NO, @[ @(AVCaptureColorSpace_sRGB) ], NO, NO, NO) ]);
-  return @[ twinA, twinB, slowFps, hdr, tele, front ];
+  // Two devices identical in every capability, differing ONLY in id (and display name): both must enumerate and
+  // round-trip to themselves — the pipeline must never dedupe capability-identical devices.
+  FakeCameraDeviceSpec *cloneA = makeDevice(@"fake-clone-a", @"Fake Clone A",
+                                            AVCaptureDeviceTypeBuiltInWideAngleCamera, AVCaptureDevicePositionBack, YES,
+                                            YES, 1, 5, 2.0f, 28, YES, @[ variantFormat() ]);
+  FakeCameraDeviceSpec *cloneB = makeDevice(@"fake-clone-b", @"Fake Clone B",
+                                            AVCaptureDeviceTypeBuiltInWideAngleCamera, AVCaptureDevicePositionBack, YES,
+                                            YES, 1, 5, 2.0f, 28, YES, @[ variantFormat() ]);
+  return @[ twinA, twinB, slowFps, hdr, tele, front, cloneA, cloneB ];
 }
 
 @implementation FakeCameraCatalog {

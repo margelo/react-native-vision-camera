@@ -23,9 +23,34 @@ describe('FakeCamera - Variants catalog', () => {
       'fake-hdr-variant',
       'fake-variant-tele',
       'fake-variant-front',
+      'fake-clone-a',
+      'fake-clone-b',
     ])
-    // Default catalog has 3 devices; this one has 6 — the pipeline is not hardcoded to a device count.
-    expect(ids).toHaveLength(6)
+    // Default catalog has 3 devices; this one has 8 — the pipeline is not hardcoded to a device count.
+    expect(ids).toHaveLength(8)
+  })
+
+  it('never dedupes two devices that are identical except their id', () => {
+    const a = factory.getCameraForId('fake-clone-a')
+    const b = factory.getCameraForId('fake-clone-b')
+    assert.exists(a, 'fake-clone-a is missing')
+    assert.exists(b, 'fake-clone-b is missing')
+    // Both are present and each round-trips to itself:
+    expect(a.id).toBe('fake-clone-a')
+    expect(b.id).toBe('fake-clone-b')
+    expect(a.id).not.toBe(b.id)
+    // Every capability the public API exposes is identical — only the id differs:
+    expect(a.position).toBe(b.position)
+    expect(a.type).toBe(b.type)
+    expect(a.hasFlash).toBe(b.hasFlash)
+    expect(a.hasTorch).toBe(b.hasTorch)
+    expect(a.minZoom).toBe(b.minZoom)
+    expect(a.maxZoom).toBe(b.maxZoom)
+    expect(a.lensAperture).toBeCloseTo(b.lensAperture, 3)
+    expect(a.focalLength).toBe(b.focalLength)
+    expect(a.supportedFPSRanges).toEqual(b.supportedFPSRanges)
+    expect(a.supportedPixelFormats).toEqual(b.supportedPixelFormats)
+    expect(a.getSupportedResolutions('video')).toEqual(b.getSupportedResolutions('video'))
   })
 
   it('distinguishes near-identical devices that differ only in one format field', () => {
