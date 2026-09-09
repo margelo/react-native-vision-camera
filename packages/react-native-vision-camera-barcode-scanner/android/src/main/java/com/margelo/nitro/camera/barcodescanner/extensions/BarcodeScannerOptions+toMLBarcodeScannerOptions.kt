@@ -16,15 +16,23 @@ private fun com.google.mlkit.vision.barcode.BarcodeScannerOptions.Builder.setBar
 }
 
 fun BarcodeScannerOptions.toMLBarcodeScannerOptions(): com.google.mlkit.vision.barcode.BarcodeScannerOptions {
-  return com.google.mlkit.vision.barcode.BarcodeScannerOptions
-    .Builder()
-    .setBarcodeFormats(this.barcodeFormats)
-    .build()
+  val builder =
+    com.google.mlkit.vision.barcode.BarcodeScannerOptions
+      .Builder()
+      .setBarcodeFormats(this.barcodeFormats)
+  if (this.enableAllPotentialBarcodes == true) {
+    builder.enableAllPotentialBarcodes()
+  }
+  return builder.build()
 }
 
 fun BarcodeScannerOutputOptions.toMLBarcodeScannerOptions(): com.google.mlkit.vision.barcode.BarcodeScannerOptions {
-  return com.google.mlkit.vision.barcode.BarcodeScannerOptions
-    .Builder()
-    .setBarcodeFormats(this.barcodeFormats)
-    .build()
+  val builder =
+    com.google.mlkit.vision.barcode.BarcodeScannerOptions
+      .Builder()
+      .setBarcodeFormats(this.barcodeFormats)
+  if (this.enableAllPotentialBarcodes == true) {
+    builder.enableAllPotentialBarcodes()
+  }
+  return builder.build()
 }

@@ -129,6 +129,24 @@ async function scanBarcodeImage() {
 The examples above are configured to detect **all** [`BarcodeFormat`](/api/react-native-vision-camera-barcode-scanner/type-aliases/BarcodeFormat)s.
 To improve performance, you should narrow [`barcodeFormats`](/api/react-native-vision-camera-barcode-scanner/interfaces/BarcodeScannerOptions#barcodeformats) down to only the formats you need - for example [`'code-128'`](/api/react-native-vision-camera-barcode-scanner/type-aliases/BarcodeFormat) - which is a common Barcode Format, or [`'qr-code'`](/api/react-native-vision-camera-barcode-scanner/type-aliases/BarcodeFormat) for square QR codes.
 
+### Potential Barcodes
+
+By default only decoded Barcodes are returned, so a Barcode MLKit could not read looks the same as no Barcode at all.
+
+Enable [`enableAllPotentialBarcodes`](/api/react-native-vision-camera-barcode-scanner/interfaces/BarcodeScannerOptions#enableallpotentialbarcodes) to also receive those:
+
+```ts
+const scanner = useBarcodeScanner({
+  barcodeFormats: ['qr-code'],
+  enableAllPotentialBarcodes: true,
+})
+```
+
+On a potential [`Barcode`](/api/react-native-vision-camera-barcode-scanner/hybrid-objects/Barcode), [`rawValue`](/api/react-native-vision-camera-barcode-scanner/hybrid-objects/Barcode#rawvalue) is `undefined` and [`boundingBox`](/api/react-native-vision-camera-barcode-scanner/hybrid-objects/Barcode#boundingbox) describes where it is - use it to zoom towards a Barcode that is too small to decode.
+
+> [!NOTE]
+> This option is Android-only.
+
 ### Test it
 
 To verify your [`<CodeScanner />`](/api/react-native-vision-camera-barcode-scanner/views/CodeScanner) works, try scanning this example [`'code-128'`](/api/react-native-vision-camera-barcode-scanner/type-aliases/BarcodeFormat) Barcode:
