@@ -11,6 +11,7 @@
 #include "vulkan/VulkanResizerPipeline.hpp"
 
 #include <memory>
+#include <mutex>
 
 namespace margelo::nitro::camera::resizer {
 
@@ -28,6 +29,11 @@ public:
   size_t getExternalMemorySize() noexcept override;
 
 private:
+  // Serializes resize() against dispose(): dispose() can run on the JS thread while resize() is
+  // still running on the frame-processor thread, and resetting _pipeline mid-run() tears down the
+  // VkDevice underneath it. A dispose landing mid-frame blocks until that resize returns; every
+  // later call throws the catchable "already been disposed" error.
+  std::mutex _lifecycleMutex;
   std::unique_ptr<vulkan::VulkanResizerPipeline> _pipeline;
 };
 

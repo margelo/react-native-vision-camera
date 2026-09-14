@@ -38,6 +38,8 @@ namespace {
 HybridResizer::HybridResizer(const ResizerOptions& options) : HybridObject(TAG), _pipeline(std::make_unique<vulkan::VulkanResizerPipeline>(options)) {}
 
 std::shared_ptr<HybridGPUFrameSpec> HybridResizer::resize(const std::shared_ptr<camera::HybridFrameSpec>& frame) {
+  std::lock_guard<std::mutex> lock(_lifecycleMutex);
+
   if (_pipeline == nullptr) [[unlikely]] {
     throw std::runtime_error("This Resizer has already been disposed!");
   }
@@ -59,6 +61,8 @@ std::shared_ptr<HybridGPUFrameSpec> HybridResizer::resize(const std::shared_ptr<
 }
 
 void HybridResizer::dispose() {
+  std::lock_guard<std::mutex> lock(_lifecycleMutex);
+
   if (_pipeline == nullptr) {
     return;
   }
@@ -71,6 +75,10 @@ void HybridResizer::dispose() {
 }
 
 size_t HybridResizer::getExternalMemorySize() noexcept {
+  // Also guarded: Nitro calls this from toObject() on arbitrary threads, and it is never called
+  // from inside resize()/dispose(), so it cannot self-deadlock.
+  std::lock_guard<std::mutex> lock(_lifecycleMutex);
+
   return _pipeline != nullptr ? _pipeline->getOutputBufferAllocationSize() : 0;
 }
 
