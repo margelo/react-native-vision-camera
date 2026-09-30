@@ -283,6 +283,58 @@ namespace margelo::nitro::camera::barcodescanner::bridge::swift {
     return optional.value();
   }
   
+  // pragma MARK: std::optional<double>
+  /**
+   * Specialized version of `std::optional<double>`.
+   */
+  using std__optional_double_ = std::optional<double>;
+  inline std::optional<double> create_std__optional_double_(const double& value) noexcept {
+    return std::optional<double>(value);
+  }
+  inline bool has_value_std__optional_double_(const std::optional<double>& optional) noexcept {
+    return optional.has_value();
+  }
+  inline double get_std__optional_double_(const std::optional<double>& optional) noexcept {
+    return optional.value();
+  }
+  
+  // pragma MARK: std::function<void(double /* zoomRatio */)>
+  /**
+   * Specialized version of `std::function<void(double)>`.
+   */
+  using Func_void_double = std::function<void(double /* zoomRatio */)>;
+  /**
+   * Wrapper class for a `std::function<void(double / * zoomRatio * /)>`, this can be used from Swift.
+   */
+  class Func_void_double_Wrapper final {
+  public:
+    explicit Func_void_double_Wrapper(std::function<void(double /* zoomRatio */)>&& func): _function(std::make_unique<std::function<void(double /* zoomRatio */)>>(std::move(func))) {}
+    inline void call(double zoomRatio) const noexcept {
+      _function->operator()(zoomRatio);
+    }
+  private:
+    std::unique_ptr<std::function<void(double /* zoomRatio */)>> _function;
+  } SWIFT_NONCOPYABLE;
+  Func_void_double create_Func_void_double(void* NON_NULL swiftClosureWrapper) noexcept;
+  inline Func_void_double_Wrapper wrap_Func_void_double(Func_void_double value) noexcept {
+    return Func_void_double_Wrapper(std::move(value));
+  }
+  
+  // pragma MARK: std::optional<std::function<void(double /* zoomRatio */)>>
+  /**
+   * Specialized version of `std::optional<std::function<void(double / * zoomRatio * /)>>`.
+   */
+  using std__optional_std__function_void_double____zoomRatio______ = std::optional<std::function<void(double /* zoomRatio */)>>;
+  inline std::optional<std::function<void(double /* zoomRatio */)>> create_std__optional_std__function_void_double____zoomRatio______(const std::function<void(double /* zoomRatio */)>& value) noexcept {
+    return std::optional<std::function<void(double /* zoomRatio */)>>(value);
+  }
+  inline bool has_value_std__optional_std__function_void_double____zoomRatio______(const std::optional<std::function<void(double /* zoomRatio */)>>& optional) noexcept {
+    return optional.has_value();
+  }
+  inline std::function<void(double /* zoomRatio */)> get_std__optional_std__function_void_double____zoomRatio______(const std::optional<std::function<void(double /* zoomRatio */)>>& optional) noexcept {
+    return optional.value();
+  }
+  
   // pragma MARK: std::shared_ptr<HybridBarcodeScannerFactorySpec>
   /**
    * Specialized version of `std::shared_ptr<HybridBarcodeScannerFactorySpec>`.
