@@ -18,6 +18,7 @@
 #include "JHybridBarcodeSpec.hpp"
 #include "JHybridBarcodeScannerSpec.hpp"
 #include "JHybridBarcodeScannerFactorySpec.hpp"
+#include "JFunc_void_double.hpp"
 #include "JFunc_void_std__vector_std__shared_ptr_HybridBarcodeSpec__.hpp"
 #include "JFunc_void_std__exception_ptr.hpp"
 #include <NitroModules/DefaultConstructableObject.hpp>
@@ -47,6 +48,7 @@ void registerAllNatives() {
   margelo::nitro::camera::barcodescanner::JHybridBarcodeSpec::CxxPart::registerNatives();
   margelo::nitro::camera::barcodescanner::JHybridBarcodeScannerSpec::CxxPart::registerNatives();
   margelo::nitro::camera::barcodescanner::JHybridBarcodeScannerFactorySpec::CxxPart::registerNatives();
+  margelo::nitro::camera::barcodescanner::JFunc_void_double_cxx::registerNatives();
   margelo::nitro::camera::barcodescanner::JFunc_void_std__vector_std__shared_ptr_HybridBarcodeSpec___cxx::registerNatives();
   margelo::nitro::camera::barcodescanner::JFunc_void_std__exception_ptr_cxx::registerNatives();
 

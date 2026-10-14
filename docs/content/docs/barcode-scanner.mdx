@@ -124,6 +124,31 @@ async function scanBarcodeImage() {
 </Tab>
 </Tabs>
 
+### Zoom suggestions (Android)
+
+When a barcode is detected but too far away to be decoded, ML Kit suggests a zoom ratio. Pass [`onZoomSuggested`](/api/react-native-vision-camera-barcode-scanner/interfaces/BarcodeScannerOutputOptions#onzoomsuggested) to apply it to the Camera's [`zoom`](/api/react-native-vision-camera/interfaces/CameraViewProps#zoom), and [`maxZoomRatio`](/api/react-native-vision-camera-barcode-scanner/interfaces/BarcodeScannerOutputOptions#maxzoomratio) to cap suggestions at the device's maximum zoom:
+
+```tsx
+const device = useCameraDevice('back')
+const [zoom, setZoom] = useState(1)
+const scannerOutput = useBarcodeScannerOutput({
+  barcodeFormats: ['qr-code'],
+  onBarcodeScanned(barcodes) {
+    console.log(`Scanned ${barcodes.length} barcodes!`)
+  },
+  onError(error) {
+    console.error(`Failed to scan barcodes!`, error)
+  },
+  maxZoomRatio: device.maxZoom,
+  onZoomSuggested(zoomRatio) {
+    setZoom(zoomRatio)
+  },
+})
+```
+
+> [!NOTE]
+> Zoom suggestions are only available on Android - ML Kit on iOS does not provide them.
+
 ### Configuring Barcode Formats
 
 The examples above are configured to detect **all** [`BarcodeFormat`](/api/react-native-vision-camera-barcode-scanner/type-aliases/BarcodeFormat)s.

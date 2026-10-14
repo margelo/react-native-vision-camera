@@ -26,6 +26,12 @@ data class BarcodeScannerOutputOptions(
   val outputResolution: BarcodeScannerOutputResolution?,
   @DoNotStrip
   @Keep
+  val maxZoomRatio: Double?,
+  @DoNotStrip
+  @Keep
+  val onZoomSuggested: Func_void_double?,
+  @DoNotStrip
+  @Keep
   val onBarcodeScanned: Func_void_std__vector_std__shared_ptr_HybridBarcodeSpec__,
   @DoNotStrip
   @Keep
@@ -34,14 +40,16 @@ data class BarcodeScannerOutputOptions(
   /**
    * Create a new instance of BarcodeScannerOutputOptions from Kotlin
    */
-  constructor(barcodeFormats: Array<TargetBarcodeFormat>, outputResolution: BarcodeScannerOutputResolution?, onBarcodeScanned: (barcodes: Array<HybridBarcodeSpec>) -> Unit, onError: (error: Throwable) -> Unit):
-         this(barcodeFormats, outputResolution, Func_void_std__vector_std__shared_ptr_HybridBarcodeSpec___java(onBarcodeScanned), Func_void_std__exception_ptr_java(onError))
+  constructor(barcodeFormats: Array<TargetBarcodeFormat>, outputResolution: BarcodeScannerOutputResolution?, maxZoomRatio: Double?, onZoomSuggested: ((zoomRatio: Double) -> Unit)?, onBarcodeScanned: (barcodes: Array<HybridBarcodeSpec>) -> Unit, onError: (error: Throwable) -> Unit):
+         this(barcodeFormats, outputResolution, maxZoomRatio, onZoomSuggested?.let { Func_void_double_java(it) }, Func_void_std__vector_std__shared_ptr_HybridBarcodeSpec___java(onBarcodeScanned), Func_void_std__exception_ptr_java(onError))
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other !is BarcodeScannerOutputOptions) return false
     return Objects.deepEquals(this.barcodeFormats, other.barcodeFormats)
       && Objects.deepEquals(this.outputResolution, other.outputResolution)
+      && Objects.deepEquals(this.maxZoomRatio, other.maxZoomRatio)
+      && Objects.deepEquals(this.onZoomSuggested, other.onZoomSuggested)
       && Objects.deepEquals(this.onBarcodeScanned, other.onBarcodeScanned)
       && Objects.deepEquals(this.onError, other.onError)
   }
@@ -50,6 +58,8 @@ data class BarcodeScannerOutputOptions(
     return arrayOf<Any?>(
       barcodeFormats,
       outputResolution,
+      maxZoomRatio,
+      onZoomSuggested,
       onBarcodeScanned,
       onError
     ).contentDeepHashCode()
@@ -63,8 +73,8 @@ data class BarcodeScannerOutputOptions(
     @Keep
     @Suppress("unused")
     @JvmStatic
-    private fun fromCpp(barcodeFormats: Array<TargetBarcodeFormat>, outputResolution: BarcodeScannerOutputResolution?, onBarcodeScanned: Func_void_std__vector_std__shared_ptr_HybridBarcodeSpec__, onError: Func_void_std__exception_ptr): BarcodeScannerOutputOptions {
-      return BarcodeScannerOutputOptions(barcodeFormats, outputResolution, onBarcodeScanned, onError)
+    private fun fromCpp(barcodeFormats: Array<TargetBarcodeFormat>, outputResolution: BarcodeScannerOutputResolution?, maxZoomRatio: Double?, onZoomSuggested: Func_void_double?, onBarcodeScanned: Func_void_std__vector_std__shared_ptr_HybridBarcodeSpec__, onError: Func_void_std__exception_ptr): BarcodeScannerOutputOptions {
+      return BarcodeScannerOutputOptions(barcodeFormats, outputResolution, maxZoomRatio, onZoomSuggested, onBarcodeScanned, onError)
     }
   }
 }

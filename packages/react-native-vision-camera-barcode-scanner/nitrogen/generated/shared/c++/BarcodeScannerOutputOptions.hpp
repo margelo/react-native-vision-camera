@@ -39,9 +39,9 @@ namespace margelo::nitro::camera::barcodescanner { class HybridBarcodeSpec; }
 #include <vector>
 #include "BarcodeScannerOutputResolution.hpp"
 #include <optional>
+#include <functional>
 #include <memory>
 #include "HybridBarcodeSpec.hpp"
-#include <functional>
 #include <exception>
 
 namespace margelo::nitro::camera::barcodescanner {
@@ -53,15 +53,17 @@ namespace margelo::nitro::camera::barcodescanner {
   public:
     std::vector<TargetBarcodeFormat> barcodeFormats     SWIFT_PRIVATE;
     std::optional<BarcodeScannerOutputResolution> outputResolution     SWIFT_PRIVATE;
+    std::optional<double> maxZoomRatio     SWIFT_PRIVATE;
+    std::optional<std::function<void(double /* zoomRatio */)>> onZoomSuggested     SWIFT_PRIVATE;
     std::function<void(const std::vector<std::shared_ptr<HybridBarcodeSpec>>& /* barcodes */)> onBarcodeScanned     SWIFT_PRIVATE;
     std::function<void(const std::exception_ptr& /* error */)> onError     SWIFT_PRIVATE;
 
   public:
     BarcodeScannerOutputOptions() = default;
-    explicit BarcodeScannerOutputOptions(std::vector<TargetBarcodeFormat> barcodeFormats, std::optional<BarcodeScannerOutputResolution> outputResolution, std::function<void(const std::vector<std::shared_ptr<HybridBarcodeSpec>>& /* barcodes */)> onBarcodeScanned, std::function<void(const std::exception_ptr& /* error */)> onError): barcodeFormats(barcodeFormats), outputResolution(outputResolution), onBarcodeScanned(onBarcodeScanned), onError(onError) {}
+    explicit BarcodeScannerOutputOptions(std::vector<TargetBarcodeFormat> barcodeFormats, std::optional<BarcodeScannerOutputResolution> outputResolution, std::optional<double> maxZoomRatio, std::optional<std::function<void(double /* zoomRatio */)>> onZoomSuggested, std::function<void(const std::vector<std::shared_ptr<HybridBarcodeSpec>>& /* barcodes */)> onBarcodeScanned, std::function<void(const std::exception_ptr& /* error */)> onError): barcodeFormats(barcodeFormats), outputResolution(outputResolution), maxZoomRatio(maxZoomRatio), onZoomSuggested(onZoomSuggested), onBarcodeScanned(onBarcodeScanned), onError(onError) {}
 
   public:
-    // BarcodeScannerOutputOptions is not equatable because these properties are not equatable: onBarcodeScanned, onError
+    // BarcodeScannerOutputOptions is not equatable because these properties are not equatable: onZoomSuggested, onBarcodeScanned, onError
   };
 
 } // namespace margelo::nitro::camera::barcodescanner
@@ -76,6 +78,8 @@ namespace margelo::nitro {
       return margelo::nitro::camera::barcodescanner::BarcodeScannerOutputOptions(
         JSIConverter<std::vector<margelo::nitro::camera::barcodescanner::TargetBarcodeFormat>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "barcodeFormats"))),
         JSIConverter<std::optional<margelo::nitro::camera::barcodescanner::BarcodeScannerOutputResolution>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "outputResolution"))),
+        JSIConverter<std::optional<double>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "maxZoomRatio"))),
+        JSIConverter<std::optional<std::function<void(double)>>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "onZoomSuggested"))),
         JSIConverter<std::function<void(const std::vector<std::shared_ptr<margelo::nitro::camera::barcodescanner::HybridBarcodeSpec>>&)>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "onBarcodeScanned"))),
         JSIConverter<std::function<void(const std::exception_ptr&)>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "onError")))
       );
@@ -84,6 +88,8 @@ namespace margelo::nitro {
       jsi::Object obj(runtime);
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "barcodeFormats"), JSIConverter<std::vector<margelo::nitro::camera::barcodescanner::TargetBarcodeFormat>>::toJSI(runtime, arg.barcodeFormats));
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "outputResolution"), JSIConverter<std::optional<margelo::nitro::camera::barcodescanner::BarcodeScannerOutputResolution>>::toJSI(runtime, arg.outputResolution));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "maxZoomRatio"), JSIConverter<std::optional<double>>::toJSI(runtime, arg.maxZoomRatio));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "onZoomSuggested"), JSIConverter<std::optional<std::function<void(double)>>>::toJSI(runtime, arg.onZoomSuggested));
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "onBarcodeScanned"), JSIConverter<std::function<void(const std::vector<std::shared_ptr<margelo::nitro::camera::barcodescanner::HybridBarcodeSpec>>&)>>::toJSI(runtime, arg.onBarcodeScanned));
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "onError"), JSIConverter<std::function<void(const std::exception_ptr&)>>::toJSI(runtime, arg.onError));
       return obj;
@@ -98,6 +104,8 @@ namespace margelo::nitro {
       }
       if (!JSIConverter<std::vector<margelo::nitro::camera::barcodescanner::TargetBarcodeFormat>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "barcodeFormats")))) return false;
       if (!JSIConverter<std::optional<margelo::nitro::camera::barcodescanner::BarcodeScannerOutputResolution>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "outputResolution")))) return false;
+      if (!JSIConverter<std::optional<double>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "maxZoomRatio")))) return false;
+      if (!JSIConverter<std::optional<std::function<void(double)>>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "onZoomSuggested")))) return false;
       if (!JSIConverter<std::function<void(const std::vector<std::shared_ptr<margelo::nitro::camera::barcodescanner::HybridBarcodeSpec>>&)>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "onBarcodeScanned")))) return false;
       if (!JSIConverter<std::function<void(const std::exception_ptr&)>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "onError")))) return false;
       return true;
