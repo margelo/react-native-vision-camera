@@ -32,10 +32,10 @@ namespace margelo::nitro::camera::barcodescanner { class HybridBarcodeSpec; }
 #include "BarcodeScannerOptions.hpp"
 #include "TargetBarcodeFormat.hpp"
 #include <vector>
+#include <optional>
 #include <VisionCamera/HybridCameraOutputSpec.hpp>
 #include "BarcodeScannerOutputOptions.hpp"
 #include "BarcodeScannerOutputResolution.hpp"
-#include <optional>
 #include "HybridBarcodeSpec.hpp"
 #include <functional>
 #include <exception>

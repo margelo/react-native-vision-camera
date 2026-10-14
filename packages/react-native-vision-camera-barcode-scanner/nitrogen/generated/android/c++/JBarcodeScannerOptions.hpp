@@ -12,6 +12,7 @@
 
 #include "JTargetBarcodeFormat.hpp"
 #include "TargetBarcodeFormat.hpp"
+#include <optional>
 #include <vector>
 
 namespace margelo::nitro::camera::barcodescanner {
@@ -35,6 +36,8 @@ namespace margelo::nitro::camera::barcodescanner {
       static const auto clazz = javaClassStatic();
       static const auto fieldBarcodeFormats = clazz->getField<jni::JArrayClass<JTargetBarcodeFormat>>("barcodeFormats");
       jni::local_ref<jni::JArrayClass<JTargetBarcodeFormat>> barcodeFormats = this->getFieldValue(fieldBarcodeFormats);
+      static const auto fieldEnableAllPotentialBarcodes = clazz->getField<jni::JBoolean>("enableAllPotentialBarcodes");
+      jni::local_ref<jni::JBoolean> enableAllPotentialBarcodes = this->getFieldValue(fieldEnableAllPotentialBarcodes);
       return BarcodeScannerOptions(
         [&](auto&& __input) {
           size_t __size = __input->size();
@@ -45,7 +48,8 @@ namespace margelo::nitro::camera::barcodescanner {
             __vector.push_back(__element->toCpp());
           }
           return __vector;
-        }(barcodeFormats)
+        }(barcodeFormats),
+        enableAllPotentialBarcodes != nullptr ? std::make_optional(static_cast<bool>(enableAllPotentialBarcodes->value())) : std::nullopt
       );
     }
 
@@ -55,7 +59,7 @@ namespace margelo::nitro::camera::barcodescanner {
      */
     [[maybe_unused]]
     static jni::local_ref<JBarcodeScannerOptions::javaobject> fromCpp(const BarcodeScannerOptions& value) {
-      using JSignature = JBarcodeScannerOptions(jni::alias_ref<jni::JArrayClass<JTargetBarcodeFormat>>);
+      using JSignature = JBarcodeScannerOptions(jni::alias_ref<jni::JArrayClass<JTargetBarcodeFormat>>, jni::alias_ref<jni::JBoolean>);
       static const auto clazz = javaClassStatic();
       static const auto create = clazz->getStaticMethod<JSignature>("fromCpp");
       return create(
@@ -69,7 +73,8 @@ namespace margelo::nitro::camera::barcodescanner {
             __array->setElement(__i, *__elementJni);
           }
           return __array;
-        }(value.barcodeFormats)
+        }(value.barcodeFormats),
+        value.enableAllPotentialBarcodes.has_value() ? jni::JBoolean::valueOf(value.enableAllPotentialBarcodes.value()) : nullptr
       );
     }
   };

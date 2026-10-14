@@ -18,7 +18,7 @@ public extension BarcodeScannerOutputOptions {
   /**
    * Create a new instance of `BarcodeScannerOutputOptions`.
    */
-  init(barcodeFormats: [TargetBarcodeFormat], outputResolution: BarcodeScannerOutputResolution?, onBarcodeScanned: @escaping (_ barcodes: [(any HybridBarcodeSpec)]) -> Void, onError: @escaping (_ error: Error) -> Void) {
+  init(barcodeFormats: [TargetBarcodeFormat], outputResolution: BarcodeScannerOutputResolution?, enableAllPotentialBarcodes: Bool?, onBarcodeScanned: @escaping (_ barcodes: [(any HybridBarcodeSpec)]) -> Void, onError: @escaping (_ error: Error) -> Void) {
     self.init({ () -> bridge.std__vector_TargetBarcodeFormat_ in
       var __vector = bridge.create_std__vector_TargetBarcodeFormat_(barcodeFormats.count)
       for __item in barcodeFormats {
@@ -28,6 +28,12 @@ public extension BarcodeScannerOutputOptions {
     }(), { () -> bridge.std__optional_BarcodeScannerOutputResolution_ in
       if let __unwrappedValue = outputResolution {
         return bridge.create_std__optional_BarcodeScannerOutputResolution_(__unwrappedValue)
+      } else {
+        return .init()
+      }
+    }(), { () -> bridge.std__optional_bool_ in
+      if let __unwrappedValue = enableAllPotentialBarcodes {
+        return bridge.create_std__optional_bool_(__unwrappedValue)
       } else {
         return .init()
       }
@@ -48,6 +54,18 @@ public extension BarcodeScannerOutputOptions {
   @inline(__always)
   var outputResolution: BarcodeScannerOutputResolution? {
     return self.__outputResolution.value
+  }
+  
+  @inline(__always)
+  var enableAllPotentialBarcodes: Bool? {
+    return { () -> Bool? in
+      if bridge.has_value_std__optional_bool_(self.__enableAllPotentialBarcodes) {
+        let __unwrapped = bridge.get_std__optional_bool_(self.__enableAllPotentialBarcodes)
+        return __unwrapped
+      } else {
+        return nil
+      }
+    }()
   }
   
   @inline(__always)
