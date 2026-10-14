@@ -92,6 +92,7 @@ class HybridPhysicalCameraDevice(
   override val supportsLowLightBoost: Boolean = false
   override val minZoom: Double = 0.0
   override val maxZoom: Double = 0.0
+  override val neutralZoom: Double = 1.0
   override val zoomLensSwitchFactors: DoubleArray = doubleArrayOf()
   override val supportsDistortionCorrection: Boolean = false
 

@@ -221,6 +221,10 @@ final class HybridCameraDevice: HybridCameraDeviceSpec, NativeCameraDevice {
     return device.maxAvailableVideoZoomFactor
   }
 
+  var neutralZoom: Double {
+    return device.neutralZoomFactor
+  }
+
   var zoomLensSwitchFactors: [Double] {
     return device.virtualDeviceSwitchOverVideoZoomFactors.map { $0.doubleValue }
   }

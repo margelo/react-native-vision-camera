@@ -88,6 +88,7 @@ namespace margelo::nitro::camera {
     bool getSupportsLowLightBoost() override;
     double getMinZoom() override;
     double getMaxZoom() override;
+    double getNeutralZoom() override;
     std::vector<double> getZoomLensSwitchFactors() override;
     bool getSupportsDistortionCorrection() override;
 
