@@ -9,7 +9,17 @@ import Foundation
 import NitroModules
 
 final class HybridCameraSession: HybridCameraSessionSpec {
-  let session: AVCaptureSession
+  private struct SessionListener {
+    let name: Notification.Name
+    let onNotification: (Notification) -> Void
+    var subscription: ListenerSubscription
+  }
+
+  private let enableMultiCam: Bool
+  // `session` is only replaced on `Self.queue`. Reads from other threads go through `lock`.
+  private let lock = NSLock()
+  private var session: AVCaptureSession
+  private var listeners: [UUID: SessionListener] = [:]
   private static let queue: DispatchQueue = DispatchQueue(
     label: "com.margelo.camera.session",
     qos: .userInteractive,
@@ -18,18 +28,28 @@ final class HybridCameraSession: HybridCameraSessionSpec {
     target: nil)
 
   init(enableMultiCam: Bool) {
-    if enableMultiCam {
-      self.session = AVCaptureMultiCamSession()
-    } else {
-      self.session = AVCaptureSession()
-    }
-    // We manage formats manually via `device.activeFormat`, so opt out of the
-    // session's preset-based format selection upfront.
-    self.session.sessionPreset = .inputPriority
+    self.enableMultiCam = enableMultiCam
+    self.session = Self.createSession(enableMultiCam: enableMultiCam)
     super.init()
   }
 
+  deinit {
+    for listener in listeners.values {
+      listener.subscription.remove()
+    }
+  }
+
+  private static func createSession(enableMultiCam: Bool) -> AVCaptureSession {
+    let session = enableMultiCam ? AVCaptureMultiCamSession() : AVCaptureSession()
+    // We manage formats manually via `device.activeFormat`, so opt out of the
+    // session's preset-based format selection upfront.
+    session.sessionPreset = .inputPriority
+    return session
+  }
+
   var isRunning: Bool {
+    lock.lock()
+    defer { lock.unlock() }
     return session.isRunning
   }
 
@@ -60,10 +80,22 @@ final class HybridCameraSession: HybridCameraSessionSpec {
       // Wrap the configuration in a batch
       self.session.beginConfiguration()
       defer {
+        // A preview that didn't get its connection because a later step threw must not stay
+        // attached: it would keep this AVCaptureSession alive and no other session could add it.
+        for connection in connections {
+          for case .preview(let preview) in connection.outputs.map(\.output)
+          where preview.previewLayer.session === self.session && preview.previewLayer.connection == nil {
+            preview.previewLayer.session = nil
+          }
+        }
         self.session.commitConfiguration()
         logger.info(
           "Successfully applied CameraSession configuration for \(connections.count) connection(s)!"
         )
+        // An interrupted session resumes by itself later, so it keeps its AVCaptureSession.
+        if connections.isEmpty && !self.session.isRunning && !self.session.isInterrupted {
+          self.replaceSession()
+        }
       }
 
       // Detach all unwanted preview layers before touching inputs/outputs
@@ -230,6 +262,32 @@ final class HybridCameraSession: HybridCameraSessionSpec {
   }
 
   // pragma MARK: Helpers
+  /**
+   * Swaps the stopped, emptied [AVCaptureSession] for a new one so the old one deallocates now.
+   * A stopped session detaches its removed outputs in dealloc, and that detach asserts if another
+   * session took one of them in the meantime.
+   */
+  private func replaceSession() {
+    let newSession = Self.createSession(enableMultiCam: enableMultiCam)
+    if #available(iOS 18.0, *) {
+      newSession.configuresApplicationAudioSessionToMixWithOthers =
+        session.configuresApplicationAudioSessionToMixWithOthers
+    }
+    let oldSession: AVCaptureSession
+    do {
+      lock.lock()
+      defer { lock.unlock() }
+      oldSession = session
+      session = newSession
+      for (id, listener) in listeners {
+        listener.subscription.remove()
+        listeners[id]?.subscription = newSession.addListener(
+          for: listener.name, listener: listener.onNotification)
+      }
+    }
+    logger.info("Released stopped AVCaptureSession \(oldSession)")
+  }
+
   /**
    * Detach all preview layers that are not listed in the [targetConnections] array
    * from this [AVCaptureSession].
@@ -403,22 +461,44 @@ final class HybridCameraSession: HybridCameraSessionSpec {
     }
   }
 
+  // pragma MARK: Listeners
+  /**
+   * Listens to the current [AVCaptureSession]. [replaceSession] moves the listener to the new one.
+   */
+  private func addSessionListener(
+    for name: Notification.Name, listener: @escaping (Notification) -> Void
+  ) -> ListenerSubscription {
+    let id = UUID()
+    lock.lock()
+    defer { lock.unlock() }
+    listeners[id] = SessionListener(
+      name: name,
+      onNotification: listener,
+      subscription: session.addListener(for: name, listener: listener))
+    return ListenerSubscription(remove: { [weak self] in
+      guard let self else { return }
+      self.lock.lock()
+      defer { self.lock.unlock() }
+      self.listeners.removeValue(forKey: id)?.subscription.remove()
+    })
+  }
+
   // pragma MARK: On Started/Stopped Listeners
   func addOnStartedListener(onStarted: @escaping () -> Void) throws -> ListenerSubscription {
-    return self.session.addListener(for: AVCaptureSession.didStartRunningNotification) { _ in
+    return self.addSessionListener(for: AVCaptureSession.didStartRunningNotification) { _ in
       onStarted()
     }
   }
 
   func addOnStoppedListener(onStopped: @escaping () -> Void) throws -> ListenerSubscription {
-    return self.session.addListener(for: AVCaptureSession.didStopRunningNotification) { _ in
+    return self.addSessionListener(for: AVCaptureSession.didStopRunningNotification) { _ in
       onStopped()
     }
   }
 
   // pragma MARK: On Error Listener
   func addOnErrorListener(onError: @escaping (any Error) -> Void) throws -> ListenerSubscription {
-    return self.session.addListener(for: AVCaptureSession.runtimeErrorNotification) {
+    return self.addSessionListener(for: AVCaptureSession.runtimeErrorNotification) {
       notification in
       if let errorAny = notification.userInfo?[AVCaptureSessionErrorKey],
         let error = errorAny as? NSError
@@ -438,7 +518,7 @@ final class HybridCameraSession: HybridCameraSessionSpec {
   func addOnInterruptionStartedListener(
     onInterruptionStarted: @escaping (InterruptionReason) -> Void
   ) throws -> ListenerSubscription {
-    return self.session.addListener(for: AVCaptureSession.wasInterruptedNotification) {
+    return self.addSessionListener(for: AVCaptureSession.wasInterruptedNotification) {
       notification in
       if let reasonAny = notification.userInfo?[AVCaptureSessionInterruptionReasonKey],
         let reasonRawValue = reasonAny as? NSNumber,
@@ -455,7 +535,7 @@ final class HybridCameraSession: HybridCameraSessionSpec {
   func addOnInterruptionEndedListener(onInterruptionEnded: @escaping () -> Void) throws
     -> ListenerSubscription
   {
-    return self.session.addListener(for: AVCaptureSession.interruptionEndedNotification) { _ in
+    return self.addSessionListener(for: AVCaptureSession.interruptionEndedNotification) { _ in
       onInterruptionEnded()
     }
   }

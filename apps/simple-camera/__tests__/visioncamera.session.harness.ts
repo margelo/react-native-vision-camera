@@ -163,6 +163,76 @@ describe('VisionCamera - Session', () => {
     }
   })
 
+  it('keeps lifecycle listeners attached when reconfiguring after configure([])', async () => {
+    const device = factory.getDefaultCamera('back')
+    assert.exists(device, 'no back camera')
+
+    const session = await VisionCamera.createCameraSession(false)
+    const photoOutput = VisionCamera.createPhotoOutput({
+      targetResolution: CommonResolutions.HD_4_3,
+      containerFormat: 'jpeg',
+      quality: 0.8,
+      qualityPrioritization: 'balanced',
+    })
+
+    let started = deferred()
+    let stopped = deferred()
+    const onStarted = fn(() => {
+      started.resolve()
+    })
+    const onStopped = fn(() => {
+      stopped.resolve()
+    })
+    const removedListener = fn()
+    const startSub = session.addOnStartedListener(onStarted)
+    const stopSub = session.addOnStoppedListener(onStopped)
+    const removedSub = session.addOnStartedListener(removedListener)
+    const errorSub = session.addOnErrorListener((error) => {
+      started.reject(error)
+      stopped.reject(error)
+    })
+
+    try {
+      await session.configure([
+        {
+          input: device,
+          outputs: [{ output: photoOutput, mirrorMode: 'auto' }],
+          constraints: [],
+        },
+      ])
+      await session.start()
+      await withTimeout(started.promise, 10_000, 'first start')
+      await session.stop()
+      await withTimeout(stopped.promise, 10_000, 'first stop')
+
+      // Empty the stopped session, then configure the same session again.
+      await session.configure([])
+      removedSub.remove()
+      started = deferred()
+      stopped = deferred()
+      await session.configure([
+        {
+          input: device,
+          outputs: [{ output: photoOutput, mirrorMode: 'auto' }],
+          constraints: [],
+        },
+      ])
+      await session.start()
+      await withTimeout(started.promise, 10_000, 'second start')
+      await session.stop()
+      await withTimeout(stopped.promise, 10_000, 'second stop')
+
+      expect(onStarted).toHaveBeenCalledTimes(2)
+      expect(onStopped).toHaveBeenCalledTimes(2)
+      expect(removedListener).toHaveBeenCalledTimes(1)
+    } finally {
+      await session.stop()
+      startSub.remove()
+      stopSub.remove()
+      errorSub.remove()
+    }
+  })
+
   it('stops delivering events after a listener subscription is removed', async () => {
     const device = factory.getDefaultCamera('back')
     assert.exists(device, 'no back camera')
