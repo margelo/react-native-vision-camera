@@ -56,6 +56,7 @@ namespace margelo::nitro::camera::barcodescanner {
     // Methods
     std::vector<std::shared_ptr<HybridBarcodeSpec>> scanCodes(const std::shared_ptr<margelo::nitro::camera::HybridFrameSpec>& frame) override;
     std::shared_ptr<Promise<std::vector<std::shared_ptr<HybridBarcodeSpec>>>> scanCodesAsync(const std::shared_ptr<margelo::nitro::camera::HybridFrameSpec>& frame) override;
+    std::vector<std::shared_ptr<HybridBarcodeSpec>> scanCodesInImage(const std::shared_ptr<margelo::nitro::image::HybridImageSpec>& image) override;
     std::shared_ptr<Promise<std::vector<std::shared_ptr<HybridBarcodeSpec>>>> scanCodesInImageAsync(const std::shared_ptr<margelo::nitro::image::HybridImageSpec>& image) override;
 
   private:

@@ -92,6 +92,14 @@ namespace margelo::nitro::camera::barcodescanner {
       auto __value = std::move(__result.value());
       return __value;
     }
+    inline std::vector<std::shared_ptr<HybridBarcodeSpec>> scanCodesInImage(const std::shared_ptr<margelo::nitro::image::HybridImageSpec>& image) override {
+      auto __result = _swiftPart.scanCodesInImage(image);
+      if (__result.hasError()) [[unlikely]] {
+        std::rethrow_exception(__result.error());
+      }
+      auto __value = std::move(__result.value());
+      return __value;
+    }
     inline std::shared_ptr<Promise<std::vector<std::shared_ptr<HybridBarcodeSpec>>>> scanCodesInImageAsync(const std::shared_ptr<margelo::nitro::image::HybridImageSpec>& image) override {
       auto __result = _swiftPart.scanCodesInImageAsync(image);
       if (__result.hasError()) [[unlikely]] {
