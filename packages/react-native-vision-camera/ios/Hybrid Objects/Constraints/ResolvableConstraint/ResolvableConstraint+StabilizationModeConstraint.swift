@@ -28,7 +28,7 @@ extension TargetStabilizationMode {
     case .off:
       return .off
     case .auto:
-      return .auto
+      return .off
     case .standard:
       return .auto
     // Cinematic modes - don't fall back to low-latency modes
