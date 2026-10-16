@@ -51,6 +51,7 @@ namespace margelo::nitro::camera {
   public:
     // Properties
     std::optional<double> getSelectedFPS() override;
+    std::optional<Size> getSelectedVideoResolution() override;
     std::optional<TargetStabilizationMode> getSelectedVideoStabilizationMode() override;
     std::optional<TargetStabilizationMode> getSelectedPreviewStabilizationMode() override;
     std::optional<TargetDynamicRange> getSelectedVideoDynamicRange() override;

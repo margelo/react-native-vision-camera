@@ -5,6 +5,7 @@ import type {
   TargetDynamicRange,
 } from '../common-types/DynamicRange'
 import type { PixelFormat } from '../common-types/PixelFormat'
+import type { Size } from '../common-types/Size'
 import type { TargetStabilizationMode } from '../common-types/StabilizationMode'
 import type { CameraDevice } from '../inputs/CameraDevice.nitro'
 import type { Frame } from '../instances/Frame.nitro'
@@ -29,6 +30,16 @@ export interface CameraSessionConfig
    * FPS value has been selected.
    */
   readonly selectedFPS?: number
+
+  /**
+   * Gets the native video dimensions selected by the constraint resolver, or
+   * `undefined` when the platform cannot report them before the session starts.
+   *
+   * Unlike an output's `currentResolution`, this value describes the resolved
+   * session configuration and is therefore safe to read from
+   * `onSessionConfigSelected` before capture begins.
+   */
+  readonly selectedVideoResolution?: Size
 
   /**
    * Gets the currently selected {@linkcode TargetStabilizationMode}

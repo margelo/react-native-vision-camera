@@ -11,6 +11,7 @@ import NitroModules
 public protocol HybridCameraSessionConfigSpec_protocol: HybridObject {
   // Properties
   var selectedFPS: Double? { get }
+  var selectedVideoResolution: Size? { get }
   var selectedVideoStabilizationMode: TargetStabilizationMode? { get }
   var selectedPreviewStabilizationMode: TargetStabilizationMode? { get }
   var selectedVideoDynamicRange: TargetDynamicRange? { get }
