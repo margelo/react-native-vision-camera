@@ -58,7 +58,7 @@ object ConstraintResolver {
     // Pass 1: Resolve features (stab, HDR, etc.) via isSessionConfigSupported.
     // SessionConfig is built WITHOUT FPS — FPS ranges depend on the resolved features.
     while (true) {
-      val config = activeConstraints.toConfig()
+      val config = activeConstraints.toConfig(cameraInfo)
       val preparedUseCases =
         outputConfigurations.map { outputConfiguration ->
           val output =
@@ -140,13 +140,14 @@ object ConstraintResolver {
  * FPS is not resolved here — it requires a validated [SessionConfig]
  * and is resolved separately in [FPSConstraint.resolveFPSRange].
  */
-internal fun List<Constraint>.toConfig(): NativeCameraOutput.Config {
+internal fun List<Constraint>.toConfig(cameraInfo: CameraInfo? = null): NativeCameraOutput.Config {
   return NativeCameraOutput.Config(
     fpsRange = null, // resolved after feature validation
     previewStabilizationMode = firstNotNullOfOrNull { it.asType<PreviewStabilizationModeConstraint>() }?.previewStabilizationMode,
     videoStabilizationMode = firstNotNullOfOrNull { it.asType<VideoStabilizationModeConstraint>() }?.videoStabilizationMode,
     videoDynamicRange = firstNotNullOfOrNull { it.asType<VideoDynamicRangeConstraint>() }?.videoDynamicRange,
     photoHDR = firstNotNullOfOrNull { it.asType<PhotoHDRConstraint>() }?.photoHDR,
+    cameraInfo = cameraInfo,
   )
 }
 

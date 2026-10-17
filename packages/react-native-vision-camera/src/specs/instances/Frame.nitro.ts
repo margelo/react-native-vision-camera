@@ -383,18 +383,24 @@ export interface Frame
    * Its origin is the top-left of the Frame.
    *
    * ```
-   * K = [ fx   0  cx ]
+   * K = [ fx   s  cx ]
    *     [  0  fy  cy ]
    *     [  0   0   1 ]
    * ```
    * - `fx`, `fy`: focal length in pixels
+   * - `s`: skew
    * - `cx`, `cy`: principal point in pixels
    *
    *
-   * @platform iOS
    * @note The {@linkcode Frame} only has a Camera intrinsic matrix attached
    * if {@linkcode FrameOutputOptions.enableCameraMatrixDelivery | enableCameraMatrixDelivery}
    * is set to true on the `CameraFrameOutput`.
+   * @note On Android, VisionCamera first reads the per-frame Camera2
+   * {@link https://developer.android.com/reference/android/hardware/camera2/CaptureResult#LENS_INTRINSIC_CALIBRATION | CaptureResult.LENS_INTRINSIC_CALIBRATION}
+   * value, and falls back to the static Camera2
+   * {@link https://developer.android.com/reference/android/hardware/camera2/CameraCharacteristics#LENS_INTRINSIC_CALIBRATION | CameraCharacteristics.LENS_INTRINSIC_CALIBRATION}
+   * value if the per-frame value is unavailable. The Camera2 calibration is
+   * transformed into Frame coordinates before it is exposed here.
    * @example
    * ```ts
    * const matrix = frame.cameraIntrinsicMatrix
