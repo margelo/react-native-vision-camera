@@ -1,0 +1,83 @@
+{
+  "name": "react-native-vision-camera-mlkit-text-recognition-latin",
+  "version": "5.2.3",
+  "description": "Latin text recognition plugin for react-native-vision-camera powered by ML Kit.",
+  "main": "lib/index",
+  "module": "lib/index",
+  "types": "lib/index.d.ts",
+  "react-native": "src/index",
+  "source": "src/index",
+  "files": [
+    "src",
+    "react-native.config.js",
+    "lib",
+    "nitrogen",
+    "android/build.gradle",
+    "android/gradle.properties",
+    "android/fix-prefab.gradle",
+    "android/CMakeLists.txt",
+    "android/src",
+    "ios/**/*.h",
+    "ios/**/*.m",
+    "ios/**/*.mm",
+    "ios/**/*.cpp",
+    "ios/**/*.swift",
+    "nitro.json",
+    "*.podspec",
+    "README.md"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf android/build node_modules/**/android/build lib",
+    "build": "tsc",
+    "typescript": "tsc",
+    "specs": "tsc --noEmit false && nitrogen",
+    "release": "release-it"
+  },
+  "keywords": [
+    "react-native",
+    "vision-camera",
+    "text-recognition",
+    "ocr",
+    "latin",
+    "mlkit",
+    "frame-processor",
+    "ios",
+    "android"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/margelo/react-native-vision-camera.git"
+  },
+  "author": "Marc Rousavy <me@mrousavy.com> (https://github.com/mrousavy)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/margelo/react-native-vision-camera/issues"
+  },
+  "homepage": "https://visioncamera.margelo.com/api/react-native-vision-camera-mlkit-text-recognition-latin",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.15",
+    "nitrogen": "0.37.0",
+    "react": "19.2.3",
+    "react-native": "0.85.3",
+    "react-native-nitro-image": "0.15.2",
+    "react-native-nitro-modules": "0.37.0",
+    "react-native-vision-camera": "*",
+    "typescript": "6.0.3"
+  },
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*",
+    "react-native-nitro-image": "*",
+    "react-native-nitro-modules": "*",
+    "react-native-vision-camera": "*"
+  },
+  "peerDependenciesMeta": {
+    "react-native-nitro-modules": {
+      "optional": true
+    }
+  }
+}

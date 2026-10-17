@@ -34,6 +34,7 @@
     "react-native-video": "6.19.2",
     "react-native-vision-camera": "../../packages/react-native-vision-camera",
     "react-native-vision-camera-barcode-scanner": "../../packages/react-native-vision-camera-barcode-scanner",
+    "react-native-vision-camera-mlkit-text-recognition-latin": "../../packages/react-native-vision-camera-mlkit-text-recognition-latin",
     "react-native-vision-camera-location": "../../packages/react-native-vision-camera-location",
     "react-native-vision-camera-resizer": "../../packages/react-native-vision-camera-resizer",
     "react-native-vision-camera-skia": "../../packages/react-native-vision-camera-skia",

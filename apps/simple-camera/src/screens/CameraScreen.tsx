@@ -2,6 +2,7 @@ import { useIsFocused, useNavigation } from '@react-navigation/native'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   Animated,
+  Pressable,
   StatusBar,
   StyleSheet,
   Text,
@@ -263,6 +264,22 @@ export function CameraScreen() {
 
       <FullOverlay style={safePadding}>
         <Row>
+          <View style={styles.pluginButtons}>
+            <Pressable
+              style={styles.pluginButton}
+              onPress={() => navigation.navigate('TextRecognitionLatin')}
+            >
+              <Text style={styles.pluginButtonText}>
+                ML Kit Text Recognition
+              </Text>
+            </Pressable>
+            <Pressable
+              style={styles.pluginButton}
+              onPress={() => navigation.navigate('BarcodeScanner')}
+            >
+              <Text style={styles.pluginButtonText}>Barcode Scanner</Text>
+            </Pressable>
+          </View>
           <View style={styles.flex} />
           <CameraSelectorButton
             uiRotation={uiRotation}
@@ -309,5 +326,19 @@ const styles = StyleSheet.create({
   captureButtonRow: {
     flexDirection: 'row',
     justifyContent: 'center',
+  },
+  pluginButton: {
+    alignSelf: 'flex-start',
+    borderRadius: 9999,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  pluginButtonText: {
+    color: 'white',
+    fontWeight: '600',
+  },
+  pluginButtons: {
+    gap: 8,
   },
 })

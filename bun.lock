@@ -42,6 +42,7 @@
         "react-native-vision-camera": "../../packages/react-native-vision-camera",
         "react-native-vision-camera-barcode-scanner": "../../packages/react-native-vision-camera-barcode-scanner",
         "react-native-vision-camera-location": "../../packages/react-native-vision-camera-location",
+        "react-native-vision-camera-mlkit-text-recognition-latin": "../../packages/react-native-vision-camera-mlkit-text-recognition-latin",
         "react-native-vision-camera-resizer": "../../packages/react-native-vision-camera-resizer",
         "react-native-vision-camera-skia": "../../packages/react-native-vision-camera-skia",
         "react-native-vision-camera-worklets": "../../packages/react-native-vision-camera-worklets",
@@ -162,6 +163,30 @@
       "peerDependencies": {
         "react": "*",
         "react-native": "*",
+        "react-native-nitro-modules": "*",
+        "react-native-vision-camera": "*",
+      },
+      "optionalPeers": [
+        "react-native-nitro-modules",
+      ],
+    },
+    "packages/react-native-vision-camera-mlkit-text-recognition-latin": {
+      "name": "react-native-vision-camera-mlkit-text-recognition-latin",
+      "version": "5.2.3",
+      "devDependencies": {
+        "@types/react": "19.2.15",
+        "nitrogen": "0.37.0",
+        "react": "19.2.3",
+        "react-native": "0.85.3",
+        "react-native-nitro-image": "0.15.2",
+        "react-native-nitro-modules": "0.37.0",
+        "react-native-vision-camera": "*",
+        "typescript": "6.0.3",
+      },
+      "peerDependencies": {
+        "react": "*",
+        "react-native": "*",
+        "react-native-nitro-image": "*",
         "react-native-nitro-modules": "*",
         "react-native-vision-camera": "*",
       },
@@ -2433,6 +2458,8 @@
     "react-native-vision-camera-barcode-scanner": ["react-native-vision-camera-barcode-scanner@workspace:packages/react-native-vision-camera-barcode-scanner"],
 
     "react-native-vision-camera-location": ["react-native-vision-camera-location@workspace:packages/react-native-vision-camera-location"],
+
+    "react-native-vision-camera-mlkit-text-recognition-latin": ["react-native-vision-camera-mlkit-text-recognition-latin@workspace:packages/react-native-vision-camera-mlkit-text-recognition-latin"],
 
     "react-native-vision-camera-resizer": ["react-native-vision-camera-resizer@workspace:packages/react-native-vision-camera-resizer"],
 

@@ -8,6 +8,7 @@
   "workspaces": [
     "packages/react-native-vision-camera",
     "packages/react-native-vision-camera-barcode-scanner",
+    "packages/react-native-vision-camera-mlkit-text-recognition-latin",
     "packages/react-native-vision-camera-location",
     "packages/react-native-vision-camera-resizer",
     "packages/react-native-vision-camera-skia",
@@ -17,12 +18,13 @@
   ],
   "scripts": {
     "bootstrap": "bun i && bun run build && bun example bundle-install && bun example pods",
-    "specs": "bun camera specs && bun location specs && bun scanner specs && bun resizer specs && bun worklets specs",
-    "build": "bun camera build && bun location build && bun scanner build && bun resizer build && bun worklets build && bun skia build",
+    "specs": "bun camera specs && bun location specs && bun scanner specs && bun text-recognition specs && bun resizer specs && bun worklets specs",
+    "build": "bun camera build && bun location build && bun scanner build && bun text-recognition build && bun resizer build && bun worklets build && bun skia build",
     "example": "bun --cwd apps/simple-camera",
     "docs": "bun --cwd docs",
     "camera": "bun --cwd packages/react-native-vision-camera",
     "scanner": "bun --cwd packages/react-native-vision-camera-barcode-scanner",
+    "text-recognition": "bun --cwd packages/react-native-vision-camera-mlkit-text-recognition-latin",
     "location": "bun --cwd packages/react-native-vision-camera-location",
     "resizer": "bun --cwd packages/react-native-vision-camera-resizer",
     "skia": "bun --cwd packages/react-native-vision-camera-skia",
@@ -72,6 +74,10 @@
           },
           {
             "file": "packages/react-native-vision-camera-barcode-scanner/package.json",
+            "path": "version"
+          },
+          {
+            "file": "packages/react-native-vision-camera-mlkit-text-recognition-latin/package.json",
             "path": "version"
           },
           {

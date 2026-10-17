@@ -1,0 +1,24 @@
+{
+  "$schema": "https://nitro.margelo.com/nitro.schema.json",
+  "cxxNamespace": ["camera", "textrecognition"],
+  "ios": {
+    "iosModuleName": "VisionCameraTextRecognitionLatin"
+  },
+  "android": {
+    "androidNamespace": ["camera", "textrecognition"],
+    "androidCxxLibName": "VisionCameraTextRecognitionLatin"
+  },
+  "autolinking": {
+    "TextRecognizerFactory": {
+      "ios": {
+        "language": "swift",
+        "implementationClassName": "HybridTextRecognizerFactory"
+      },
+      "android": {
+        "language": "kotlin",
+        "implementationClassName": "HybridTextRecognizerFactory"
+      }
+    }
+  },
+  "ignorePaths": ["**/node_modules"]
+}
