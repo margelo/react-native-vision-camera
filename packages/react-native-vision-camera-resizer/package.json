@@ -13,6 +13,7 @@
     "lib",
     "nitrogen",
     "android/build.gradle",
+    "android/compile-shaders.gradle",
     "android/gradle.properties",
     "android/fix-prefab.gradle",
     "android/CMakeLists.txt",

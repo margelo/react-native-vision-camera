@@ -26,7 +26,7 @@ namespace {
       throw std::runtime_error("Android asset manager is not available for Vulkan shader loading.");
     }
 
-    // The shader is precompiled by AGP and packaged as an app asset, so native code only needs to read the SPIR-V bytes.
+    // The shader is precompiled by Gradle and packaged as an app asset, so native code only needs to read the SPIR-V bytes.
     std::unique_ptr<AAsset, decltype(&AAsset_close)> asset(AAssetManager_open(assetManager, assetPath, AASSET_MODE_BUFFER), &AAsset_close);
     if (asset == nullptr) [[unlikely]] {
       throw std::runtime_error(std::string("Failed to open Vulkan shader asset `") + assetPath +
