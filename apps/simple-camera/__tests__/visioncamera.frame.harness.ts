@@ -11,8 +11,10 @@ import {
 import type {
   CameraDevice,
   CameraDeviceFactory,
+  CameraOrientation,
   FrameDroppedReason,
   PixelFormat,
+  Point,
   TargetVideoPixelFormat,
 } from 'react-native-vision-camera'
 import { CommonResolutions, VisionCamera } from 'react-native-vision-camera'
@@ -57,6 +59,249 @@ describe('VisionCamera - Frame', () => {
     const back = factory.getDefaultCamera('back')
     assert.exists(back, 'no back camera')
     backDevice = back
+  })
+
+  // Regression test for https://github.com/mrousavy/react-native-vision-camera/issues/4096.
+  //
+  // `Frame.orientation` is a promise about pixels: rotate the buffer clockwise
+  // by that orientation's degrees (`up` 0°, `right` 90°, `down` 180°, `left`
+  // 270° - the mapping `CameraOrientation.degrees` uses on both platforms, and
+  // the one EXIF/`UIImage.Orientation` use) and the Frame is upright.
+  // `enablePhysicalBufferRotation` makes the Camera pipeline perform exactly
+  // that rotation itself, which is what makes the promise measurable: capture
+  // the same Frames once without and once with physical rotation, express both
+  // buffers' axes in Camera coordinates, and the angle between them *is* the
+  // rotation the pipeline applied to upright the Frame. It must equal the
+  // rotation the un-rotated Frame announced - `left` and `right` are both a
+  // quarter turn, so nothing but the direction distinguishes them, and every
+  // consumer that counter-rotates by `orientation` (MLKit, the Resizer, Skia)
+  // ends up 180° off when the two are swapped.
+  it('physically rotates a Frame by exactly the rotation its orientation announced', async () => {
+    type FrameReport = {
+      orientation: CameraOrientation
+      width: number
+      height: number
+      xAxis: Point
+      yAxis: Point
+    }
+    const clockwiseDegrees: Record<CameraOrientation, number> = {
+      up: 0,
+      right: 90,
+      down: 180,
+      left: 270,
+    }
+
+    const session = await VisionCamera.createCameraSession(false)
+    const frameOutput = VisionCamera.createFrameOutput({
+      targetResolution: CommonResolutions.HD_16_9,
+      pixelFormat: 'yuv',
+      enablePreviewSizedOutputBuffers: false,
+      enablePhysicalBufferRotation: false,
+      enableCameraMatrixDelivery: false,
+      allowDeferredStart: false,
+      dropFramesWhileBusy: true,
+    })
+    await session.configure([
+      {
+        input: backDevice,
+        outputs: [{ output: frameOutput, mirrorMode: 'off' }],
+        constraints: [],
+      },
+    ])
+
+    // A Frame only announces a rotation while the sensor is mounted sideways
+    // relative to the target output orientation. Which output orientation that
+    // is depends on the hardware, so ask for one and then for a quarter turn
+    // away from it - one of the two must come back rotated.
+    const candidateOrientations: CameraOrientation[] = ['up', 'right']
+    const observedOrientations: string[] = []
+    let outputOrientation: CameraOrientation | undefined
+    let rawReport: FrameReport | undefined
+    const runtime = workletsProvider.createRuntimeForThread(frameOutput.thread)
+
+    for (const candidateOrientation of candidateOrientations) {
+      frameOutput.outputOrientation = candidateOrientation
+      const receivedReport = deferred<FrameReport>()
+      const report = (frameReport: FrameReport) => {
+        receivedReport.resolve(frameReport)
+      }
+      const errorSub = session.addOnErrorListener(receivedReport.reject)
+
+      runtime.setOnFrameCallback(frameOutput, (frame) => {
+        'worklet'
+        const origin = frame.convertFramePointToCameraPoint({ x: 0, y: 0 })
+        const xAxisEnd = frame.convertFramePointToCameraPoint({
+          x: frame.width,
+          y: 0,
+        })
+        const yAxisEnd = frame.convertFramePointToCameraPoint({
+          x: 0,
+          y: frame.height,
+        })
+        scheduleOnRN(report, {
+          orientation: frame.orientation,
+          width: frame.width,
+          height: frame.height,
+          xAxis: {
+            x: xAxisEnd.x - origin.x,
+            y: xAxisEnd.y - origin.y,
+          },
+          yAxis: {
+            x: yAxisEnd.x - origin.x,
+            y: yAxisEnd.y - origin.y,
+          },
+        })
+        frame.dispose()
+      })
+
+      await session.start()
+      let frameReport: FrameReport
+      try {
+        frameReport = await withTimeout(
+          receivedReport.promise,
+          15_000,
+          `receive frame for output orientation ${candidateOrientation}`,
+        )
+      } finally {
+        runtime.setOnFrameCallback(frameOutput, undefined)
+        errorSub.remove()
+        await session.stop()
+      }
+
+      observedOrientations.push(
+        `${candidateOrientation} -> ${frameReport.orientation}`,
+      )
+      if (frameReport.orientation !== 'up') {
+        outputOrientation = candidateOrientation
+        rawReport = frameReport
+        break
+      }
+    }
+
+    if (outputOrientation == null || rawReport == null) {
+      throw new Error(
+        `Frames never announced a rotation (${observedOrientations.join(', ')})`,
+      )
+    }
+
+    const rotatedSession = await VisionCamera.createCameraSession(false)
+    const rotatedFrameOutput = VisionCamera.createFrameOutput({
+      targetResolution: CommonResolutions.HD_16_9,
+      pixelFormat: 'yuv',
+      enablePreviewSizedOutputBuffers: false,
+      enablePhysicalBufferRotation: true,
+      enableCameraMatrixDelivery: false,
+      allowDeferredStart: false,
+      dropFramesWhileBusy: true,
+    })
+    rotatedFrameOutput.outputOrientation = outputOrientation
+    await rotatedSession.configure([
+      {
+        input: backDevice,
+        outputs: [{ output: rotatedFrameOutput, mirrorMode: 'off' }],
+        constraints: [],
+      },
+    ])
+
+    const receivedRotatedReport = deferred<FrameReport>()
+    const reportRotated = (frameReport: FrameReport) => {
+      receivedRotatedReport.resolve(frameReport)
+    }
+    const rotatedErrorSub = rotatedSession.addOnErrorListener(
+      receivedRotatedReport.reject,
+    )
+    const rotatedRuntime = workletsProvider.createRuntimeForThread(
+      rotatedFrameOutput.thread,
+    )
+    rotatedRuntime.setOnFrameCallback(rotatedFrameOutput, (frame) => {
+      'worklet'
+      const origin = frame.convertFramePointToCameraPoint({ x: 0, y: 0 })
+      const xAxisEnd = frame.convertFramePointToCameraPoint({
+        x: frame.width,
+        y: 0,
+      })
+      const yAxisEnd = frame.convertFramePointToCameraPoint({
+        x: 0,
+        y: frame.height,
+      })
+      scheduleOnRN(reportRotated, {
+        orientation: frame.orientation,
+        width: frame.width,
+        height: frame.height,
+        xAxis: {
+          x: xAxisEnd.x - origin.x,
+          y: xAxisEnd.y - origin.y,
+        },
+        yAxis: {
+          x: yAxisEnd.x - origin.x,
+          y: yAxisEnd.y - origin.y,
+        },
+      })
+      frame.dispose()
+    })
+
+    await rotatedSession.start()
+    let rotatedReport: FrameReport
+    try {
+      rotatedReport = await withTimeout(
+        receivedRotatedReport.promise,
+        15_000,
+        `receive physically rotated frame for ${outputOrientation}`,
+      )
+    } finally {
+      rotatedRuntime.setOnFrameCallback(rotatedFrameOutput, undefined)
+      rotatedErrorSub.remove()
+      await rotatedSession.stop()
+    }
+
+    // The pipeline consumed the orientation by rotating the pixels instead of
+    // handing it to us as metadata.
+    expect(rotatedReport.orientation).toBe('up')
+
+    const announcedRotation = clockwiseDegrees[rawReport.orientation]
+    const rawAspectRatio = rawReport.width / rawReport.height
+    const rotatedAspectRatio = rotatedReport.width / rotatedReport.height
+    if (announcedRotation === 90 || announcedRotation === 270) {
+      // A quarter turn transposes the buffer, whichever way it turned.
+      expect(rotatedAspectRatio).toBeCloseTo(1 / rawAspectRatio, 1)
+    }
+
+    // Both buffers' axes are expressed in the same Camera coordinate system,
+    // so the angle from the un-rotated axes to the physically rotated ones is
+    // the rotation the pipeline applied. Angles are measured from the
+    // un-rotated x axis towards the un-rotated y axis, which is clockwise in
+    // image coordinates because y points down.
+    const toUnitVector = (vector: Point): Point => {
+      const length = Math.hypot(vector.x, vector.y)
+      return { x: vector.x / length, y: vector.y / length }
+    }
+    const rawXAxis = toUnitVector(rawReport.xAxis)
+    const rawYAxis = toUnitVector(rawReport.yAxis)
+    const measureClockwiseRotation = (
+      rotatedAxis: Point,
+      axisDegrees: number,
+    ): number => {
+      const axis = toUnitVector(rotatedAxis)
+      const alongRawXAxis = axis.x * rawXAxis.x + axis.y * rawXAxis.y
+      const alongRawYAxis = axis.x * rawYAxis.x + axis.y * rawYAxis.y
+      const radians = Math.atan2(alongRawYAxis, alongRawXAxis)
+      const degrees = axisDegrees - radians * (180 / Math.PI)
+      const quarterTurns = Math.round(degrees / 90)
+      return (((quarterTurns * 90) % 360) + 360) % 360
+    }
+    // Both axes are measured because a single axis cannot tell a rotation
+    // apart from a rotation that also mirrored the buffer.
+    const xAxisRotation = measureClockwiseRotation(rotatedReport.xAxis, 0)
+    const yAxisRotation = measureClockwiseRotation(rotatedReport.yAxis, 90)
+
+    console.log(
+      `outputOrientation=${outputOrientation} announced=${rawReport.orientation} (${announcedRotation}°) ` +
+        `measured=${xAxisRotation}°/${yAxisRotation}° ` +
+        `raw=${rawReport.width}x${rawReport.height} rotated=${rotatedReport.width}x${rotatedReport.height}`,
+    )
+
+    expect(xAxisRotation).toBe(announcedRotation)
+    expect(yAxisRotation).toBe(announcedRotation)
   })
 
   it('delivers frames to a worklet and posts back via scheduleOnRN', async () => {
