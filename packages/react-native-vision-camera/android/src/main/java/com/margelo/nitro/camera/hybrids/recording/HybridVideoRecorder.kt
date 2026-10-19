@@ -53,56 +53,63 @@ class HybridVideoRecorder(
 
       // Start recording
       this.recording =
-        pendingRecording.start(executor) { event ->
-          when (event) {
-            is VideoRecordEvent.Start -> {
-              promise.resolve()
-              didResolve = true
-            }
-            is VideoRecordEvent.Pause -> onRecordingPaused?.invoke()
-            is VideoRecordEvent.Resume -> onRecordingResumed?.invoke()
-            is VideoRecordEvent.Finalize -> {
-              // Recording is over - drop the Recording reference so `isRecording`
-              // flips to false even when the finalize was auto-triggered (e.g. by
-              // reaching `maxDuration` / `maxFileSize`) instead of via `stopRecording()`.
-              this.recording = null
-              if (isCancelled) {
-                // Recording was cancelled - delete the file and don't notify
-                isCancelled = false
-                file.delete()
-                return@start
+        try {
+          pendingRecording.start(executor) { event ->
+            when (event) {
+              is VideoRecordEvent.Start -> {
+                promise.resolve()
+                didResolve = true
               }
-              val finishReason =
-                when (event.error) {
-                  VideoRecordEvent.Finalize.ERROR_NONE -> RecordingFinishedReason.STOPPED
-                  VideoRecordEvent.Finalize.ERROR_DURATION_LIMIT_REACHED -> RecordingFinishedReason.MAX_DURATION_REACHED
-                  VideoRecordEvent.Finalize.ERROR_FILE_SIZE_LIMIT_REACHED -> RecordingFinishedReason.MAX_FILE_SIZE_REACHED
-                  // Source went inactive (e.g. Activity stopped mid-recording). Unlike
-                  // ERROR_NO_VALID_DATA, CameraX still finalizes a valid file, so keep it.
-                  VideoRecordEvent.Finalize.ERROR_SOURCE_INACTIVE -> RecordingFinishedReason.STOPPED
-                  else -> null
+              is VideoRecordEvent.Pause -> onRecordingPaused?.invoke()
+              is VideoRecordEvent.Resume -> onRecordingResumed?.invoke()
+              is VideoRecordEvent.Finalize -> {
+                // Recording is over - drop the Recording reference so `isRecording`
+                // flips to false even when the finalize was auto-triggered (e.g. by
+                // reaching `maxDuration` / `maxFileSize`) instead of via `stopRecording()`.
+                this.recording = null
+                if (isCancelled) {
+                  // Recording was cancelled - delete the file and don't notify
+                  isCancelled = false
+                  file.delete()
+                  return@start
                 }
-              if (finishReason != null) {
-                // Recording finished successfully - either no error, or file/duration limit reached:
-                onRecordingFinished(file.absolutePath, finishReason)
-              } else {
-                // We have an error, either during capture or even while starting:
-                val error = VideoRecorderError(event.error, event.cause)
-                if (!didResolve) {
-                  // We didn't even start the Recording yet! Reject promise
-                  promise.reject(error)
-                  didResolve = true
+                val finishReason =
+                  when (event.error) {
+                    VideoRecordEvent.Finalize.ERROR_NONE -> RecordingFinishedReason.STOPPED
+                    VideoRecordEvent.Finalize.ERROR_DURATION_LIMIT_REACHED -> RecordingFinishedReason.MAX_DURATION_REACHED
+                    VideoRecordEvent.Finalize.ERROR_FILE_SIZE_LIMIT_REACHED -> RecordingFinishedReason.MAX_FILE_SIZE_REACHED
+                    // Source went inactive (e.g. Activity stopped mid-recording). Unlike
+                    // ERROR_NO_VALID_DATA, CameraX still finalizes a valid file, so keep it.
+                    VideoRecordEvent.Finalize.ERROR_SOURCE_INACTIVE -> RecordingFinishedReason.STOPPED
+                    else -> null
+                  }
+                if (finishReason != null) {
+                  // Recording finished successfully - either no error, or file/duration limit reached:
+                  onRecordingFinished(file.absolutePath, finishReason)
                 } else {
-                  // Unknown error while recording
-                  onRecordingError(error)
+                  // We have an error, either during capture or even while starting:
+                  val error = VideoRecorderError(event.error, event.cause)
+                  if (!didResolve) {
+                    // We didn't even start the Recording yet! Reject promise
+                    promise.reject(error)
+                    didResolve = true
+                  } else {
+                    // Unknown error while recording
+                    onRecordingError(error)
+                  }
                 }
               }
-            }
-            is VideoRecordEvent.Status -> {
-              this.recordedDuration = event.recordingStats.recordedDurationNanos / 1_000_000_000.0
-              this.recordedFileSize = event.recordingStats.numBytesRecorded.toDouble()
+              is VideoRecordEvent.Status -> {
+                this.recordedDuration = event.recordingStats.recordedDurationNanos / 1_000_000_000.0
+                this.recordedFileSize = event.recordingStats.numBytesRecorded.toDouble()
+              }
             }
           }
+        } catch (error: IllegalStateException) {
+          // CameraX throws synchronously if the shared Recorder already has an active
+          // recording, e.g. one started by another Recorder of this output.
+          promise.reject(error)
+          return@execute
         }
     }
 
