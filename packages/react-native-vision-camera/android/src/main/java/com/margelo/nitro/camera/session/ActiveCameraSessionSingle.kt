@@ -5,6 +5,7 @@ import androidx.camera.core.Camera
 import androidx.camera.core.CameraState
 import androidx.lifecycle.Observer
 import com.margelo.nitro.camera.extensions.cameraIdOrNull
+import com.margelo.nitro.camera.extensions.interruptionReason
 import com.margelo.nitro.camera.extensions.reason
 import java.io.Closeable
 
@@ -62,7 +63,7 @@ class ActiveCameraSessionSingle(
             listener.onError(throwable)
           }
           CameraState.ErrorType.RECOVERABLE -> {
-            listener.onInterruptionStarted()
+            listener.onInterruptionStarted(error.interruptionReason)
           }
         }
       } else {

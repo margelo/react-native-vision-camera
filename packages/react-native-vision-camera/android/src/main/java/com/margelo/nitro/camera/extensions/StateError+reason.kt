@@ -1,6 +1,7 @@
 package com.margelo.nitro.camera.extensions
 
 import androidx.camera.core.CameraState
+import com.margelo.nitro.camera.InterruptionReason
 
 val CameraState.StateError.reason: String
   get() {
@@ -21,5 +22,13 @@ val CameraState.StateError.reason: String
           "Encountered an unknown Camera Error! The session will restart. ($code)"
         }
       }
+    }
+  }
+
+val CameraState.StateError.interruptionReason: InterruptionReason
+  get() {
+    return when (code) {
+      CameraState.ERROR_CAMERA_IN_USE -> InterruptionReason.VIDEO_DEVICE_IN_USE_BY_ANOTHER_CLIENT
+      else -> InterruptionReason.UNKNOWN
     }
   }
