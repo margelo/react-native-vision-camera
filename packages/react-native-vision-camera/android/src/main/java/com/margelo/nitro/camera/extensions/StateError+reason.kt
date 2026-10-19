@@ -29,6 +29,8 @@ val CameraState.StateError.interruptionReason: InterruptionReason
   get() {
     return when (code) {
       CameraState.ERROR_CAMERA_IN_USE -> InterruptionReason.VIDEO_DEVICE_IN_USE_BY_ANOTHER_CLIENT
+      CameraState.ERROR_MAX_CAMERAS_IN_USE -> InterruptionReason.MAX_CAMERAS_IN_USE
+      CameraState.ERROR_OTHER_RECOVERABLE_ERROR -> InterruptionReason.OTHER_RECOVERABLE_ERROR
       else -> InterruptionReason.UNKNOWN
     }
   }

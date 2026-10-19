@@ -36,6 +36,8 @@ namespace margelo::nitro::camera {
     VIDEO_DEVICE_NOT_AVAILABLE_WITH_MULTIPLE_FOREGROUND_APPS      SWIFT_NAME(videoDeviceNotAvailableWithMultipleForegroundApps) = 4,
     VIDEO_DEVICE_NOT_AVAILABLE_DUE_TO_SYSTEM_PRESSURE      SWIFT_NAME(videoDeviceNotAvailableDueToSystemPressure) = 5,
     SENSITIVE_CONTENT_MITIGATION_ACTIVATED      SWIFT_NAME(sensitiveContentMitigationActivated) = 6,
+    MAX_CAMERAS_IN_USE      SWIFT_NAME(maxCamerasInUse) = 7,
+    OTHER_RECOVERABLE_ERROR      SWIFT_NAME(otherRecoverableError) = 8,
   } CLOSED_ENUM;
 
 } // namespace margelo::nitro::camera
@@ -55,6 +57,8 @@ namespace margelo::nitro {
         case hashString("video-device-not-available-with-multiple-foreground-apps"): return margelo::nitro::camera::InterruptionReason::VIDEO_DEVICE_NOT_AVAILABLE_WITH_MULTIPLE_FOREGROUND_APPS;
         case hashString("video-device-not-available-due-to-system-pressure"): return margelo::nitro::camera::InterruptionReason::VIDEO_DEVICE_NOT_AVAILABLE_DUE_TO_SYSTEM_PRESSURE;
         case hashString("sensitive-content-mitigation-activated"): return margelo::nitro::camera::InterruptionReason::SENSITIVE_CONTENT_MITIGATION_ACTIVATED;
+        case hashString("max-cameras-in-use"): return margelo::nitro::camera::InterruptionReason::MAX_CAMERAS_IN_USE;
+        case hashString("other-recoverable-error"): return margelo::nitro::camera::InterruptionReason::OTHER_RECOVERABLE_ERROR;
         default: [[unlikely]]
           throw std::invalid_argument("Cannot convert \"" + unionValue + "\" to enum InterruptionReason - invalid value!");
       }
@@ -68,6 +72,8 @@ namespace margelo::nitro {
         case margelo::nitro::camera::InterruptionReason::VIDEO_DEVICE_NOT_AVAILABLE_WITH_MULTIPLE_FOREGROUND_APPS: return JSIConverter<std::string>::toJSI(runtime, "video-device-not-available-with-multiple-foreground-apps");
         case margelo::nitro::camera::InterruptionReason::VIDEO_DEVICE_NOT_AVAILABLE_DUE_TO_SYSTEM_PRESSURE: return JSIConverter<std::string>::toJSI(runtime, "video-device-not-available-due-to-system-pressure");
         case margelo::nitro::camera::InterruptionReason::SENSITIVE_CONTENT_MITIGATION_ACTIVATED: return JSIConverter<std::string>::toJSI(runtime, "sensitive-content-mitigation-activated");
+        case margelo::nitro::camera::InterruptionReason::MAX_CAMERAS_IN_USE: return JSIConverter<std::string>::toJSI(runtime, "max-cameras-in-use");
+        case margelo::nitro::camera::InterruptionReason::OTHER_RECOVERABLE_ERROR: return JSIConverter<std::string>::toJSI(runtime, "other-recoverable-error");
         default: [[unlikely]]
           throw std::invalid_argument("Cannot convert InterruptionReason to JS - invalid value: "
                                     + std::to_string(static_cast<int>(arg)) + "!");
@@ -86,6 +92,8 @@ namespace margelo::nitro {
         case hashString("video-device-not-available-with-multiple-foreground-apps"):
         case hashString("video-device-not-available-due-to-system-pressure"):
         case hashString("sensitive-content-mitigation-activated"):
+        case hashString("max-cameras-in-use"):
+        case hashString("other-recoverable-error"):
           return true;
         default:
           return false;
