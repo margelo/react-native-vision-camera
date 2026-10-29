@@ -143,7 +143,7 @@ dependencies {
   implementation "com.facebook.react:react-native:+"
 
   // CameraX dependency
-  def camerax_version = "1.7.0-alpha03"
+  def camerax_version = "1.7.0-rc01"
   implementation "androidx.camera:camera-core:${camerax_version}"
   implementation "androidx.camera:camera-camera2:${camerax_version}"
   implementation "androidx.camera:camera-camera2-pipe:${camerax_version}"
