@@ -643,4 +643,71 @@ describe('VisionCamera - Multi-Output', () => {
       await session.stop()
     }
   })
+
+  it('keeps a reused photo output working after its previous session is garbage collected', async () => {
+    const { gc } = globalThis as typeof globalThis & { gc?: () => void }
+    assert.exists(gc, 'Hermes gc() is not available')
+    const photoOutput = VisionCamera.createPhotoOutput({
+      targetResolution: CommonResolutions.HD_4_3,
+      containerFormat: 'jpeg',
+      quality: 0.8,
+      qualityPrioritization: 'balanced',
+    })
+
+    const firstSession = await VisionCamera.createCameraSession(false)
+    await firstSession.configure([
+      {
+        input: backDevice,
+        outputs: [{ output: photoOutput, mirrorMode: 'auto' }],
+        constraints: [],
+      },
+    ])
+    await firstSession.start()
+    // Capturing makes sure the output is live in the first session.
+    const firstPhoto = await photoOutput.capturePhoto(
+      { flashMode: 'off', enableShutterSound: false },
+      {},
+    )
+    firstPhoto.dispose()
+    // stop() + configure([]) is the teardown of an unmounting <Camera>.
+    // dispose() drops the JS reference before the second session exists; on
+    // iOS the native session then lives until the next GC.
+    await firstSession.stop()
+    await firstSession.configure([])
+    firstSession.dispose()
+
+    const secondSession = await VisionCamera.createCameraSession(false)
+    const onSessionError = fn<(error: Error) => void>()
+    const errorSub = secondSession.addOnErrorListener(onSessionError)
+    try {
+      await secondSession.configure([
+        {
+          input: backDevice,
+          outputs: [{ output: photoOutput, mirrorMode: 'auto' }],
+          constraints: [],
+        },
+      ])
+      await secondSession.start()
+      const photoBeforeGC = await photoOutput.capturePhoto(
+        { flashMode: 'off', enableShutterSound: false },
+        {},
+      )
+      photoBeforeGC.dispose()
+
+      // Free the first session while its old output is live in the second one.
+      gc()
+
+      const photoAfterGC = await photoOutput.capturePhoto(
+        { flashMode: 'off', enableShutterSound: false },
+        {},
+      )
+      expect(photoAfterGC.width).toBeGreaterThan(0)
+      expect(photoAfterGC.height).toBeGreaterThan(0)
+      photoAfterGC.dispose()
+      expect(onSessionError).not.toHaveBeenCalled()
+    } finally {
+      errorSub.remove()
+      await secondSession.stop()
+    }
+  })
 })
