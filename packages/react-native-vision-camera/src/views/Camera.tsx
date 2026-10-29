@@ -1,4 +1,10 @@
-import React, { type Ref, useImperativeHandle, useMemo, useRef } from 'react'
+import React, {
+  type Ref,
+  useCallback,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+} from 'react'
 import type { ViewProps } from 'react-native'
 import { callback } from 'react-native-nitro-modules'
 import type { SharedValue } from 'react-native-reanimated'
@@ -11,11 +17,14 @@ import type {
   MeteringMode,
 } from '../specs/common-types/FocusOptions'
 import type { Point } from '../specs/common-types/Point'
+import type { Size } from '../specs/common-types/Size'
+import type { PreviewConfiguration } from '../specs/outputs/CameraPreviewOutput.nitro'
 import type {
   PreviewView,
   PreviewViewMethods,
   PreviewViewProps,
 } from '../specs/views/PreviewView.nitro'
+import { getUprightPreviewResolution } from '../utils/getUprightPreviewResolution'
 import { NativePreviewView } from './NativePreviewView'
 
 /**
@@ -86,6 +95,34 @@ export interface CameraViewProps
    * stopped streaming Frames.
    */
   onPreviewStopped?: () => void
+  /**
+   * Called whenever the Preview's resolution or rotation changes.
+   */
+  onPreviewConfigurationChanged?: (configuration: PreviewConfiguration) => void
+  /**
+   * Called when the Preview's upright stream resolution becomes available or
+   * changes.
+   *
+   * The callback receives the Preview stream's dimensions in upright pixels.
+   * Its `width` and `height` are ready to use for upright layout calculations.
+   *
+   * This describes the camera content, not the size of the React Native
+   * `<Camera>` view. It can be used directly to calculate the Preview's
+   * upright aspect ratio:
+   *
+   * ```ts
+   * onPreviewResolution={({ width, height }) => {
+   *   setPreviewAspectRatio(width / height)
+   * }}
+   * ```
+   *
+   * Use {@linkcode onPreviewConfigurationChanged} instead when the complete,
+   * lower-level Preview configuration needs to be inspected.
+   *
+   * On iOS, this callback is available on iOS 17.0 and newer. It is not called
+   * on earlier iOS versions. Android is supported on all versions.
+   */
+  onPreviewResolution?: (resolution: Size) => void
 
   // Native gestures
   /**
@@ -114,14 +151,30 @@ function CameraImpl({
   resizeMode,
   onPreviewStarted,
   onPreviewStopped,
+  onPreviewConfigurationChanged,
+  onPreviewResolution,
   outputs = [],
   enableNativeZoomGesture = false,
   enableNativeTapToFocusGesture = false,
   ref,
   ...props
 }: CameraViewProps): React.ReactElement {
+  const onConfigurationChanged = useCallback(
+    (configuration: PreviewConfiguration) => {
+      onPreviewConfigurationChanged?.(configuration)
+
+      const resolution = getUprightPreviewResolution(configuration)
+      if (resolution != null) {
+        onPreviewResolution?.(resolution)
+      }
+    },
+    [onPreviewConfigurationChanged, onPreviewResolution],
+  )
+
   // 1. Create `PreviewOutput` for the Camera
-  const previewOutput = usePreviewOutput()
+  const previewOutput = usePreviewOutput({
+    onConfigurationChanged,
+  })
 
   // 3. Create session/controller and add the preview output
   const controller = useCamera({

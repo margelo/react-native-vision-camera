@@ -12,9 +12,16 @@
 // Forward declaration of `HybridCameraPreviewOutputSpec_cxx` to properly resolve imports.
 namespace VisionCamera { class HybridCameraPreviewOutputSpec_cxx; }
 
+// Forward declaration of `PreviewConfiguration` to properly resolve imports.
+namespace margelo::nitro::camera { struct PreviewConfiguration; }
+// Forward declaration of `Size` to properly resolve imports.
+namespace margelo::nitro::camera { struct Size; }
 // Forward declaration of `HybridCameraOutputSpecSwift` to properly resolve imports.
 namespace margelo::nitro::camera { class HybridCameraOutputSpecSwift; }
 
+#include "PreviewConfiguration.hpp"
+#include <optional>
+#include "Size.hpp"
 #include "HybridCameraOutputSpecSwift.hpp"
 
 #include "VisionCamera-Swift-Cxx-Umbrella.hpp"
@@ -64,7 +71,10 @@ namespace margelo::nitro::camera {
 
   public:
     // Properties
-    
+    inline std::optional<PreviewConfiguration> getCurrentConfiguration() noexcept override {
+      auto __result = _swiftPart.getCurrentConfiguration();
+      return __result;
+    }
 
   public:
     // Methods

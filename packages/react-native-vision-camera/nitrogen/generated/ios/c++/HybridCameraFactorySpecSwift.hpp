@@ -84,6 +84,10 @@ namespace margelo::nitro::camera { class HybridCameraDepthFrameOutputSpec; }
 namespace margelo::nitro::camera { struct DepthFrameOutputOptions; }
 // Forward declaration of `HybridCameraPreviewOutputSpec` to properly resolve imports.
 namespace margelo::nitro::camera { class HybridCameraPreviewOutputSpec; }
+// Forward declaration of `PreviewOutputOptions` to properly resolve imports.
+namespace margelo::nitro::camera { struct PreviewOutputOptions; }
+// Forward declaration of `PreviewConfiguration` to properly resolve imports.
+namespace margelo::nitro::camera { struct PreviewConfiguration; }
 // Forward declaration of `HybridCameraObjectOutputSpec` to properly resolve imports.
 namespace margelo::nitro::camera { class HybridCameraObjectOutputSpec; }
 // Forward declaration of `ObjectOutputOptions` to properly resolve imports.
@@ -146,6 +150,9 @@ namespace margelo::nitro::camera { class HybridMeteringPointSpec; }
 #include "HybridCameraDepthFrameOutputSpec.hpp"
 #include "DepthFrameOutputOptions.hpp"
 #include "HybridCameraPreviewOutputSpec.hpp"
+#include "PreviewOutputOptions.hpp"
+#include "PreviewConfiguration.hpp"
+#include <functional>
 #include "HybridCameraObjectOutputSpec.hpp"
 #include "ObjectOutputOptions.hpp"
 #include "ScannedObjectType.hpp"
@@ -289,8 +296,8 @@ namespace margelo::nitro::camera {
       auto __value = std::move(__result.value());
       return __value;
     }
-    inline std::shared_ptr<HybridCameraPreviewOutputSpec> createPreviewOutput() override {
-      auto __result = _swiftPart.createPreviewOutput();
+    inline std::shared_ptr<HybridCameraPreviewOutputSpec> createPreviewOutput(const PreviewOutputOptions& options) override {
+      auto __result = _swiftPart.createPreviewOutput(std::forward<decltype(options)>(options));
       if (__result.hasError()) [[unlikely]] {
         std::rethrow_exception(__result.error());
       }

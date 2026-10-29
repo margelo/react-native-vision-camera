@@ -27,6 +27,10 @@ final class HybridCameraObjectOutput: HybridCameraObjectOutputSpec, NativeCamera
     guard let connection = output.connection(with: .metadataObject) else { return nil }
     return connection.inputStreamResolution
   }
+  var rotationDegrees: Double? {
+    // Rotation angles only apply to video and depth connections.
+    return nil
+  }
 
   var streamType: StreamType = .video
   var targetResolution: ResolutionRule = .any

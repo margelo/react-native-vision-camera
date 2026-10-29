@@ -78,7 +78,7 @@ abstract class HybridCameraFactorySpec: HybridObject() {
   
   @DoNotStrip
   @Keep
-  abstract fun createPreviewOutput(): HybridCameraPreviewOutputSpec
+  abstract fun createPreviewOutput(options: PreviewOutputOptions): HybridCameraPreviewOutputSpec
   
   @DoNotStrip
   @Keep

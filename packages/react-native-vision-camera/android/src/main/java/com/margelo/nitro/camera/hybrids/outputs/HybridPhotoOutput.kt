@@ -53,6 +53,8 @@ class HybridPhotoOutput(
     }
   override val currentResolution: Size?
     get() = imageCapture?.resolutionInfo?.resolution?.toSize()
+  override val rotationDegrees: Double?
+    get() = imageCapture?.resolutionInfo?.rotationDegrees?.toDouble()
 
   private val coroutineScope = CoroutineScope(Dispatchers.Default)
   private var imageCapture: ImageCapture? = null

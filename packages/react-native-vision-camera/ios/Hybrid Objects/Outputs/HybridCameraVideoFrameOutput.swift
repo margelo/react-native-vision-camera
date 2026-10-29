@@ -37,6 +37,10 @@ final class HybridCameraVideoFrameOutput: HybridCameraVideoOutputSpec, NativeCam
     guard let connection = output.connection(with: .video) else { return nil }
     return connection.inputStreamResolution
   }
+  var rotationDegrees: Double? {
+    guard let connection = output.connection(with: .video) else { return nil }
+    return connection.rotationDegrees
+  }
 
   // TODO: Support setting custom `targetBitRate`
   init(options: VideoOutputOptions) {
