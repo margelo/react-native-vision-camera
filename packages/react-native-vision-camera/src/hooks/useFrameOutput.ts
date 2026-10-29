@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react'
+import { NitroModules } from 'react-native-nitro-modules'
 import type { PixelFormatConstraint } from '../specs/common-types/Constraint'
 import type { FrameDroppedReason } from '../specs/common-types/FrameDroppedReason'
 import type { PixelFormat } from '../specs/common-types/PixelFormat'
@@ -105,6 +106,13 @@ export interface UseFrameOutputProps extends Partial<FrameOutputOptions> {
  * both YUV and RGB, so streaming in {@linkcode TargetVideoPixelFormat | 'yuv'}
  * is more efficient.
  *
+ * @discussion
+ * The hook owns the returned output. Do not call `dispose()` on it.
+ * When the component unmounts, hides or gets new options, the hook
+ * removes the frame callback. On Android, the output's thread then
+ * exits after 5 s without work. The output object stays valid, and
+ * the garbage collector frees it.
+ *
  * @see {@linkcode TargetVideoPixelFormat}
  * @see {@linkcode VideoPixelFormat}
  *
@@ -133,7 +141,8 @@ export function useFrameOutput({
   // 1. `targetResolution` is usually an inline object literal - memoize it by value.
   const memoizedTargetResolution = useMemoizedSize(targetResolution)
 
-  // 2. Create frame output
+  // 2. Create the output. The hook never disposes it: React can hand it to effects
+  //    again (StrictMode, <Activity>, Suspense). Its native thread exits on its own.
   const frameOutput = useMemo(
     () =>
       VisionCamera.createFrameOutput({
@@ -160,23 +169,38 @@ export function useFrameOutput({
   const onFrameDroppedRef = useRef(onFrameDropped)
   onFrameDroppedRef.current = onFrameDropped
   useEffect(() => {
+    if (!NitroModules.isHybridObject(frameOutput)) return
     frameOutput.setOnFrameDroppedCallback((reason) => {
       const callback = onFrameDroppedRef.current
       if (callback != null) callback(reason)
       else console.warn(`Frame Dropped! Reason: ${reason}`)
     })
+    return () => {
+      if (!NitroModules.isHybridObject(frameOutput)) return
+      frameOutput.setOnFrameDroppedCallback(undefined)
+    }
   }, [frameOutput])
 
   // 4. Create Worklet Runtime for NativeThread
   const runtime = useMemo(
     () => VisionCameraWorkletsProxy.createRuntimeForThread(frameOutput.thread),
-    [frameOutput.thread],
+    [frameOutput],
   )
   // 5. Update onFrame() callback if it changed
   useEffect(() => {
+    if (!NitroModules.isHybridObject(frameOutput)) return
     runtime.setOnFrameCallback(frameOutput, onFrame)
   }, [runtime, frameOutput, onFrame])
 
-  // 6. Return :)
+  // 6. Remove onFrame() when this output is released (unmount, hide, new options).
+  //    This also lets the output's thread exit.
+  useEffect(() => {
+    return () => {
+      if (!NitroModules.isHybridObject(frameOutput)) return
+      runtime.setOnFrameCallback(frameOutput, undefined)
+    }
+  }, [runtime, frameOutput])
+
+  // 7. Return :)
   return frameOutput
 }

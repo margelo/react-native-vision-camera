@@ -7,7 +7,9 @@
 #pragma once
 
 #include "JSIConverter+AsyncQueue.hpp"
+#include <NitroModules/NitroLogger.hpp>
 #include <VisionCamera/HybridNativeThreadSpec.hpp>
+#include <exception>
 #include <jsi/jsi.h>
 
 namespace margelo::nitro::camera::worklets {
@@ -24,7 +26,13 @@ public:
 
   void push(std::function<void()>&& job) override {
     auto jobCopy = job;
-    _thread->runOnThread(jobCopy);
+    try {
+      _thread->runOnThread(jobCopy);
+    } catch (const std::exception& error) {
+      // The NativeThread no longer accepts work (e.g. its output was disposed).
+      // Native callers (like timers) cannot handle this, so drop the job.
+      Logger::log(LogLevel::Warning, "NativeThreadAsyncQueue", "Dropped a job: %s", error.what());
+    }
   }
 
 private:
