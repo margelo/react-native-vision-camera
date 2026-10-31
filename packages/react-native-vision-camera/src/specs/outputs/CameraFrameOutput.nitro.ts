@@ -138,8 +138,10 @@ export interface FrameOutputOptions {
    *
    *
    * @see {@linkcode Frame.cameraIntrinsicMatrix}
-   * @throws If video stabilization is enabled, as intrinsic matrix delivery only works when video stabilization is `'off'`.
-   * @platform iOS
+   * @throws On iOS, if video stabilization is enabled, as intrinsic matrix delivery only works when video stabilization is `'off'`.
+   * @note On Android, the intrinsic matrix is read from Camera2 capture metadata
+   * when available, with static camera characteristics as a fallback. Camera2
+   * calibration values are transformed into Frame coordinates.
    * @default false
    */
   enableCameraMatrixDelivery: boolean
