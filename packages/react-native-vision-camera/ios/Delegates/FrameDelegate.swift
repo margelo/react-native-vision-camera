@@ -9,7 +9,7 @@ import AVFoundation
 import Foundation
 
 final class FrameDelegate: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
-  var onFrame: ((CMSampleBuffer, CMTime, CameraOrientation, Bool) -> Void)?
+  var onFrame: ((CMSampleBuffer, CMTime, CameraOrientation, Bool, CameraOrientation) -> Void)?
   var onFrameDropped: ((CMSampleBuffer) -> Void)?
 
   func captureOutput(
@@ -28,7 +28,7 @@ final class FrameDelegate: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
     if let onFrame {
       onFrame(
         sampleBuffer, sampleBuffer.presentationTimeStamp, connection.orientation,
-        connection.isVideoMirrored)
+        connection.isVideoMirrored, connection.physicalBufferRotation)
     }
   }
 }
