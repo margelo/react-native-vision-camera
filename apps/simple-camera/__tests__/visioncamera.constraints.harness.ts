@@ -1,3 +1,4 @@
+import { Platform } from 'react-native'
 import {
   assert,
   beforeAll,
@@ -447,6 +448,103 @@ describe('VisionCamera - Constraints', () => {
 
     expect(withPreviewEdges.short).toBe(photoOnlyEdges.short)
     expect(withPreviewEdges.long).toBe(photoOnlyEdges.long)
+  })
+
+  it('keeps front TrueDepth FHD resolution bias when requesting 60 fps', async (context) => {
+    if (Platform.OS !== 'ios') {
+      return context.skip('front TrueDepth FHD@60 resolution bias: iOS only')
+    }
+
+    const device = factory.cameraDevices.find(
+      (d) => d.position === 'front' && d.type === 'true-depth',
+    )
+    if (device == null) {
+      return context.skip(
+        'front TrueDepth FHD@60 resolution bias: no front TrueDepth camera',
+      )
+    }
+    if (!device.supportsFPS(60)) {
+      return context.skip(
+        'front TrueDepth FHD@60 resolution bias: 60 fps not supported',
+      )
+    }
+
+    const supportedVideoResolutions = device.getSupportedResolutions('video')
+    const hasResolution = (target: { width: number; height: number }) => {
+      const targetShortEdge = Math.min(target.width, target.height)
+      const targetLongEdge = Math.max(target.width, target.height)
+      return supportedVideoResolutions.some((resolution) => {
+        const shortEdge = Math.min(resolution.width, resolution.height)
+        const longEdge = Math.max(resolution.width, resolution.height)
+        return shortEdge === targetShortEdge && longEdge === targetLongEdge
+      })
+    }
+    const hasFHD = hasResolution(CommonResolutions.FHD_16_9)
+    const hasUHD = hasResolution(CommonResolutions.UHD_16_9)
+    if (!hasFHD || !hasUHD) {
+      return context.skip(
+        `front TrueDepth FHD@60 resolution bias: video resolutions do not include FHD and UHD (${supportedVideoResolutions
+          .map((r) => `${r.width}x${r.height}`)
+          .join(', ')})`,
+      )
+    }
+
+    await VisionCamera.requestMicrophonePermission()
+    if (VisionCamera.microphonePermissionStatus !== 'authorized') {
+      return context.skip(
+        'front TrueDepth FHD@60 resolution bias: microphone permission not authorized',
+      )
+    }
+
+    const session = await VisionCamera.createCameraSession(false)
+    const videoOutput = VisionCamera.createVideoOutput({
+      targetResolution: CommonResolutions.FHD_16_9,
+      enableAudio: true,
+    })
+
+    let received: CameraSessionConfig | undefined
+    await session.configure([
+      {
+        input: device,
+        outputs: [{ output: videoOutput, mirrorMode: 'auto' }],
+        constraints: [{ resolutionBias: videoOutput }, { fps: 60 }],
+        onSessionConfigSelected: (config) => {
+          received = config
+        },
+      },
+    ])
+    await waitUntil(() => received != null, { timeout: 5_000 })
+    expect(received?.selectedFPS).toBe(60)
+
+    await session.start()
+    try {
+      await waitUntil(() => videoOutput.currentResolution != null, {
+        timeout: 10_000,
+      })
+
+      const reported = videoOutput.currentResolution
+      expect(reported).toBeDefined()
+      if (reported == null) throw new Error('no reported video resolution')
+
+      const requestedShortEdge = Math.min(
+        CommonResolutions.FHD_16_9.width,
+        CommonResolutions.FHD_16_9.height,
+      )
+      const requestedLongEdge = Math.max(
+        CommonResolutions.FHD_16_9.width,
+        CommonResolutions.FHD_16_9.height,
+      )
+      const reportedShortEdge = Math.min(reported.width, reported.height)
+      const reportedLongEdge = Math.max(reported.width, reported.height)
+      console.log(
+        `front TrueDepth FHD@60 target=${CommonResolutions.FHD_16_9.width}x${CommonResolutions.FHD_16_9.height} ` +
+          `resolved=${reported.width}x${reported.height} config=${received?.toString()}`,
+      )
+      expect(reportedShortEdge).toBe(requestedShortEdge)
+      expect(reportedLongEdge).toBe(requestedLongEdge)
+    } finally {
+      await session.stop()
+    }
   })
 
   it('resolves photoHDR: true when the device supports photo HDR', async (context) => {
