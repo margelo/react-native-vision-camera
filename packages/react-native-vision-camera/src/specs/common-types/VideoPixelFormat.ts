@@ -57,7 +57,7 @@ export type VideoPixelFormat =
  *    {@linkcode VideoPixelFormat | 'raw-bayer-packed96-12-bit'}, or a private
  *    format ({@linkcode PixelFormat | 'private'}) and requires zero conversion.
  * - `'yuv'`: Choose the YUV format closest to the Camera's native format. Often YUV 4:2:0
- *    8-bit full-range like {@linkcode VideoPixelFormat | 'yuv-420-8-bit-full'}.
+ *    8-bit video-range like {@linkcode VideoPixelFormat | 'yuv-420-8-bit-video'}.
  * - `'rgb'`: Choose an RGB format. Often 8-bit BGRA like
  *   {@linkcode VideoPixelFormat | 'rgb-bgra-8-bit'}.
  */
