@@ -94,6 +94,8 @@ describe('VisionCamera - Devices', () => {
   it('reports sane capability invariants for each device', () => {
     for (const device of factory.cameraDevices) {
       expect(device.minZoom).toBeLessThanOrEqual(device.maxZoom)
+      expect(device.neutralZoom).toBeGreaterThanOrEqual(device.minZoom)
+      expect(device.neutralZoom).toBeLessThanOrEqual(device.maxZoom)
 
       if (device.supportsExposureBias) {
         expect(device.minExposureBias).toBeLessThanOrEqual(

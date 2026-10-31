@@ -194,6 +194,7 @@ class HybridCameraDevice(
       val zoomState = cameraInfo.zoomState.value ?: return 0.0
       return zoomState.maxZoomRatio.toDouble()
     }
+  override val neutralZoom: Double = 1.0
   override val zoomLensSwitchFactors: DoubleArray
     get() = cameraInfo.zoomLensSwitchFactors
 
