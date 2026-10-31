@@ -69,6 +69,12 @@ final class HybridCameraPhotoOutput: HybridCameraPhotoOutputSpec, NativeCameraOu
       output.isCameraSensorOrientationCompensationEnabled = false
     }
 
+    if #available(iOS 26.0, *), output.isDeferredStartSupported {
+      // Deferred start allows the session to delay this output's startup in favor
+      // of preview-related outputs to make preview appear faster.
+      output.isDeferredStartEnabled = true
+    }
+
     // Prepare the default Photo Settings to make the pipeline ready - some things (like flashMode)
     // might change on a per-capture basis, but containerFormat and preview size is already known
     // and can be prepared already.
