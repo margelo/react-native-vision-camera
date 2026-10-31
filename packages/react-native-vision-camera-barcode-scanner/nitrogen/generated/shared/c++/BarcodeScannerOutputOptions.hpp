@@ -53,12 +53,13 @@ namespace margelo::nitro::camera::barcodescanner {
   public:
     std::vector<TargetBarcodeFormat> barcodeFormats     SWIFT_PRIVATE;
     std::optional<BarcodeScannerOutputResolution> outputResolution     SWIFT_PRIVATE;
+    std::optional<bool> enableAllPotentialBarcodes     SWIFT_PRIVATE;
     std::function<void(const std::vector<std::shared_ptr<HybridBarcodeSpec>>& /* barcodes */)> onBarcodeScanned     SWIFT_PRIVATE;
     std::function<void(const std::exception_ptr& /* error */)> onError     SWIFT_PRIVATE;
 
   public:
     BarcodeScannerOutputOptions() = default;
-    explicit BarcodeScannerOutputOptions(std::vector<TargetBarcodeFormat> barcodeFormats, std::optional<BarcodeScannerOutputResolution> outputResolution, std::function<void(const std::vector<std::shared_ptr<HybridBarcodeSpec>>& /* barcodes */)> onBarcodeScanned, std::function<void(const std::exception_ptr& /* error */)> onError): barcodeFormats(barcodeFormats), outputResolution(outputResolution), onBarcodeScanned(onBarcodeScanned), onError(onError) {}
+    explicit BarcodeScannerOutputOptions(std::vector<TargetBarcodeFormat> barcodeFormats, std::optional<BarcodeScannerOutputResolution> outputResolution, std::optional<bool> enableAllPotentialBarcodes, std::function<void(const std::vector<std::shared_ptr<HybridBarcodeSpec>>& /* barcodes */)> onBarcodeScanned, std::function<void(const std::exception_ptr& /* error */)> onError): barcodeFormats(barcodeFormats), outputResolution(outputResolution), enableAllPotentialBarcodes(enableAllPotentialBarcodes), onBarcodeScanned(onBarcodeScanned), onError(onError) {}
 
   public:
     // BarcodeScannerOutputOptions is not equatable because these properties are not equatable: onBarcodeScanned, onError
@@ -76,6 +77,7 @@ namespace margelo::nitro {
       return margelo::nitro::camera::barcodescanner::BarcodeScannerOutputOptions(
         JSIConverter<std::vector<margelo::nitro::camera::barcodescanner::TargetBarcodeFormat>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "barcodeFormats"))),
         JSIConverter<std::optional<margelo::nitro::camera::barcodescanner::BarcodeScannerOutputResolution>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "outputResolution"))),
+        JSIConverter<std::optional<bool>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "enableAllPotentialBarcodes"))),
         JSIConverter<std::function<void(const std::vector<std::shared_ptr<margelo::nitro::camera::barcodescanner::HybridBarcodeSpec>>&)>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "onBarcodeScanned"))),
         JSIConverter<std::function<void(const std::exception_ptr&)>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "onError")))
       );
@@ -84,6 +86,7 @@ namespace margelo::nitro {
       jsi::Object obj(runtime);
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "barcodeFormats"), JSIConverter<std::vector<margelo::nitro::camera::barcodescanner::TargetBarcodeFormat>>::toJSI(runtime, arg.barcodeFormats));
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "outputResolution"), JSIConverter<std::optional<margelo::nitro::camera::barcodescanner::BarcodeScannerOutputResolution>>::toJSI(runtime, arg.outputResolution));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "enableAllPotentialBarcodes"), JSIConverter<std::optional<bool>>::toJSI(runtime, arg.enableAllPotentialBarcodes));
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "onBarcodeScanned"), JSIConverter<std::function<void(const std::vector<std::shared_ptr<margelo::nitro::camera::barcodescanner::HybridBarcodeSpec>>&)>>::toJSI(runtime, arg.onBarcodeScanned));
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "onError"), JSIConverter<std::function<void(const std::exception_ptr&)>>::toJSI(runtime, arg.onError));
       return obj;
@@ -98,6 +101,7 @@ namespace margelo::nitro {
       }
       if (!JSIConverter<std::vector<margelo::nitro::camera::barcodescanner::TargetBarcodeFormat>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "barcodeFormats")))) return false;
       if (!JSIConverter<std::optional<margelo::nitro::camera::barcodescanner::BarcodeScannerOutputResolution>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "outputResolution")))) return false;
+      if (!JSIConverter<std::optional<bool>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "enableAllPotentialBarcodes")))) return false;
       if (!JSIConverter<std::function<void(const std::vector<std::shared_ptr<margelo::nitro::camera::barcodescanner::HybridBarcodeSpec>>&)>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "onBarcodeScanned")))) return false;
       if (!JSIConverter<std::function<void(const std::exception_ptr&)>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "onError")))) return false;
       return true;
