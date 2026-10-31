@@ -13,6 +13,7 @@
     "packages/react-native-vision-camera-skia",
     "packages/react-native-vision-camera-worklets",
     "apps/simple-camera",
+    "apps/fake-simulated-camera",
     "docs"
   ],
   "scripts": {
@@ -20,6 +21,7 @@
     "specs": "bun camera specs && bun location specs && bun scanner specs && bun resizer specs && bun worklets specs",
     "build": "bun camera build && bun location build && bun scanner build && bun resizer build && bun worklets build && bun skia build",
     "example": "bun --cwd apps/simple-camera",
+    "fake": "bun --cwd apps/fake-simulated-camera",
     "docs": "bun --cwd docs",
     "camera": "bun --cwd packages/react-native-vision-camera",
     "scanner": "bun --cwd packages/react-native-vision-camera-barcode-scanner",

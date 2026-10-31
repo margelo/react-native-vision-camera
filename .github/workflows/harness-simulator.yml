@@ -1,0 +1,297 @@
+name: Harness Simulator
+
+### About
+#
+# Runs the Harness suites of apps/fake-simulated-camera on the iOS Simulator and the
+# Android Emulator against an injected, catalog-defined camera (see the app README).
+
+concurrency:
+  group: harness-simulator-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/harness-simulator.yml'
+      - 'apps/fake-simulated-camera/**'
+      - 'packages/react-native-vision-camera/**'
+      - 'packages/react-native-vision-camera-barcode-scanner/**'
+      - 'bun.lock'
+      - 'package.json'
+      - 'patches/**'
+  pull_request:
+    paths:
+      - '.github/workflows/harness-simulator.yml'
+      - 'apps/fake-simulated-camera/**'
+      - 'packages/react-native-vision-camera/**'
+      - 'packages/react-native-vision-camera-barcode-scanner/**'
+      - 'bun.lock'
+      - 'package.json'
+      - 'patches/**'
+
+env:
+  HARNESS_XCODE_VERSION: "26.2"
+  HARNESS_PROJECT_ROOT: apps/fake-simulated-camera
+  HARNESS_IOS_DERIVED_DATA_OUTPUT: apps/fake-simulated-camera/ios/build/simulator
+  HARNESS_ANDROID_APP_BUILD_OUTPUT: apps/fake-simulated-camera/android/app/build/outputs/apk/debug/app-debug.apk
+  HARNESS_ANDROID_BUNDLE_ID: com.margelo.nitro.camera.example.fake
+  HARNESS_ANDROID_DEVICE_MODE: emulator
+  HARNESS_ANDROID_API_LEVEL: "35"
+  HARNESS_ANDROID_DEVICE_ARCH: x86_64
+  HARNESS_ANDROID_DEVICE_PROFILE: pixel
+  HARNESS_ANDROID_EMULATOR: Pixel_API_35
+  HARNESS_ANDROID_EMULATOR_BOOT_TIMEOUT_SECONDS: 240
+  HARNESS_ANDROID_STARTUP_TIMEOUT_SECONDS: 60
+  HARNESS_ANDROID_TEST_TIMEOUT_SECONDS: 900
+
+jobs:
+  test-ios-simulator:
+    name: Test iOS Simulator
+    runs-on: macos-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Ccache
+        uses: hendrikmuhs/ccache-action@v1.2.23
+        with:
+          max-size: 1.5G
+          key: ${{ runner.os }}-${{ runner.arch }}-xcode${{ env.HARNESS_XCODE_VERSION }}-ccache-harness-simulator
+          create-symlink: true
+
+      - name: Setup ccache behavior
+        run: |
+          echo "CCACHE_SLOPPINESS=clang_index_store,file_stat_matches,include_file_ctime,include_file_mtime,ivfsoverlay,pch_defines,modules,system_headers,time_macros" >> $GITHUB_ENV
+          echo "CCACHE_FILECLONE=true" >> $GITHUB_ENV
+          echo "CCACHE_DEPEND=true" >> $GITHUB_ENV
+          echo "CCACHE_INODECACHE=true" >> $GITHUB_ENV
+
+      - name: Setup Ruby (bundle)
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.4.9
+          bundler-cache: true
+          working-directory: apps/fake-simulated-camera/
+
+      - name: Select Xcode ${{ env.HARNESS_XCODE_VERSION }}
+        run: sudo xcode-select -s "/Applications/Xcode_${{ env.HARNESS_XCODE_VERSION }}.app/Contents/Developer"
+
+      - name: Restore CocoaPods cache
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/Library/Caches/CocoaPods
+            apps/fake-simulated-camera/ios/Pods
+          key: ${{ runner.os }}-pods-simulator-${{ hashFiles('apps/fake-simulated-camera/ios/Podfile', 'apps/fake-simulated-camera/package.json', 'bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pods-simulator-
+
+      - name: Install Pods
+        working-directory: apps/fake-simulated-camera/ios
+        env:
+          RCT_USE_PREBUILT_RNCORE: "0"
+        run: bundle exec pod install
+
+      - name: Restore DerivedData cache
+        uses: actions/cache@v5
+        with:
+          path: ${{ env.HARNESS_IOS_DERIVED_DATA_OUTPUT }}
+          key: ${{ runner.os }}-${{ runner.arch }}-xcode${{ env.HARNESS_XCODE_VERSION }}-dd-simulator-${{ hashFiles('bun.lock', 'apps/fake-simulated-camera/Gemfile.lock', 'apps/fake-simulated-camera/ios/Podfile') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-xcode${{ env.HARNESS_XCODE_VERSION }}-dd-simulator-
+
+      - name: Build iOS Simulator app
+        run: |
+          set -euo pipefail
+          HARNESS_IOS_DERIVED_DATA_OUTPUT="$GITHUB_WORKSPACE/${{ env.HARNESS_IOS_DERIVED_DATA_OUTPUT }}" \
+            bash apps/fake-simulated-camera/scripts/build-ios-simulator.sh CC=clang CPLUSPLUS=clang++ LD=clang LDPLUSPLUS=clang++ | tee build-ios.log
+          grep '^HARNESS_APP_PATH=' build-ios.log | tail -1 >> "$GITHUB_ENV"
+
+      - name: Resolve iOS Simulator
+        run: |
+          set -euo pipefail
+          xcrun simctl list -j devices available > simulators.json
+          python3 - <<'EOF' >> "$GITHUB_ENV"
+          import json, re, sys
+          data = json.load(open("simulators.json"))["devices"]
+          best = None
+          for runtime, devices in data.items():
+              match = re.search(r"iOS-(\d+)-(\d+)$", runtime)
+              if not match:
+                  continue
+              version = (int(match.group(1)), int(match.group(2)))
+              phones = [d for d in devices if d.get("isAvailable") and d["name"].startswith("iPhone")]
+              if phones and (best is None or version > best[0]):
+                  best = (version, phones[0]["name"])
+          if best is None:
+              sys.exit("no available iPhone simulator runtime")
+          print(f"HARNESS_IOS_SIMULATOR={best[1]}")
+          print(f"HARNESS_IOS_SIMULATOR_VERSION={best[0][0]}.{best[0][1]}")
+          EOF
+          cat "$GITHUB_ENV"
+
+      - name: Run Harness tests on iOS Simulator
+        working-directory: apps/fake-simulated-camera
+        env:
+          CI: "true"
+        run: |
+          set -uo pipefail
+          if ! ls __tests__/*.harness.ts >/dev/null 2>&1; then
+            echo "No Harness suites yet — build-only run."
+            exit 0
+          fi
+          # Pre-boot the simulator the harness will use, then stream the fake's os_log to a file for the whole
+          # run. The harness shuts the simulator down afterwards, so a post-hoc `log show` finds nothing; a live
+          # stream is the only way to capture the fake-camera fault that precedes an "app bridge disconnected".
+          UDID=$(xcrun simctl list devices -j | python3 -c "import json,sys,os; d=json.load(sys.stdin)['devices']; name=os.environ.get('HARNESS_IOS_SIMULATOR',''); ver=os.environ.get('HARNESS_IOS_SIMULATOR_VERSION','').replace('.','-'); rts=[k for k in d if ('iOS-'+ver) in k]; print(next((x['udid'] for k in rts for x in d[k] if x['name']==name), ''))" 2>/dev/null || true)
+          echo "resolved simulator udid: ${UDID:-<none>}"
+          STREAM_PID=""
+          if [ -n "${UDID:-}" ]; then
+            xcrun simctl boot "$UDID" 2>/dev/null || true
+            xcrun simctl spawn "$UDID" log stream --level debug --style compact \
+              --predicate 'subsystem == "com.margelo.fakecamera"' > fakecam-stream.log 2>&1 &
+            STREAM_PID=$!
+          fi
+          RC=0
+          if command -v gtimeout >/dev/null 2>&1; then
+            gtimeout --foreground --kill-after=30s 1500 bun run test:harness:ios || RC=$?
+          else
+            bun run test:harness:ios || RC=$?
+          fi
+          # Robustness: a second app launch with the variants catalog runs the variant-only suite.
+          RCV=0
+          FAKE_CAMERA_CATALOG=variants bun run test:harness:ios-variants || RCV=$?
+          [ "$RCV" -ne 0 ] && [ "$RC" -eq 0 ] && RC=$RCV
+          [ -n "$STREAM_PID" ] && kill "$STREAM_PID" 2>/dev/null || true
+          if [ "$RC" -ne 0 ]; then
+            echo "=== fakecam-stream.log tail ==="; tail -60 fakecam-stream.log 2>/dev/null || true
+            REPORTS="$HOME/Library/Developer/CoreSimulator/Devices/$UDID/data/Library/Logs/DiagnosticReports"
+            for f in "$REPORTS"/FakeSimulated*.ips "$REPORTS"/FakeSimulated*.crash; do
+              [ -f "$f" ] || continue
+              echo "=== crash report $f (head) ==="; head -70 "$f"; cp "$f" . 2>/dev/null || true
+            done
+          fi
+          exit $RC
+
+      - name: Collect iOS diagnostics
+        if: always()
+        run: |
+          set +e
+          mkdir -p ios-diagnostics
+          cp -R apps/fake-simulated-camera/.harness ios-diagnostics/harness 2>/dev/null
+          cp build-ios.log ios-diagnostics/ 2>/dev/null
+          cp apps/fake-simulated-camera/fakecam-stream.log ios-diagnostics/ 2>/dev/null
+          xcrun simctl spawn booted log show --info --debug --last 20m --predicate 'subsystem == "com.margelo.fakecamera" OR process == "FakeSimulatedCamera"' > ios-diagnostics/fakecamera.log 2>/dev/null
+          cp -R ~/Library/Logs/DiagnosticReports ios-diagnostics/DiagnosticReports 2>/dev/null
+          mkdir -p ios-diagnostics/SimulatorCrashes
+          find ~/Library/Developer/CoreSimulator/Devices -path '*/DiagnosticReports/*' \( -name '*.ips' -o -name '*.crash' \) -exec cp {} ios-diagnostics/SimulatorCrashes/ \; 2>/dev/null
+          true
+
+      - name: Upload iOS diagnostics
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: harness-simulator-ios-diagnostics
+          path: ios-diagnostics
+          if-no-files-found: ignore
+          retention-days: 7
+
+  test-android-emulator:
+    name: Test Android Emulator
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: zulu
+          java-version: '17'
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Restore Gradle/CMake cache
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            apps/fake-simulated-camera/android/.gradle
+            apps/fake-simulated-camera/android/app/.cxx
+          key: ${{ runner.os }}-gradle-simulator-${{ env.HARNESS_ANDROID_DEVICE_ARCH }}-${{ hashFiles('apps/fake-simulated-camera/android/**/*.gradle*', 'apps/fake-simulated-camera/android/**/gradle-wrapper.properties', 'packages/**/CMakeLists.txt', 'packages/**/*.cmake', 'bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-simulator-${{ env.HARNESS_ANDROID_DEVICE_ARCH }}-
+            ${{ runner.os }}-gradle-
+
+      - name: Build Android app
+        working-directory: apps/fake-simulated-camera/android
+        run: ./gradlew assembleDebug -PreactNativeArchitectures=${{ env.HARNESS_ANDROID_DEVICE_ARCH }} --no-daemon --build-cache --console=plain
+
+      - name: Verify Android app artifact
+        run: |
+          set -euo pipefail
+          test -f ${{ env.HARNESS_ANDROID_APP_BUILD_OUTPUT }}
+          unzip -l ${{ env.HARNESS_ANDROID_APP_BUILD_OUTPUT }} | grep -E 'assets/scenes/qr-code-margelo.png'
+
+      - name: Enable KVM group perms
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          ls /dev/kvm
+
+      - name: Run Harness tests on Android Emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          working-directory: ${{ env.HARNESS_PROJECT_ROOT }}
+          api-level: ${{ env.HARNESS_ANDROID_API_LEVEL }}
+          arch: ${{ env.HARNESS_ANDROID_DEVICE_ARCH }}
+          profile: ${{ env.HARNESS_ANDROID_DEVICE_PROFILE }}
+          force-avd-creation: true
+          avd-name: ${{ env.HARNESS_ANDROID_EMULATOR }}
+          emulator-boot-timeout: ${{ env.HARNESS_ANDROID_EMULATOR_BOOT_TIMEOUT_SECONDS }}
+          disable-animations: true
+          emulator-options: -no-snapshot -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back virtualscene -camera-front emulated -virtualscene-poster wall=${{ github.workspace }}/apps/fake-simulated-camera/scenes/qr-code-margelo.png
+          script: bash ./scripts/run-harness-android-ci.sh
+
+      - name: Collect Android diagnostics
+        if: always()
+        run: |
+          set +e
+          mkdir -p android-diagnostics
+          cp -R apps/fake-simulated-camera/.harness android-diagnostics/harness 2>/dev/null
+          cp apps/fake-simulated-camera/android/logcat*.txt android-diagnostics/ 2>/dev/null
+          true
+
+      - name: Upload Android diagnostics
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: harness-simulator-android-diagnostics
+          path: android-diagnostics
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Stop Gradle Daemon
+        if: always()
+        working-directory: apps/fake-simulated-camera/android
+        run: ./gradlew --stop
