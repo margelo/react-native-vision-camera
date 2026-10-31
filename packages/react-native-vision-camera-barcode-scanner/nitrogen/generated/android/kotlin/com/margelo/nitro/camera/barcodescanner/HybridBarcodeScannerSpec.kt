@@ -42,6 +42,10 @@ abstract class HybridBarcodeScannerSpec: HybridObject() {
   
   @DoNotStrip
   @Keep
+  abstract fun scanCodesInImage(image: com.margelo.nitro.image.HybridImageSpec): Array<HybridBarcodeSpec>
+
+  @DoNotStrip
+  @Keep
   abstract fun scanCodesInImageAsync(image: com.margelo.nitro.image.HybridImageSpec): Promise<Array<HybridBarcodeSpec>>
 
   // Default implementation of `HybridObject.toString()`
