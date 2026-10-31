@@ -245,7 +245,10 @@
     "@shopify/react-native-skia",
   ],
   "patchedDependencies": {
+    "@react-native-harness/platform-apple@1.4.0-rc.1": "patches/@react-native-harness%2Fplatform-apple@1.4.0-rc.1.patch",
+    "@react-native-harness/bridge@1.4.0-rc.1": "patches/@react-native-harness%2Fbridge@1.4.0-rc.1.patch",
     "react-native@0.85.3": "patches/react-native@0.85.3.patch",
+    "@react-native-harness/cli@1.4.0-rc.1": "patches/@react-native-harness%2Fcli@1.4.0-rc.1.patch",
   },
   "packages": {
     "@alloc/quick-lru": ["@alloc/quick-lru@5.2.0", "", {}, "sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw=="],

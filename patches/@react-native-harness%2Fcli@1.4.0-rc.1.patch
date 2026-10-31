@@ -1,0 +1,26 @@
+diff --git a/dist/index.js b/dist/index.js
+index b1054c2bd34b2383e95b18cec1fe23e602e2131f..b410f2163d2c25277ee0fc86faf8ef076a5cc398 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -182,7 +182,7 @@ const main = async () => {
+         cwd: process.cwd(),
+     });
+     await checkForOldConfig();
+-    run();
++    await run();
+ };
+ main().catch((error) => {
+     console.error(getErrorMessage(error));
+diff --git a/src/index.ts b/src/index.ts
+index af488bd42934870e44e0cd03300f26fe174646ab..e57619ef90d5941d3f13ab6afde19bdc6324e8cb 100644
+--- a/src/index.ts
++++ b/src/index.ts
+@@ -244,7 +244,7 @@ const main = async () => {
+   });
+ 
+   await checkForOldConfig();
+-  run();
++  await run();
+ };
+ 
+ main().catch((error) => {
