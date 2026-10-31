@@ -4,6 +4,7 @@ import androidx.camera.core.SessionConfig
 import com.margelo.nitro.camera.AutoFocusSystem
 import com.margelo.nitro.camera.HybridCameraSessionConfigSpec
 import com.margelo.nitro.camera.PixelFormat
+import com.margelo.nitro.camera.Size
 import com.margelo.nitro.camera.TargetDynamicRange
 import com.margelo.nitro.camera.TargetStabilizationMode
 import com.margelo.nitro.camera.public.NativeCameraOutput
@@ -16,6 +17,12 @@ class HybridCameraSessionConfig(
   NativeCameraSessionConfig {
   override val selectedFPS: Double?
     get() = resolvedConfig.fpsRange?.upper?.toDouble()
+
+  // CameraX does not expose an authoritative use-case resolution until after
+  // binding. Keep this absent here; callers can continue using an output's
+  // currentResolution from the later configured callback on Android.
+  override val selectedVideoResolution: Size?
+    get() = null
 
   override val selectedVideoStabilizationMode: TargetStabilizationMode?
     get() = resolvedConfig.videoStabilizationMode
@@ -46,6 +53,7 @@ class HybridCameraSessionConfig(
       arrayOf(
         "config: $sessionConfig",
         "selectedFPS: $selectedFPS",
+        "selectedVideoResolution: $selectedVideoResolution",
         "selectedVideoStabilizationMode: $selectedVideoStabilizationMode",
         "selectedPreviewStabilizationMode: $selectedPreviewStabilizationMode",
         "selectedVideoDynamicRange: $selectedVideoDynamicRange",

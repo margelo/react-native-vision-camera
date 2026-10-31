@@ -21,6 +21,11 @@ final class HybridCameraSessionConfig: HybridCameraSessionConfigSpec, NativeCame
     return enabledConstraints.selectedFPS
   }
 
+  var selectedVideoResolution: Size? {
+    let dimensions = negotiatedFormat.format.formatDescription.dimensions
+    return Size(dimensions: dimensions)
+  }
+
   var selectedVideoStabilizationMode: TargetStabilizationMode? {
     return enabledConstraints.selectedVideoStabilizationMode
   }
@@ -56,6 +61,7 @@ final class HybridCameraSessionConfig: HybridCameraSessionConfigSpec, NativeCame
     let components = [
       "format: \(negotiatedFormat.format)",
       "selectedFPS: \(String(describing: selectedFPS))",
+      "selectedVideoResolution: \(String(describing: selectedVideoResolution))",
       "selectedVideoStabilizationMode: \(String(describing: selectedVideoStabilizationMode))",
       "selectedPreviewStabilizationMode: \(String(describing: selectedPreviewStabilizationMode))",
       "selectedVideoDynamicRange: \(String(describing: selectedVideoDynamicRange))",

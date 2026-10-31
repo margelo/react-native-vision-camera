@@ -7,6 +7,8 @@
 
 #include "JHybridCameraSessionConfigSpec.hpp"
 
+// Forward declaration of `Size` to properly resolve imports.
+namespace margelo::nitro::camera { struct Size; }
 // Forward declaration of `TargetStabilizationMode` to properly resolve imports.
 namespace margelo::nitro::camera { enum class TargetStabilizationMode; }
 // Forward declaration of `TargetDynamicRange` to properly resolve imports.
@@ -23,6 +25,8 @@ namespace margelo::nitro::camera { enum class PixelFormat; }
 namespace margelo::nitro::camera { enum class AutoFocusSystem; }
 
 #include <optional>
+#include "Size.hpp"
+#include "JSize.hpp"
 #include "TargetStabilizationMode.hpp"
 #include "JTargetStabilizationMode.hpp"
 #include "TargetDynamicRange.hpp"
@@ -72,6 +76,11 @@ namespace margelo::nitro::camera {
     static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<jni::JDouble>()>("getSelectedFPS");
     auto __result = method(_javaPart);
     return __result != nullptr ? std::make_optional(__result->value()) : std::nullopt;
+  }
+  std::optional<Size> JHybridCameraSessionConfigSpec::getSelectedVideoResolution() {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JSize>()>("getSelectedVideoResolution");
+    auto __result = method(_javaPart);
+    return __result != nullptr ? std::make_optional(__result->toCpp()) : std::nullopt;
   }
   std::optional<TargetStabilizationMode> JHybridCameraSessionConfigSpec::getSelectedVideoStabilizationMode() {
     static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JTargetStabilizationMode>()>("getSelectedVideoStabilizationMode");

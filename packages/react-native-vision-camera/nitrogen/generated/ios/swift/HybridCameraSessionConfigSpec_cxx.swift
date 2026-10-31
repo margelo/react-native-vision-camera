@@ -134,6 +134,19 @@ open class HybridCameraSessionConfigSpec_cxx {
     }
   }
   
+  public final var selectedVideoResolution: bridge.std__optional_Size_ {
+    @inline(__always)
+    get {
+      return { () -> bridge.std__optional_Size_ in
+        if let __unwrappedValue = self.__implementation.selectedVideoResolution {
+          return bridge.create_std__optional_Size_(__unwrappedValue)
+        } else {
+          return .init()
+        }
+      }()
+    }
+  }
+  
   public final var selectedVideoStabilizationMode: bridge.std__optional_TargetStabilizationMode_ {
     @inline(__always)
     get {

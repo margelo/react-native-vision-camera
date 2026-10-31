@@ -32,6 +32,10 @@ abstract class HybridCameraSessionConfigSpec: HybridObject() {
   
   @get:DoNotStrip
   @get:Keep
+  abstract val selectedVideoResolution: Size?
+  
+  @get:DoNotStrip
+  @get:Keep
   abstract val selectedVideoStabilizationMode: TargetStabilizationMode?
   
   @get:DoNotStrip
