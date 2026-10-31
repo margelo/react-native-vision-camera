@@ -33,11 +33,6 @@ export function transformPoint(
 ): Point {
   let result = normalizedPoint
 
-  if (isMirrored) {
-    // Mirror alongside X first
-    result = { x: 1 - result.x, y: result.y }
-  }
-
   // Now rotate to camera coordinate system
   switch (orientation) {
     case 'up':
@@ -52,6 +47,10 @@ export function transformPoint(
     case 'right':
       result = { x: 1 - result.y, y: result.x }
       break
+  }
+
+  if (isMirrored) {
+    result = { x: 1 - result.x, y: result.y }
   }
 
   return result
