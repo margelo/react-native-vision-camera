@@ -69,6 +69,14 @@ final class HybridCameraPreviewOutput: HybridCameraPreviewOutputSpec, NativePrev
     try? connection.setMirrorMode(config.mirrorMode)
     if let interfaceOrientation = orientationManager.currentOrientation {
       try? connection.setOrientation(interfaceOrientation)
+    } else {
+      DispatchQueue.main.async { [weak self] in
+        guard let self else { return }
+        guard let connection = self.previewLayer.connection else { return }
+        if let interfaceOrientation = self.orientationManager.currentOrientation {
+          try? connection.setOrientation(interfaceOrientation)
+        }
+      }
     }
   }
 }
