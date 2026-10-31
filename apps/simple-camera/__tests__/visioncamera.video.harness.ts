@@ -36,6 +36,46 @@ describe('VisionCamera - Video', () => {
     backDevice = back
   })
 
+  // Reproduces a hard, uncatchable crash: calling setOutputSettings({ codec })
+  // after a `targetBitRate` was configured aborts the process (SIGTRAP), so the
+  // harness app dies rather than this assertion failing cleanly.
+  //
+  // `setOutputSettings` reads the fully-expanded `output.outputSettings(for:)`
+  // dict and writes it back. When `targetBitRate` is set, that dict already
+  // contains AVVideoCompressionPropertiesKey plus width/height/color keys.
+  // `AVCaptureMovieFileOutput.setOutputSettings:forConnection:` rejects the
+  // non-codec/compression keys with an Objective-C NSInvalidArgumentException,
+  // which Swift cannot catch — no JS try/catch can prevent the abort.
+  //
+  // Expected (fixed) behavior: setOutputSettings resolves without crashing.
+  it('setOutputSettings({ codec }) does not crash when a targetBitRate is configured', async () => {
+    const session = await VisionCamera.createCameraSession(false)
+    const videoOutput = VisionCamera.createVideoOutput({
+      targetResolution: CommonResolutions.HD_16_9,
+      enableAudio: false,
+      // Populating targetBitRate makes the connection's expanded outputSettings
+      // include AVVideoCompressionPropertiesKey, which triggers the crash below.
+      targetBitRate: 2_000_000,
+    })
+    await session.configure([
+      {
+        input: backDevice,
+        outputs: [{ output: videoOutput, mirrorMode: 'auto' }],
+        constraints: [],
+      },
+    ])
+    await session.start()
+
+    try {
+      // On current main this aborts the whole process via an uncatchable ObjC
+      // exception. With the bug fixed, it resolves.
+      await videoOutput.setOutputSettings({ codec: 'h264' })
+    } finally {
+      await session.stop()
+    }
+    // Reaching here without the app crashing means the bug is fixed.
+  })
+
   it('records a short clip and finishes with reason "stopped"', async () => {
     const session = await VisionCamera.createCameraSession(false)
     const videoOutput = VisionCamera.createVideoOutput({
