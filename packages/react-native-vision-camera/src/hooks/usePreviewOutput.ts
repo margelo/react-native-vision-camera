@@ -6,6 +6,7 @@ import type {
 } from '../specs/outputs/CameraPreviewOutput.nitro'
 import type { CameraSession } from '../specs/session/CameraSession.nitro'
 import { VisionCamera } from '../VisionCamera'
+import { useMemoizedSize } from './internal/useMemoizedSize'
 import { useStableCallback } from './internal/useStableCallback'
 
 export interface UsePreviewOutputProps extends PreviewOutputOptions {
@@ -32,17 +33,21 @@ export interface UsePreviewOutputProps extends PreviewOutputOptions {
  * ```
  */
 export function usePreviewOutput({
+  targetResolution,
   onConfigurationChanged,
 }: UsePreviewOutputProps = {}): CameraPreviewOutput {
   const stableOnConfigurationChanged = useStableCallback(
     onConfigurationChanged ?? (() => {}),
   )
 
+  const memoizedTargetResolution = useMemoizedSize(targetResolution)
+
   return useMemo(
     () =>
       VisionCamera.createPreviewOutput({
+        targetResolution: memoizedTargetResolution,
         onConfigurationChanged: stableOnConfigurationChanged,
       }),
-    [stableOnConfigurationChanged],
+    [memoizedTargetResolution, stableOnConfigurationChanged],
   )
 }

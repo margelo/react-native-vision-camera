@@ -18,8 +18,14 @@ public extension PreviewOutputOptions {
   /**
    * Create a new instance of `PreviewOutputOptions`.
    */
-  init(onConfigurationChanged: ((_ configuration: PreviewConfiguration) -> Void)?) {
-    self.init({ () -> bridge.std__optional_std__function_void_const_PreviewConfiguration_____configuration______ in
+  init(targetResolution: Size?, onConfigurationChanged: ((_ configuration: PreviewConfiguration) -> Void)?) {
+    self.init({ () -> bridge.std__optional_Size_ in
+      if let __unwrappedValue = targetResolution {
+        return bridge.create_std__optional_Size_(__unwrappedValue)
+      } else {
+        return .init()
+      }
+    }(), { () -> bridge.std__optional_std__function_void_const_PreviewConfiguration_____configuration______ in
       if let __unwrappedValue = onConfigurationChanged {
         return bridge.create_std__optional_std__function_void_const_PreviewConfiguration_____configuration______({ () -> bridge.Func_void_PreviewConfiguration in
           let __closureWrapper = Func_void_PreviewConfiguration(__unwrappedValue)
@@ -31,6 +37,11 @@ public extension PreviewOutputOptions {
     }())
   }
 
+  @inline(__always)
+  var targetResolution: Size? {
+    return self.__targetResolution.value
+  }
+  
   @inline(__always)
   var onConfigurationChanged: ((_ configuration: PreviewConfiguration) -> Void)? {
     return { () -> ((_ configuration: PreviewConfiguration) -> Void)? in

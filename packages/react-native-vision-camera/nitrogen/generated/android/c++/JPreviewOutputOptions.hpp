@@ -38,9 +38,12 @@ namespace margelo::nitro::camera {
     [[nodiscard]]
     PreviewOutputOptions toCpp() const {
       static const auto clazz = javaClassStatic();
+      static const auto fieldTargetResolution = clazz->getField<JSize>("targetResolution");
+      jni::local_ref<JSize> targetResolution = this->getFieldValue(fieldTargetResolution);
       static const auto fieldOnConfigurationChanged = clazz->getField<JFunc_void_PreviewConfiguration::javaobject>("onConfigurationChanged");
       jni::local_ref<JFunc_void_PreviewConfiguration::javaobject> onConfigurationChanged = this->getFieldValue(fieldOnConfigurationChanged);
       return PreviewOutputOptions(
+        targetResolution != nullptr ? std::make_optional(targetResolution->toCpp()) : std::nullopt,
         onConfigurationChanged != nullptr ? std::make_optional([&]() -> std::function<void(const PreviewConfiguration& /* configuration */)> {
           if (onConfigurationChanged->isInstanceOf(JFunc_void_PreviewConfiguration_cxx::javaClassStatic())) [[likely]] {
             auto downcast = jni::static_ref_cast<JFunc_void_PreviewConfiguration_cxx::javaobject>(onConfigurationChanged);
@@ -59,11 +62,12 @@ namespace margelo::nitro::camera {
      */
     [[maybe_unused]]
     static jni::local_ref<JPreviewOutputOptions::javaobject> fromCpp(const PreviewOutputOptions& value) {
-      using JSignature = JPreviewOutputOptions(jni::alias_ref<JFunc_void_PreviewConfiguration::javaobject>);
+      using JSignature = JPreviewOutputOptions(jni::alias_ref<JSize>, jni::alias_ref<JFunc_void_PreviewConfiguration::javaobject>);
       static const auto clazz = javaClassStatic();
       static const auto create = clazz->getStaticMethod<JSignature>("fromCpp");
       return create(
         clazz,
+        value.targetResolution.has_value() ? JSize::fromCpp(value.targetResolution.value()) : nullptr,
         value.onConfigurationChanged.has_value() ? JFunc_void_PreviewConfiguration_cxx::fromCpp(value.onConfigurationChanged.value()) : nullptr
       );
     }

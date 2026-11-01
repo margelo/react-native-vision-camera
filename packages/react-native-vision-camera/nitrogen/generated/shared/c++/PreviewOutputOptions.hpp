@@ -28,12 +28,15 @@
 #error NitroModules cannot be found! Are you sure you installed NitroModules properly?
 #endif
 
+// Forward declaration of `Size` to properly resolve imports.
+namespace margelo::nitro::camera { struct Size; }
 // Forward declaration of `PreviewConfiguration` to properly resolve imports.
 namespace margelo::nitro::camera { struct PreviewConfiguration; }
 
+#include "Size.hpp"
+#include <optional>
 #include "PreviewConfiguration.hpp"
 #include <functional>
-#include <optional>
 
 namespace margelo::nitro::camera {
 
@@ -42,11 +45,12 @@ namespace margelo::nitro::camera {
    */
   struct PreviewOutputOptions final {
   public:
+    std::optional<Size> targetResolution     SWIFT_PRIVATE;
     std::optional<std::function<void(const PreviewConfiguration& /* configuration */)>> onConfigurationChanged     SWIFT_PRIVATE;
 
   public:
     PreviewOutputOptions() = default;
-    explicit PreviewOutputOptions(std::optional<std::function<void(const PreviewConfiguration& /* configuration */)>> onConfigurationChanged): onConfigurationChanged(onConfigurationChanged) {}
+    explicit PreviewOutputOptions(std::optional<Size> targetResolution, std::optional<std::function<void(const PreviewConfiguration& /* configuration */)>> onConfigurationChanged): targetResolution(targetResolution), onConfigurationChanged(onConfigurationChanged) {}
 
   public:
     // PreviewOutputOptions is not equatable because these properties are not equatable: onConfigurationChanged
@@ -62,11 +66,13 @@ namespace margelo::nitro {
     static inline margelo::nitro::camera::PreviewOutputOptions fromJSI(jsi::Runtime& runtime, const jsi::Value& arg) {
       jsi::Object obj = arg.asObject(runtime);
       return margelo::nitro::camera::PreviewOutputOptions(
+        JSIConverter<std::optional<margelo::nitro::camera::Size>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "targetResolution"))),
         JSIConverter<std::optional<std::function<void(const margelo::nitro::camera::PreviewConfiguration&)>>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "onConfigurationChanged")))
       );
     }
     static inline jsi::Value toJSI(jsi::Runtime& runtime, const margelo::nitro::camera::PreviewOutputOptions& arg) {
       jsi::Object obj(runtime);
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "targetResolution"), JSIConverter<std::optional<margelo::nitro::camera::Size>>::toJSI(runtime, arg.targetResolution));
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "onConfigurationChanged"), JSIConverter<std::optional<std::function<void(const margelo::nitro::camera::PreviewConfiguration&)>>>::toJSI(runtime, arg.onConfigurationChanged));
       return obj;
     }
@@ -78,6 +84,7 @@ namespace margelo::nitro {
       if (!nitro::isPlainObject(runtime, obj)) {
         return false;
       }
+      if (!JSIConverter<std::optional<margelo::nitro::camera::Size>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "targetResolution")))) return false;
       if (!JSIConverter<std::optional<std::function<void(const margelo::nitro::camera::PreviewConfiguration&)>>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "onConfigurationChanged")))) return false;
       return true;
     }

@@ -123,6 +123,13 @@ export interface CameraViewProps
    * on earlier iOS versions. Android is supported on all versions.
    */
   onPreviewResolution?: (resolution: Size) => void
+  /**
+   * The preferred Preview resolution. Negotiated with the other
+   * outputs, so the resulting resolution may differ.
+   *
+   * When omitted, the platform's default Preview resolution preference is used.
+   */
+  previewTargetResolution?: Size
 
   // Native gestures
   /**
@@ -153,6 +160,7 @@ function CameraImpl({
   onPreviewStopped,
   onPreviewConfigurationChanged,
   onPreviewResolution,
+  previewTargetResolution,
   outputs = [],
   enableNativeZoomGesture = false,
   enableNativeTapToFocusGesture = false,
@@ -173,6 +181,7 @@ function CameraImpl({
 
   // 1. Create `PreviewOutput` for the Camera
   const previewOutput = usePreviewOutput({
+    targetResolution: previewTargetResolution,
     onConfigurationChanged,
   })
 

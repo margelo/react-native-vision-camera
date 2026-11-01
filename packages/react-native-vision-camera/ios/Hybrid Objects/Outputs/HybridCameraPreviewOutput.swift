@@ -16,7 +16,7 @@ final class HybridCameraPreviewOutput: HybridCameraPreviewOutputSpec, NativePrev
   private var rotationCoordinator: NSObject?
   private var rotationObserver: NSKeyValueObservation?
   private var formatDescriptionObserver: NSObjectProtocol?
-  private let onConfigurationChanged: ((PreviewConfiguration) -> Void)?
+  private let options: PreviewOutputOptions
   private(set) var currentConfiguration: PreviewConfiguration?
   var outputOrientation: CameraOrientation {
     get {
@@ -48,6 +48,9 @@ final class HybridCameraPreviewOutput: HybridCameraPreviewOutputSpec, NativePrev
   /// because the view might not even be laid out yet at the time
   /// the resolution negotiation runs.
   var targetResolution: ResolutionRule {
+    if let targetResolution = options.targetResolution {
+      return .closestTo(targetResolution)
+    }
     let screenSizeDp = UIScreen.main.bounds.size
     let pixelRatio = UIScreen.main.scale
     let screenSizePx = Size(
@@ -58,7 +61,7 @@ final class HybridCameraPreviewOutput: HybridCameraPreviewOutputSpec, NativePrev
 
   init(options: PreviewOutputOptions) {
     self.previewLayer = AVCaptureVideoPreviewLayer()
-    self.onConfigurationChanged = options.onConfigurationChanged
+    self.options = options
     self.previewLayer.videoGravity = .resizeAspectFill
     if #available(iOS 17.0, *) {
       self.orientationManager = nil
@@ -180,6 +183,6 @@ final class HybridCameraPreviewOutput: HybridCameraPreviewOutputSpec, NativePrev
     logger.info(
       "[PreviewConfiguration] Preview configuration changed (\(source)): \(resolution.width)x\(resolution.height) @ \(String(describing: rotationDegrees))°"
     )
-    onConfigurationChanged?(configuration)
+    options.onConfigurationChanged?(configuration)
   }
 }

@@ -22,6 +22,14 @@ export interface PreviewConfiguration {
  */
 export interface PreviewOutputOptions {
   /**
+   * The preferred Preview resolution. The {@linkcode CameraSession}
+   * negotiates this with its other outputs, so the resulting resolution
+   * may differ.
+   *
+   * When omitted, the platform's default Preview resolution preference is used.
+   */
+  targetResolution?: Size
+  /**
    * Called whenever the Preview's resolution or rotation changes.
    */
   onConfigurationChanged?: (configuration: PreviewConfiguration) => void

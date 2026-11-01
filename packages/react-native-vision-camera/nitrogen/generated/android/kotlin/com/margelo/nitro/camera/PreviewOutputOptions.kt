@@ -20,22 +20,27 @@ import java.util.Objects
 data class PreviewOutputOptions(
   @DoNotStrip
   @Keep
+  val targetResolution: Size?,
+  @DoNotStrip
+  @Keep
   val onConfigurationChanged: Func_void_PreviewConfiguration?
 ) {
   /**
    * Create a new instance of PreviewOutputOptions from Kotlin
    */
-  constructor(onConfigurationChanged: ((configuration: PreviewConfiguration) -> Unit)?):
-         this(onConfigurationChanged?.let { Func_void_PreviewConfiguration_java(it) })
+  constructor(targetResolution: Size?, onConfigurationChanged: ((configuration: PreviewConfiguration) -> Unit)?):
+         this(targetResolution, onConfigurationChanged?.let { Func_void_PreviewConfiguration_java(it) })
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other !is PreviewOutputOptions) return false
-    return Objects.deepEquals(this.onConfigurationChanged, other.onConfigurationChanged)
+    return Objects.deepEquals(this.targetResolution, other.targetResolution)
+      && Objects.deepEquals(this.onConfigurationChanged, other.onConfigurationChanged)
   }
 
   override fun hashCode(): Int {
     return arrayOf<Any?>(
+      targetResolution,
       onConfigurationChanged
     ).contentDeepHashCode()
   }
@@ -48,8 +53,8 @@ data class PreviewOutputOptions(
     @Keep
     @Suppress("unused")
     @JvmStatic
-    private fun fromCpp(onConfigurationChanged: Func_void_PreviewConfiguration?): PreviewOutputOptions {
-      return PreviewOutputOptions(onConfigurationChanged)
+    private fun fromCpp(targetResolution: Size?, onConfigurationChanged: Func_void_PreviewConfiguration?): PreviewOutputOptions {
+      return PreviewOutputOptions(targetResolution, onConfigurationChanged)
     }
   }
 }

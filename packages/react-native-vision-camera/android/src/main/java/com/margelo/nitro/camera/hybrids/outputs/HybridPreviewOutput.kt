@@ -2,6 +2,7 @@ package com.margelo.nitro.camera.hybrids.outputs
 
 import android.util.Log
 import androidx.camera.core.Preview
+import androidx.camera.core.resolutionselector.ResolutionSelector
 import com.margelo.nitro.camera.CameraOrientation
 import com.margelo.nitro.camera.HybridCameraPreviewOutputSpec
 import com.margelo.nitro.camera.MediaType
@@ -13,6 +14,7 @@ import com.margelo.nitro.camera.TargetStabilizationMode
 import com.margelo.nitro.camera.extensions.converters.fromMirrorMode
 import com.margelo.nitro.camera.extensions.converters.toMirrorMode
 import com.margelo.nitro.camera.extensions.converters.toSize
+import com.margelo.nitro.camera.extensions.sortedByClosestTo
 import com.margelo.nitro.camera.extensions.surfaceRotation
 import com.margelo.nitro.camera.hybrids.orientation.HybridInterfaceOrientationManager
 import com.margelo.nitro.camera.public.NativeCameraOutput
@@ -77,6 +79,18 @@ class HybridPreviewOutput(
       Preview
         .Builder()
         .apply {
+          // targetResolution={...}
+          options.targetResolution?.let { targetResolution ->
+            val targetSize = targetResolution.toSize()
+            val resolutionSelector =
+              ResolutionSelector
+                .Builder()
+                .setResolutionFilter { sizes, _ ->
+                  sizes.sortedByClosestTo(targetSize)
+                }.build()
+            setResolutionSelector(resolutionSelector)
+          }
+
           // isMirrored={...}
           setMirrorMode(mirrorMode.toMirrorMode())
 
