@@ -127,6 +127,9 @@ export interface CameraViewProps
    * The preferred Preview resolution. Negotiated with the other
    * outputs, so the resulting resolution may differ.
    *
+   * Mainly meant for Android. On iOS, leave this unset and use a
+   * `resolutionBias` constraint instead.
+   *
    * When omitted, the platform's default Preview resolution preference is used.
    */
   previewTargetResolution?: Size

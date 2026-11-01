@@ -26,6 +26,15 @@ export interface PreviewOutputOptions {
    * negotiates this with its other outputs, so the resulting resolution
    * may differ.
    *
+   * Use this to align the Preview's aspect ratio with your other outputs
+   * (e.g. a Frame or Video output). Outputs with different aspect ratios
+   * crop the sensor differently, so the Preview can show a different area
+   * than the other outputs see. This is most noticeable on Android, where
+   * the Preview defaults to 4:3 while video usually resolves to 16:9.
+   *
+   * On iOS, leave this unset - the Preview follows the resolved format.
+   * Use a `resolutionBias` constraint to steer the resolution instead.
+   *
    * When omitted, the platform's default Preview resolution preference is used.
    */
   targetResolution?: Size
