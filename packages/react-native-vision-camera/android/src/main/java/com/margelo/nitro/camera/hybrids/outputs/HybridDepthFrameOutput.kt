@@ -39,6 +39,8 @@ class HybridDepthFrameOutput(
     }
   override val currentResolution: Size?
     get() = imageAnalysis?.resolutionInfo?.resolution?.toSize()
+  override val rotationDegrees: Double?
+    get() = imageAnalysis?.resolutionInfo?.rotationDegrees?.toDouble()
   override var mirrorMode: MirrorMode = MirrorMode.AUTO
 
   private var imageAnalysis: ImageAnalysis? = null

@@ -139,6 +139,19 @@ open class HybridCameraOutputSpec_cxx {
     }
   }
   
+  public final var rotationDegrees: bridge.std__optional_double_ {
+    @inline(__always)
+    get {
+      return { () -> bridge.std__optional_double_ in
+        if let __unwrappedValue = self.__implementation.rotationDegrees {
+          return bridge.create_std__optional_double_(__unwrappedValue)
+        } else {
+          return .init()
+        }
+      }()
+    }
+  }
+  
   public final var currentResolution: bridge.std__optional_Size_ {
     @inline(__always)
     get {

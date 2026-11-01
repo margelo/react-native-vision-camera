@@ -18,8 +18,8 @@ namespace margelo::nitro::camera { struct Size; }
 #include "JMediaType.hpp"
 #include "CameraOrientation.hpp"
 #include "JCameraOrientation.hpp"
-#include "Size.hpp"
 #include <optional>
+#include "Size.hpp"
 #include "JSize.hpp"
 
 namespace margelo::nitro::camera {
@@ -65,6 +65,11 @@ namespace margelo::nitro::camera {
   void JHybridCameraOutputSpec::setOutputOrientation(CameraOrientation outputOrientation) {
     static const auto method = _javaPart->javaClassStatic()->getMethod<void(jni::alias_ref<JCameraOrientation> /* outputOrientation */)>("setOutputOrientation");
     method(_javaPart, JCameraOrientation::fromCpp(outputOrientation));
+  }
+  std::optional<double> JHybridCameraOutputSpec::getRotationDegrees() {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<jni::JDouble>()>("getRotationDegrees");
+    auto __result = method(_javaPart);
+    return __result != nullptr ? std::make_optional(__result->value()) : std::nullopt;
   }
   std::optional<Size> JHybridCameraOutputSpec::getCurrentResolution() {
     static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JSize>()>("getCurrentResolution");

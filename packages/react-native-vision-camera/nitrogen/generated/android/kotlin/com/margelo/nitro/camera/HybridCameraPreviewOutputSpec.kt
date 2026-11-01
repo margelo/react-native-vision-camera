@@ -26,7 +26,9 @@ import com.margelo.nitro.core.HybridObject
 )
 abstract class HybridCameraPreviewOutputSpec: HybridCameraOutputSpec() {
   // Properties
-  
+  @get:DoNotStrip
+  @get:Keep
+  abstract val currentConfiguration: PreviewConfiguration?
 
   // Methods
   
