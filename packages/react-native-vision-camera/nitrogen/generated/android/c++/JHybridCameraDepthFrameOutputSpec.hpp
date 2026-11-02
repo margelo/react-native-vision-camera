@@ -56,6 +56,7 @@ namespace margelo::nitro::camera {
     MediaType getMediaType() override;
     CameraOrientation getOutputOrientation() override;
     void setOutputOrientation(CameraOrientation outputOrientation) override;
+    std::optional<double> getRotationDegrees() override;
     std::optional<Size> getCurrentResolution() override;
 
   public:

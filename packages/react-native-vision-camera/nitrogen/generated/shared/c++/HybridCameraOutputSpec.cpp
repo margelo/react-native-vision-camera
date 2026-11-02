@@ -17,6 +17,7 @@ namespace margelo::nitro::camera {
       prototype.registerHybridGetter("mediaType", &HybridCameraOutputSpec::getMediaType);
       prototype.registerHybridGetter("outputOrientation", &HybridCameraOutputSpec::getOutputOrientation);
       prototype.registerHybridSetter("outputOrientation", &HybridCameraOutputSpec::setOutputOrientation);
+      prototype.registerHybridGetter("rotationDegrees", &HybridCameraOutputSpec::getRotationDegrees);
       prototype.registerHybridGetter("currentResolution", &HybridCameraOutputSpec::getCurrentResolution);
     });
   }

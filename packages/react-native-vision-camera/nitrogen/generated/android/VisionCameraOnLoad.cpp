@@ -18,6 +18,7 @@
 #include "JHybridCameraControllerSpec.hpp"
 #include "JFunc_void.hpp"
 #include "JHybridCameraFactorySpec.hpp"
+#include "JFunc_void_PreviewConfiguration.hpp"
 #include "JHybridFrameRendererSpec.hpp"
 #include "JHybridNativeThreadSpec.hpp"
 #include "JHybridNativeThreadFactorySpec.hpp"
@@ -128,6 +129,7 @@ void registerAllNatives() {
   margelo::nitro::camera::JHybridCameraControllerSpec::CxxPart::registerNatives();
   margelo::nitro::camera::JFunc_void_cxx::registerNatives();
   margelo::nitro::camera::JHybridCameraFactorySpec::CxxPart::registerNatives();
+  margelo::nitro::camera::JFunc_void_PreviewConfiguration_cxx::registerNatives();
   margelo::nitro::camera::JHybridFrameRendererSpec::CxxPart::registerNatives();
   margelo::nitro::camera::JHybridNativeThreadSpec::CxxPart::registerNatives();
   margelo::nitro::camera::JHybridNativeThreadFactorySpec::CxxPart::registerNatives();

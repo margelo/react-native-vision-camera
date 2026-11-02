@@ -65,7 +65,7 @@ namespace margelo::nitro::camera {
     std::shared_ptr<HybridCameraVideoOutputSpec> createVideoOutput(const VideoOutputOptions& options) override;
     std::shared_ptr<HybridCameraFrameOutputSpec> createFrameOutput(const FrameOutputOptions& options) override;
     std::shared_ptr<HybridCameraDepthFrameOutputSpec> createDepthFrameOutput(const DepthFrameOutputOptions& options) override;
-    std::shared_ptr<HybridCameraPreviewOutputSpec> createPreviewOutput() override;
+    std::shared_ptr<HybridCameraPreviewOutputSpec> createPreviewOutput(const PreviewOutputOptions& options) override;
     std::shared_ptr<HybridCameraObjectOutputSpec> createObjectOutput(const ObjectOutputOptions& options) override;
     std::shared_ptr<HybridCameraOutputSynchronizerSpec> createOutputSynchronizer(const std::vector<std::shared_ptr<HybridCameraOutputSpec>>& outputs) override;
     std::shared_ptr<HybridZoomGestureControllerSpec> createZoomGestureController() override;

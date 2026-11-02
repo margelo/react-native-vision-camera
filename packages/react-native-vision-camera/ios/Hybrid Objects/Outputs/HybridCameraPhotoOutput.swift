@@ -44,6 +44,10 @@ final class HybridCameraPhotoOutput: HybridCameraPhotoOutputSpec, NativeCameraOu
     let dims = device.activeFormat.highResolutionStillImageDimensions
     return Size(width: Double(dims.width), height: Double(dims.height))
   }
+  var rotationDegrees: Double? {
+    guard let connection = output.connection(with: .video) else { return nil }
+    return connection.rotationDegrees
+  }
 
   var streamType: StreamType = .photo
   var targetResolution: ResolutionRule {

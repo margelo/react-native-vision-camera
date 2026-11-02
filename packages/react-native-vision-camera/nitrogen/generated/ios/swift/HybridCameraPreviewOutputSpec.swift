@@ -10,7 +10,7 @@ import NitroModules
 /// See ``HybridCameraPreviewOutputSpec``
 public protocol HybridCameraPreviewOutputSpec_protocol: HybridObject, HybridCameraOutputSpec_protocol {
   // Properties
-  
+  var currentConfiguration: PreviewConfiguration? { get }
 
   // Methods
   

@@ -97,8 +97,8 @@ final class VisionCamera: HybridCameraFactorySpec {
     return HybridCameraObjectOutput(options: options)
   }
 
-  func createPreviewOutput() -> any HybridCameraPreviewOutputSpec {
-    return HybridCameraPreviewOutput()
+  func createPreviewOutput(options: PreviewOutputOptions) -> any HybridCameraPreviewOutputSpec {
+    return HybridCameraPreviewOutput(options: options)
   }
 
   func createOutputSynchronizer(outputs: [any HybridCameraOutputSpec]) throws

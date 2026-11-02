@@ -138,6 +138,8 @@ namespace margelo::nitro::camera { struct PixelFormatConstraint; }
 namespace margelo::nitro::camera { enum class PixelFormat; }
 // Forward declaration of `Point` to properly resolve imports.
 namespace margelo::nitro::camera { struct Point; }
+// Forward declaration of `PreviewConfiguration` to properly resolve imports.
+namespace margelo::nitro::camera { struct PreviewConfiguration; }
 // Forward declaration of `PreviewImplementationMode` to properly resolve imports.
 namespace margelo::nitro::camera { enum class PreviewImplementationMode; }
 // Forward declaration of `PreviewResizeMode` to properly resolve imports.
@@ -319,6 +321,7 @@ namespace VisionCamera { class HybridZoomGestureControllerSpec_cxx; }
 #include "PixelFormat.hpp"
 #include "PixelFormatConstraint.hpp"
 #include "Point.hpp"
+#include "PreviewConfiguration.hpp"
 #include "PreviewImplementationMode.hpp"
 #include "PreviewResizeMode.hpp"
 #include "PreviewStabilizationModeConstraint.hpp"
@@ -984,6 +987,43 @@ namespace margelo::nitro::camera::bridge::swift {
   // pragma MARK: std::weak_ptr<HybridCameraPreviewOutputSpec>
   using std__weak_ptr_HybridCameraPreviewOutputSpec_ = std::weak_ptr<HybridCameraPreviewOutputSpec>;
   inline std__weak_ptr_HybridCameraPreviewOutputSpec_ weakify_std__shared_ptr_HybridCameraPreviewOutputSpec_(const std::shared_ptr<HybridCameraPreviewOutputSpec>& strong) noexcept { return strong; }
+  
+  // pragma MARK: std::function<void(const PreviewConfiguration& /* configuration */)>
+  /**
+   * Specialized version of `std::function<void(const PreviewConfiguration&)>`.
+   */
+  using Func_void_PreviewConfiguration = std::function<void(const PreviewConfiguration& /* configuration */)>;
+  /**
+   * Wrapper class for a `std::function<void(const PreviewConfiguration& / * configuration * /)>`, this can be used from Swift.
+   */
+  class Func_void_PreviewConfiguration_Wrapper final {
+  public:
+    explicit Func_void_PreviewConfiguration_Wrapper(std::function<void(const PreviewConfiguration& /* configuration */)>&& func): _function(std::make_unique<std::function<void(const PreviewConfiguration& /* configuration */)>>(std::move(func))) {}
+    inline void call(PreviewConfiguration configuration) const noexcept {
+      _function->operator()(configuration);
+    }
+  private:
+    std::unique_ptr<std::function<void(const PreviewConfiguration& /* configuration */)>> _function;
+  } SWIFT_NONCOPYABLE;
+  Func_void_PreviewConfiguration create_Func_void_PreviewConfiguration(void* NON_NULL swiftClosureWrapper) noexcept;
+  inline Func_void_PreviewConfiguration_Wrapper wrap_Func_void_PreviewConfiguration(Func_void_PreviewConfiguration value) noexcept {
+    return Func_void_PreviewConfiguration_Wrapper(std::move(value));
+  }
+  
+  // pragma MARK: std::optional<std::function<void(const PreviewConfiguration& /* configuration */)>>
+  /**
+   * Specialized version of `std::optional<std::function<void(const PreviewConfiguration& / * configuration * /)>>`.
+   */
+  using std__optional_std__function_void_const_PreviewConfiguration_____configuration______ = std::optional<std::function<void(const PreviewConfiguration& /* configuration */)>>;
+  inline std::optional<std::function<void(const PreviewConfiguration& /* configuration */)>> create_std__optional_std__function_void_const_PreviewConfiguration_____configuration______(const std::function<void(const PreviewConfiguration& /* configuration */)>& value) noexcept {
+    return std::optional<std::function<void(const PreviewConfiguration& /* configuration */)>>(value);
+  }
+  inline bool has_value_std__optional_std__function_void_const_PreviewConfiguration_____configuration______(const std::optional<std::function<void(const PreviewConfiguration& /* configuration */)>>& optional) noexcept {
+    return optional.has_value();
+  }
+  inline std::function<void(const PreviewConfiguration& /* configuration */)> get_std__optional_std__function_void_const_PreviewConfiguration_____configuration______(const std::optional<std::function<void(const PreviewConfiguration& /* configuration */)>>& optional) noexcept {
+    return optional.value();
+  }
   
   // pragma MARK: std::shared_ptr<HybridCameraObjectOutputSpec>
   /**
@@ -2540,6 +2580,21 @@ namespace margelo::nitro::camera::bridge::swift {
   }
   inline Result_std__shared_ptr_Promise_PhotoFile___ create_Result_std__shared_ptr_Promise_PhotoFile___(const std::exception_ptr& error) noexcept {
     return Result<std::shared_ptr<Promise<PhotoFile>>>::withError(error);
+  }
+  
+  // pragma MARK: std::optional<PreviewConfiguration>
+  /**
+   * Specialized version of `std::optional<PreviewConfiguration>`.
+   */
+  using std__optional_PreviewConfiguration_ = std::optional<PreviewConfiguration>;
+  inline std::optional<PreviewConfiguration> create_std__optional_PreviewConfiguration_(const PreviewConfiguration& value) noexcept {
+    return std::optional<PreviewConfiguration>(value);
+  }
+  inline bool has_value_std__optional_PreviewConfiguration_(const std::optional<PreviewConfiguration>& optional) noexcept {
+    return optional.has_value();
+  }
+  inline PreviewConfiguration get_std__optional_PreviewConfiguration_(const std::optional<PreviewConfiguration>& optional) noexcept {
+    return optional.value();
   }
   
   // pragma MARK: std::vector<VideoCodec>

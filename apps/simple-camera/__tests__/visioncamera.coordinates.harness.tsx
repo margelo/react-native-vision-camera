@@ -196,7 +196,7 @@ describe('VisionCamera - Coordinates', () => {
 
   it('round-trips View -> Camera -> View coordinates for the view center and corners', async () => {
     const session = await VisionCamera.createCameraSession(false)
-    const previewOutput = VisionCamera.createPreviewOutput()
+    const previewOutput = VisionCamera.createPreviewOutput({})
     await session.configure([
       {
         input: backDevice,
@@ -268,7 +268,7 @@ describe('VisionCamera - Coordinates', () => {
   // CameraPoint(...))` for the view center.
   it('maps the view center through Camera coordinates back onto the view center', async () => {
     const session = await VisionCamera.createCameraSession(false)
-    const previewOutput = VisionCamera.createPreviewOutput()
+    const previewOutput = VisionCamera.createPreviewOutput({})
     await session.configure([
       {
         input: backDevice,
@@ -331,7 +331,7 @@ describe('VisionCamera - Coordinates', () => {
   // coordinate system.
   it('createMeteringPoint echoes view coords as relative and normalizes camera coords to [0, 1]', async () => {
     const session = await VisionCamera.createCameraSession(false)
-    const previewOutput = VisionCamera.createPreviewOutput()
+    const previewOutput = VisionCamera.createPreviewOutput({})
     await session.configure([
       {
         input: backDevice,
@@ -405,7 +405,7 @@ describe('VisionCamera - Coordinates', () => {
   // Repro for https://github.com/margelo/react-native-vision-camera/issues/3871
   it('round-trips Frame center -> Camera -> View center end-to-end', async () => {
     const session = await VisionCamera.createCameraSession(false)
-    const previewOutput = VisionCamera.createPreviewOutput()
+    const previewOutput = VisionCamera.createPreviewOutput({})
     const frameOutput = VisionCamera.createFrameOutput({
       targetResolution: CommonResolutions.HD_16_9,
       pixelFormat: 'native',
@@ -516,7 +516,7 @@ describe('VisionCamera - Coordinates', () => {
   // is the contract under test, not either half alone.
   it('maps a square Frame region onto a square View region', async () => {
     const session = await VisionCamera.createCameraSession(false)
-    const previewOutput = VisionCamera.createPreviewOutput()
+    const previewOutput = VisionCamera.createPreviewOutput({})
     const frameOutput = VisionCamera.createFrameOutput({
       targetResolution: CommonResolutions.HD_16_9,
       pixelFormat: 'native',

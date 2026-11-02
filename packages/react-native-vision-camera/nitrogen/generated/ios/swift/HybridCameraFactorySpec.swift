@@ -24,7 +24,7 @@ public protocol HybridCameraFactorySpec_protocol: HybridObject {
   func createVideoOutput(options: VideoOutputOptions) throws -> (any HybridCameraVideoOutputSpec)
   func createFrameOutput(options: FrameOutputOptions) throws -> (any HybridCameraFrameOutputSpec)
   func createDepthFrameOutput(options: DepthFrameOutputOptions) throws -> (any HybridCameraDepthFrameOutputSpec)
-  func createPreviewOutput() throws -> (any HybridCameraPreviewOutputSpec)
+  func createPreviewOutput(options: PreviewOutputOptions) throws -> (any HybridCameraPreviewOutputSpec)
   func createObjectOutput(options: ObjectOutputOptions) throws -> (any HybridCameraObjectOutputSpec)
   func createOutputSynchronizer(outputs: [(any HybridCameraOutputSpec)]) throws -> (any HybridCameraOutputSynchronizerSpec)
   func createZoomGestureController() throws -> (any HybridZoomGestureControllerSpec)

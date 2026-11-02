@@ -59,6 +59,8 @@ namespace margelo::nitro::camera { class HybridCameraDepthFrameOutputSpec; }
 namespace margelo::nitro::camera { struct DepthFrameOutputOptions; }
 // Forward declaration of `HybridCameraPreviewOutputSpec` to properly resolve imports.
 namespace margelo::nitro::camera { class HybridCameraPreviewOutputSpec; }
+// Forward declaration of `PreviewOutputOptions` to properly resolve imports.
+namespace margelo::nitro::camera { struct PreviewOutputOptions; }
 // Forward declaration of `HybridCameraObjectOutputSpec` to properly resolve imports.
 namespace margelo::nitro::camera { class HybridCameraObjectOutputSpec; }
 // Forward declaration of `ObjectOutputOptions` to properly resolve imports.
@@ -108,6 +110,7 @@ namespace margelo::nitro::camera { class HybridMeteringPointSpec; }
 #include "HybridCameraDepthFrameOutputSpec.hpp"
 #include "DepthFrameOutputOptions.hpp"
 #include "HybridCameraPreviewOutputSpec.hpp"
+#include "PreviewOutputOptions.hpp"
 #include "HybridCameraObjectOutputSpec.hpp"
 #include "ObjectOutputOptions.hpp"
 #include "HybridCameraOutputSynchronizerSpec.hpp"
@@ -161,7 +164,7 @@ namespace margelo::nitro::camera {
       virtual std::shared_ptr<HybridCameraVideoOutputSpec> createVideoOutput(const VideoOutputOptions& options) = 0;
       virtual std::shared_ptr<HybridCameraFrameOutputSpec> createFrameOutput(const FrameOutputOptions& options) = 0;
       virtual std::shared_ptr<HybridCameraDepthFrameOutputSpec> createDepthFrameOutput(const DepthFrameOutputOptions& options) = 0;
-      virtual std::shared_ptr<HybridCameraPreviewOutputSpec> createPreviewOutput() = 0;
+      virtual std::shared_ptr<HybridCameraPreviewOutputSpec> createPreviewOutput(const PreviewOutputOptions& options) = 0;
       virtual std::shared_ptr<HybridCameraObjectOutputSpec> createObjectOutput(const ObjectOutputOptions& options) = 0;
       virtual std::shared_ptr<HybridCameraOutputSynchronizerSpec> createOutputSynchronizer(const std::vector<std::shared_ptr<HybridCameraOutputSpec>>& outputs) = 0;
       virtual std::shared_ptr<HybridZoomGestureControllerSpec> createZoomGestureController() = 0;
