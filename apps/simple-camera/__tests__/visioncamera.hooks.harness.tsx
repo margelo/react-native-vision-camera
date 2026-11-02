@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { StyleSheet } from 'react-native'
 import {
+  assert,
   beforeAll,
   describe,
   expect,
@@ -9,6 +10,7 @@ import {
   type Mock,
   render,
   waitFor,
+  waitUntil,
 } from 'react-native-harness'
 import {
   Screen,
@@ -18,6 +20,7 @@ import {
 import type {
   CameraDevice,
   CameraDeviceFactory,
+  CameraFrameOutput,
   CameraOrientation,
   CameraPhotoOutput,
   CameraPosition,
@@ -30,12 +33,14 @@ import {
   getUIRotation,
   useCamera,
   useCameraDevice,
+  useFrameOutput,
   useOrientation,
   usePhotoOutput,
   usePreviewOutput,
   useVideoOutput,
   VisionCamera,
 } from 'react-native-vision-camera'
+import { scheduleOnRN } from 'react-native-worklets'
 
 interface DeviceSnapshot {
   requestedPosition: TargetCameraPosition
@@ -112,6 +117,32 @@ function CameraDeviceProbe({
   return null
 }
 
+interface FrameOutputProbeProps {
+  onFrameOutput: (frameOutput: CameraFrameOutput) => void
+  onFrameReceived: () => void
+}
+
+function FrameOutputProbe({
+  onFrameOutput,
+  onFrameReceived,
+}: FrameOutputProbeProps): null {
+  const frameOutput = useFrameOutput({
+    targetResolution: CommonResolutions.HD_16_9,
+    pixelFormat: 'native',
+    onFrame(frame) {
+      'worklet'
+      scheduleOnRN(onFrameReceived)
+      frame.dispose()
+    },
+  })
+
+  useEffect(() => {
+    onFrameOutput(frameOutput)
+  }, [frameOutput, onFrameOutput])
+
+  return null
+}
+
 async function expectLatestDeviceSnapshot(
   onSnapshot: Mock<(snapshot: DeviceSnapshot) => void>,
   position: TargetCameraPosition,
@@ -131,11 +162,15 @@ async function expectLatestDeviceSnapshot(
 
 describe('VisionCamera - Hooks', () => {
   let factory: CameraDeviceFactory
+  let backDevice: CameraDevice
 
   beforeAll(async () => {
     await VisionCamera.requestCameraPermission()
     expect(VisionCamera.cameraPermissionStatus).toBe('authorized')
     factory = await VisionCamera.createDeviceFactory()
+    const back = factory.getDefaultCamera('back')
+    assert.exists(back, 'no back camera')
+    backDevice = back
   })
 
   it('updates useCameraDevice when the requested position changes', async () => {
@@ -642,5 +677,80 @@ describe('VisionCamera - Hooks', () => {
     )
 
     expect(onError).not.toHaveBeenCalled()
+  })
+
+  it('stops delivering Frames to useFrameOutput once the component unmounts', async () => {
+    const onFrameReceived = fn<() => void>()
+    let hookFrameOutput: CameraFrameOutput | undefined
+    const onFrameOutput = (frameOutput: CameraFrameOutput) => {
+      hookFrameOutput = frameOutput
+    }
+
+    const { unmount } = await render(
+      <FrameOutputProbe
+        onFrameOutput={onFrameOutput}
+        onFrameReceived={onFrameReceived}
+      />,
+    )
+    await waitUntil(() => hookFrameOutput != null, { timeout: 10_000 })
+    assert.exists(hookFrameOutput, 'useFrameOutput did not produce an output')
+
+    // The session outlives the component: a real app keeps the pipeline
+    // running (or re-attaches the same output) after a screen unmounts.
+    const session = await VisionCamera.createCameraSession(false)
+    const photoOutput = VisionCamera.createPhotoOutput({
+      targetResolution: CommonResolutions.HD_4_3,
+      containerFormat: 'jpeg',
+      quality: 0.8,
+      qualityPrioritization: 'balanced',
+    })
+    const onSessionError = fn<(error: Error) => void>()
+    const errorSub = session.addOnErrorListener(onSessionError)
+    await session.configure([
+      {
+        input: backDevice,
+        outputs: [
+          { output: hookFrameOutput, mirrorMode: 'auto' },
+          { output: photoOutput, mirrorMode: 'auto' },
+        ],
+        constraints: [],
+      },
+    ])
+    await session.start()
+
+    try {
+      await waitUntil(
+        () => {
+          const error = onSessionError.mock.lastCall?.[0]
+          if (error != null) throw error
+          return onFrameReceived.mock.calls.length >= 3
+        },
+        { timeout: 15_000 },
+      )
+
+      unmount()
+
+      // A photo capture only completes with the pipeline running, so it is
+      // the clock: Frames in flight at unmount land before it resolves.
+      const settlePhoto = await photoOutput.capturePhoto(
+        { flashMode: 'off', enableShutterSound: false },
+        {},
+      )
+      settlePhoto.dispose()
+      const framesAfterUnmount = onFrameReceived.mock.calls.length
+
+      const clockPhoto = await photoOutput.capturePhoto(
+        { flashMode: 'off', enableShutterSound: false },
+        {},
+      )
+      expect(clockPhoto.width).toBeGreaterThan(0)
+      clockPhoto.dispose()
+
+      expect(onSessionError).not.toHaveBeenCalled()
+      expect(onFrameReceived).toHaveBeenCalledTimes(framesAfterUnmount)
+    } finally {
+      errorSub.remove()
+      await session.stop()
+    }
   })
 })

@@ -49,6 +49,9 @@ export function useObjectOutput({
   // 2. Update onObjectsScanned() callback if it changed
   useEffect(() => {
     objectOutput.setOnObjectsScannedCallback(onObjectsScanned)
+    return () => {
+      objectOutput.setOnObjectsScannedCallback(undefined)
+    }
   }, [objectOutput, onObjectsScanned])
 
   // 3. Return :)
