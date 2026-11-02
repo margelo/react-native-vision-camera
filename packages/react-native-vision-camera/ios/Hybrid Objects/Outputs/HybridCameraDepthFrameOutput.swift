@@ -35,6 +35,10 @@ final class HybridCameraDepthFrameOutput: HybridCameraDepthFrameOutputSpec, Nati
     guard let connection = output.connection(with: .depthData) else { return nil }
     return connection.inputStreamResolution
   }
+  var rotationDegrees: Double? {
+    guard let connection = output.connection(with: .depthData) else { return nil }
+    return connection.rotationDegrees
+  }
 
   var streamType: StreamType = .depthVideo
   var targetResolution: ResolutionRule {

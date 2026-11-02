@@ -124,7 +124,18 @@ open class HybridCameraPreviewOutputSpec_cxx : HybridCameraOutputSpec_cxx {
   }
 
   // Properties
-  
+  public final var currentConfiguration: bridge.std__optional_PreviewConfiguration_ {
+    @inline(__always)
+    get {
+      return { () -> bridge.std__optional_PreviewConfiguration_ in
+        if let __unwrappedValue = self.__implementation.currentConfiguration {
+          return bridge.create_std__optional_PreviewConfiguration_(__unwrappedValue)
+        } else {
+          return .init()
+        }
+      }()
+    }
+  }
 
   // Methods
   

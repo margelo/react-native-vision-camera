@@ -38,6 +38,10 @@ abstract class HybridCameraOutputSpec: HybridObject() {
   
   @get:DoNotStrip
   @get:Keep
+  abstract val rotationDegrees: Double?
+  
+  @get:DoNotStrip
+  @get:Keep
   abstract val currentResolution: Size?
 
   // Methods

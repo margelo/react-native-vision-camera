@@ -112,7 +112,7 @@ describe('VisionCamera - Constraints', () => {
         enableHigherResolutionCodecs: true,
       })
       const previewOutput = includePreview
-        ? VisionCamera.createPreviewOutput()
+        ? VisionCamera.createPreviewOutput({})
         : undefined
       let selectedConfig: CameraSessionConfig | undefined
 
@@ -238,7 +238,7 @@ describe('VisionCamera - Constraints', () => {
         enableHigherResolutionCodecs: true,
       })
       const previewOutput = includePreview
-        ? VisionCamera.createPreviewOutput()
+        ? VisionCamera.createPreviewOutput({})
         : undefined
 
       await session.configure([
@@ -320,7 +320,7 @@ describe('VisionCamera - Constraints', () => {
         enableAudio: false,
       })
       const previewOutput = includePreview
-        ? VisionCamera.createPreviewOutput()
+        ? VisionCamera.createPreviewOutput({})
         : undefined
       let selectedConfig: CameraSessionConfig | undefined
 
@@ -407,7 +407,7 @@ describe('VisionCamera - Constraints', () => {
         qualityPrioritization: 'balanced',
       })
       const previewOutput = includePreview
-        ? VisionCamera.createPreviewOutput()
+        ? VisionCamera.createPreviewOutput({})
         : undefined
 
       await session.configure([
@@ -522,7 +522,7 @@ describe('VisionCamera - Constraints', () => {
         'previewStabilizationMode: no device on this system supports "preview-optimized"',
       )
     }
-    const previewOutput = VisionCamera.createPreviewOutput()
+    const previewOutput = VisionCamera.createPreviewOutput({})
     const config = await VisionCamera.resolveConstraints(
       stabDevice,
       [{ output: previewOutput, mirrorMode: 'auto' }],

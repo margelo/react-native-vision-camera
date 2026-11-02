@@ -27,6 +27,10 @@ final class HybridBarcodeScannerOutput: HybridCameraOutputSpec, NativeCameraOutp
     guard let connection = output.connection(with: .video) else { return nil }
     return connection.inputStreamResolution
   }
+  var rotationDegrees: Double? {
+    guard let connection = output.connection(with: .video) else { return nil }
+    return connection.rotationDegrees
+  }
 
   let streamType: StreamType = .video
   var targetResolution: ResolutionRule {

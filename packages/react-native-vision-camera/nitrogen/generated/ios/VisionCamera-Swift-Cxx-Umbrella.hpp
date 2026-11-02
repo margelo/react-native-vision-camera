@@ -174,8 +174,12 @@ namespace margelo::nitro::camera { struct PixelFormatConstraint; }
 namespace margelo::nitro::camera { enum class PixelFormat; }
 // Forward declaration of `Point` to properly resolve imports.
 namespace margelo::nitro::camera { struct Point; }
+// Forward declaration of `PreviewConfiguration` to properly resolve imports.
+namespace margelo::nitro::camera { struct PreviewConfiguration; }
 // Forward declaration of `PreviewImplementationMode` to properly resolve imports.
 namespace margelo::nitro::camera { enum class PreviewImplementationMode; }
+// Forward declaration of `PreviewOutputOptions` to properly resolve imports.
+namespace margelo::nitro::camera { struct PreviewOutputOptions; }
 // Forward declaration of `PreviewResizeMode` to properly resolve imports.
 namespace margelo::nitro::camera { enum class PreviewResizeMode; }
 // Forward declaration of `PreviewStabilizationModeConstraint` to properly resolve imports.
@@ -316,7 +320,9 @@ namespace margelo::nitro::camera { struct WhiteBalanceTemperatureAndTint; }
 #include "PixelFormat.hpp"
 #include "PixelFormatConstraint.hpp"
 #include "Point.hpp"
+#include "PreviewConfiguration.hpp"
 #include "PreviewImplementationMode.hpp"
+#include "PreviewOutputOptions.hpp"
 #include "PreviewResizeMode.hpp"
 #include "PreviewStabilizationModeConstraint.hpp"
 #include "QualityPrioritization.hpp"

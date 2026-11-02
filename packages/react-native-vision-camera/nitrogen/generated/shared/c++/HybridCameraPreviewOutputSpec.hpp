@@ -13,9 +13,13 @@
 #error NitroModules cannot be found! Are you sure you installed NitroModules properly?
 #endif
 
+// Forward declaration of `PreviewConfiguration` to properly resolve imports.
+namespace margelo::nitro::camera { struct PreviewConfiguration; }
 // Forward declaration of `HybridCameraOutputSpec` to properly resolve imports.
 namespace margelo::nitro::camera { class HybridCameraOutputSpec; }
 
+#include "PreviewConfiguration.hpp"
+#include <optional>
 #include <memory>
 #include "HybridCameraOutputSpec.hpp"
 
@@ -46,7 +50,7 @@ namespace margelo::nitro::camera {
 
     public:
       // Properties
-      
+      virtual std::optional<PreviewConfiguration> getCurrentConfiguration() = 0;
 
     public:
       // Methods
