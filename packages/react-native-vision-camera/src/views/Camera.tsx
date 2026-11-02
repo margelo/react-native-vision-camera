@@ -1,4 +1,10 @@
-import React, { type Ref, useImperativeHandle, useMemo, useRef } from 'react'
+import React, {
+  type Ref,
+  type RefObject,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+} from 'react'
 import type { ViewProps } from 'react-native'
 import { callback } from 'react-native-nitro-modules'
 import type { SharedValue } from 'react-native-reanimated'
@@ -109,6 +115,15 @@ export interface CameraViewProps
   ref?: Ref<CameraRef>
 }
 
+// Module-level so the callback handed to native captures only the ref object.
+// Native holds this callback for as long as the native view lives; created inside
+// CameraImpl it would keep CameraImpl's whole scope alive, including its props.
+function createHybridRefSetter(ref: RefObject<PreviewView | null>) {
+  return callback((r: PreviewView) => {
+    ref.current = r
+  })
+}
+
 function CameraImpl({
   implementationMode,
   resizeMode,
@@ -131,13 +146,7 @@ function CameraImpl({
 
   // 4. Create `ref` for `PreviewView`
   const previewViewRef = useRef<PreviewView>(null)
-  const setHybridRef = useMemo(
-    () =>
-      callback((r: PreviewView) => {
-        previewViewRef.current = r
-      }),
-    [],
-  )
+  const setHybridRef = useMemo(() => createHybridRefSetter(previewViewRef), [])
 
   // 5. Create a ref that exposes some funcs on the Controller and the PreviewView.
   useImperativeHandle(
