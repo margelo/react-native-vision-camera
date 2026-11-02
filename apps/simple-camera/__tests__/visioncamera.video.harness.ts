@@ -577,6 +577,49 @@ describe('VisionCamera - Video', () => {
     expect(recordingFailure).toBeInstanceOf(Error)
   })
 
+  it('rejects starting a second Recorder while another Recorder of the same output is recording', async () => {
+    const session = await VisionCamera.createCameraSession(false)
+    const videoOutput = VisionCamera.createVideoOutput({
+      targetResolution: CommonResolutions.HD_16_9,
+      enableAudio: false,
+    })
+    await session.configure([
+      {
+        input: backDevice,
+        outputs: [{ output: videoOutput, mirrorMode: 'auto' }],
+        constraints: [],
+      },
+    ])
+    await session.start()
+
+    const firstRecorder = await videoOutput.createRecorder({})
+    const secondRecorder = await videoOutput.createRecorder({})
+    const finished = deferred<RecordingFinishedReason>()
+
+    try {
+      await firstRecorder.startRecording(
+        (_path, reason) => finished.resolve(reason),
+        finished.reject,
+      )
+      // A video output records one file at a time, so the second start must
+      // reject instead of crashing the app or interrupting the first recording.
+      await expect(
+        secondRecorder.startRecording(
+          () => {},
+          () => {},
+        ),
+      ).rejects.toThrow()
+      expect(firstRecorder.isRecording).toBe(true)
+
+      await sleep(1_000)
+      await firstRecorder.stopRecording()
+      const reason = await withTimeout(finished.promise, 10_000, 'finish')
+      expect(reason).toBe('stopped')
+    } finally {
+      await session.stop()
+    }
+  })
+
   // Verifies that `targetResolution` actually drives the video pipeline.
   // We can't introspect the captured MP4's dimensions from JS today, so the
   // best signal is `videoOutput.currentResolution` once the output has been
