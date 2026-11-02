@@ -138,7 +138,7 @@ dependencies {
   implementation "com.facebook.react:react-native:+"
 
   // Google Fused Location API
-  implementation "com.google.android.gms:play-services-location:21.3.0"
+  implementation "com.google.android.gms:play-services-location:21.4.0"
 
   // Add a dependency on NitroModules
   implementation project(":react-native-nitro-modules")
