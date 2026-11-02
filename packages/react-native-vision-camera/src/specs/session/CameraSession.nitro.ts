@@ -16,6 +16,8 @@ export type InterruptionReason =
   | 'video-device-not-available-with-multiple-foreground-apps'
   | 'video-device-not-available-due-to-system-pressure'
   | 'sensitive-content-mitigation-activated'
+  | 'max-cameras-in-use'
+  | 'other-recoverable-error'
   | 'unknown'
 
 /**

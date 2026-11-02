@@ -31,6 +31,10 @@ public extension InterruptionReason {
         self = .videoDeviceNotAvailableDueToSystemPressure
       case "sensitive-content-mitigation-activated":
         self = .sensitiveContentMitigationActivated
+      case "max-cameras-in-use":
+        self = .maxCamerasInUse
+      case "other-recoverable-error":
+        self = .otherRecoverableError
       default:
         return nil
     }
@@ -55,6 +59,10 @@ public extension InterruptionReason {
         return "video-device-not-available-due-to-system-pressure"
       case .sensitiveContentMitigationActivated:
         return "sensitive-content-mitigation-activated"
+      case .maxCamerasInUse:
+        return "max-cameras-in-use"
+      case .otherRecoverableError:
+        return "other-recoverable-error"
     }
   }
 }

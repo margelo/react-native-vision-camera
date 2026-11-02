@@ -1,6 +1,7 @@
 package com.margelo.nitro.camera.session
 
 import androidx.camera.core.Camera
+import com.margelo.nitro.camera.InterruptionReason
 import java.io.Closeable
 
 interface ActiveCameraSession : Closeable {
@@ -11,7 +12,7 @@ interface ActiveCameraSession : Closeable {
 
     fun onError(error: Throwable)
 
-    fun onInterruptionStarted()
+    fun onInterruptionStarted(reason: InterruptionReason)
 
     fun onInterruptionEnded()
   }
