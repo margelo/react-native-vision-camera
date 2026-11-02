@@ -1,3 +1,4 @@
+import { Platform } from 'react-native'
 import {
   assert,
   beforeAll,
@@ -16,9 +17,20 @@ import type {
   TargetVideoPixelFormat,
 } from 'react-native-vision-camera'
 import { CommonResolutions, VisionCamera } from 'react-native-vision-camera'
-import { provider as workletsProvider } from 'react-native-vision-camera-worklets'
-import { createSynchronizable, scheduleOnRN } from 'react-native-worklets'
+import {
+  createWorkletRuntimeForThread,
+  getCurrentThreadMarker,
+  provider as workletsProvider,
+} from 'react-native-vision-camera-worklets'
+import {
+  createSynchronizable,
+  scheduleOnRN,
+  scheduleOnRuntime,
+} from 'react-native-worklets'
 import { deferred, withTimeout } from './test-utils'
+
+// Mirrors `IdentifiableExecutor.IDLE_THREAD_TIMEOUT_MS` on Android.
+const FRAME_THREAD_IDLE_TIMEOUT_MS = 5_000
 
 const framePixelFormatCases = [
   {
@@ -104,6 +116,149 @@ describe('VisionCamera - Frame', () => {
       await session.stop()
     }
     expect(framesReceived).toBeGreaterThanOrEqual(3)
+  })
+
+  it('stops accepting work on the frame output thread after dispose()', async () => {
+    const frameOutput = VisionCamera.createFrameOutput({
+      targetResolution: CommonResolutions.VGA_16_9,
+      pixelFormat: 'native',
+      enablePreviewSizedOutputBuffers: false,
+      enablePhysicalBufferRotation: false,
+      enableCameraMatrixDelivery: false,
+      allowDeferredStart: false,
+      dropFramesWhileBusy: true,
+    })
+    const thread = frameOutput.thread
+
+    const ranBeforeDispose = deferred()
+    thread.runOnThread(() => ranBeforeDispose.resolve())
+    await withTimeout(
+      ranBeforeDispose.promise,
+      5_000,
+      'run on frame output thread',
+    )
+
+    frameOutput.dispose()
+
+    expect(() => thread.runOnThread(() => {})).toThrow()
+  })
+
+  it('drops worklet jobs queued on the frame output thread after dispose()', async () => {
+    const frameOutput = VisionCamera.createFrameOutput({
+      targetResolution: CommonResolutions.VGA_16_9,
+      pixelFormat: 'native',
+      enablePreviewSizedOutputBuffers: false,
+      enablePhysicalBufferRotation: false,
+      enableCameraMatrixDelivery: false,
+      allowDeferredStart: false,
+      dropFramesWhileBusy: true,
+    })
+    const runtime = createWorkletRuntimeForThread(frameOutput.thread)
+
+    const ranBeforeDispose = deferred()
+    const onRanBeforeDispose = () => ranBeforeDispose.resolve()
+    scheduleOnRuntime(runtime, () => {
+      'worklet'
+      scheduleOnRN(onRanBeforeDispose)
+    })
+    await withTimeout(
+      ranBeforeDispose.promise,
+      5_000,
+      'run worklet on frame output thread',
+    )
+
+    frameOutput.dispose()
+
+    // Native callers of the worklet queue (timers, Promise continuations)
+    // have no error handler, so a rejected job must not throw.
+    expect(() =>
+      scheduleOnRuntime(runtime, () => {
+        'worklet'
+      }),
+    ).not.toThrow()
+  })
+
+  // Red before: `expect(markerAfterIdle).not.toBe(markerBeforeIdle)` - the
+  // single-thread executor kept its worker, so both markers were equal.
+  it('lets an idle frame output thread exit and runs the next job on a new thread', async (context) => {
+    if (Platform.OS !== 'android') {
+      return context.skip(
+        'idle thread exit: Android only, only Android gives each output its own OS thread',
+      )
+    }
+    const frameOutput = VisionCamera.createFrameOutput({
+      targetResolution: CommonResolutions.VGA_16_9,
+      pixelFormat: 'native',
+      enablePreviewSizedOutputBuffers: false,
+      enablePhysicalBufferRotation: false,
+      enableCameraMatrixDelivery: false,
+      allowDeferredStart: false,
+      dropFramesWhileBusy: true,
+    })
+    const probe = createWorkletRuntimeForThread(frameOutput.thread)
+    const readThreadMarker = async (): Promise<number> => {
+      const marker = deferred<number>()
+      const onMarker = (value: number) => marker.resolve(value)
+      scheduleOnRuntime(probe, () => {
+        'worklet'
+        scheduleOnRN(onMarker, getCurrentThreadMarker())
+      })
+      return withTimeout(marker.promise, 5_000, 'read the frame thread marker')
+    }
+
+    const markerBeforeIdle = await readThreadMarker()
+    // Elapsed idle time is the behavior under test. Nothing may touch the
+    // thread during the wait, because each job restarts the idle timer.
+    await new Promise<void>((resolve) =>
+      setTimeout(resolve, FRAME_THREAD_IDLE_TIMEOUT_MS + 2_000),
+    )
+    const markerAfterIdle = await readThreadMarker()
+
+    expect(markerAfterIdle).not.toBe(markerBeforeIdle)
+  })
+
+  // Guard: green before and after. Red if the idle exit ignores a set frame callback.
+  it('keeps the frame output thread while a frame callback is set', async (context) => {
+    if (Platform.OS !== 'android') {
+      return context.skip(
+        'idle thread exit: Android only, only Android gives each output its own OS thread',
+      )
+    }
+    const frameOutput = VisionCamera.createFrameOutput({
+      targetResolution: CommonResolutions.VGA_16_9,
+      pixelFormat: 'native',
+      enablePreviewSizedOutputBuffers: false,
+      enablePhysicalBufferRotation: false,
+      enableCameraMatrixDelivery: false,
+      allowDeferredStart: false,
+      dropFramesWhileBusy: true,
+    })
+    const runtime = workletsProvider.createRuntimeForThread(frameOutput.thread)
+    runtime.setOnFrameCallback(frameOutput, (frame) => {
+      'worklet'
+      frame.dispose()
+    })
+    const probe = createWorkletRuntimeForThread(frameOutput.thread)
+    const readThreadMarker = async (): Promise<number> => {
+      const marker = deferred<number>()
+      const onMarker = (value: number) => marker.resolve(value)
+      scheduleOnRuntime(probe, () => {
+        'worklet'
+        scheduleOnRN(onMarker, getCurrentThreadMarker())
+      })
+      return withTimeout(marker.promise, 5_000, 'read the frame thread marker')
+    }
+
+    const markerBeforeIdle = await readThreadMarker()
+    // Elapsed idle time is the behavior under test. Nothing may touch the
+    // thread during the wait, because each job restarts the idle timer.
+    await new Promise<void>((resolve) =>
+      setTimeout(resolve, FRAME_THREAD_IDLE_TIMEOUT_MS + 2_000),
+    )
+    const markerAfterIdle = await readThreadMarker()
+    runtime.setOnFrameCallback(frameOutput, undefined)
+
+    expect(markerAfterIdle).toBe(markerBeforeIdle)
   })
 
   for (const {

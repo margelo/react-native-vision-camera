@@ -96,6 +96,29 @@ See [`FrameOutputOptions`](/api/react-native-vision-camera/interfaces/FrameOutpu
 > [!DEPENDENCY]
 > The [`CameraFrameOutput`](/api/react-native-vision-camera/hybrid-objects/CameraFrameOutput) requires [react-native-vision-camera-worklets](/api/react-native-vision-camera-worklets) (and [react-native-worklets](https://docs.swmansion.com/react-native-worklets/docs/)) to be installed to synchronously run the [`onFrame(...)`](/api/react-native-vision-camera/hybrid-objects/CameraFrameOutput#setonframecallback) function on a parallel JS Worklet Runtime.
 
+### Lifetime
+
+A Frame Output from [`useFrameOutput`](/api/react-native-vision-camera/functions/useFrameOutput) belongs to the hook - do not call `dispose()` on it.
+When the component unmounts, hides (for example inside `<Activity>`) or gets new options, the hook removes the frame callback.
+On Android, the output's thread then exits after 5 seconds without work, and the garbage collector frees the output.
+
+If you create the Frame Output yourself with the `CameraSession` (imperative) API, tear it down in this order:
+
+1. Remove the frame callback on the output's [`thread`](/api/react-native-vision-camera/hybrid-objects/CameraFrameOutput#thread).
+2. Wait for that removal: a `runOnThread(...)` task runs only after every job queued before it.
+3. Remove the output from the session with `configure(...)`, then call `dispose()` on the output.
+4. Only then drop your reference to the worklet runtime.
+
+```ts
+scheduleOnRuntime(workletRuntime, () => {
+  'worklet'
+  frameOutput.setOnFrameCallback(undefined)
+})
+await new Promise<void>((resolve) => frameOutput.thread.runOnThread(() => resolve()))
+await session.configure([], {})
+frameOutput.dispose()
+```
+
 ### Disposing a Frame
 
 A [`Frame`](/api/react-native-vision-camera/hybrid-objects/Frame) is a GPU-backed buffer, streamed at full resolution and frame rate.

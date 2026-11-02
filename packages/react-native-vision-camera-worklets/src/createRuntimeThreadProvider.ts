@@ -23,6 +23,17 @@ export function createRuntimeThreadProvider(): RuntimeThreadProvider {
     },
     createRuntimeForThread(thread) {
       const runtime = createWorkletRuntimeForThread(thread)
+      // The thread can still run a Frame that calls the removed callback.
+      // This task queues behind the removal and keeps `runtime` reachable until it runs.
+      const retainRuntimeUntilThreadDrains = () => {
+        try {
+          thread.runOnThread(() => {
+            void runtime
+          })
+        } catch {
+          // The thread was disposed. Its output already removed the callback.
+        }
+      }
       return {
         setOnDepthFrameCallback(depthOutput, onDepth) {
           scheduleOnRuntime(runtime, () => {
@@ -44,6 +55,7 @@ export function createRuntimeThreadProvider(): RuntimeThreadProvider {
               depthOutput.setOnDepthFrameCallback(undefined)
             }
           })
+          if (onDepth == null) retainRuntimeUntilThreadDrains()
         },
         setOnFrameCallback(frameOutput, onFrame) {
           scheduleOnRuntime(runtime, () => {
@@ -65,6 +77,7 @@ export function createRuntimeThreadProvider(): RuntimeThreadProvider {
               frameOutput.setOnFrameCallback(undefined)
             }
           })
+          if (onFrame == null) retainRuntimeUntilThreadDrains()
         },
       }
     },
