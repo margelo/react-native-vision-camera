@@ -1,0 +1,72 @@
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.tasks.CacheableTask
+import org.gradle.api.tasks.InputDirectory
+import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
+import org.gradle.api.tasks.TaskAction
+import org.gradle.process.ExecOperations
+
+import javax.inject.Inject
+
+@CacheableTask
+abstract class CompileResizerShader extends DefaultTask {
+  // Include helper files in the input snapshot so edits to #includes recompile the shader.
+  @InputDirectory
+  @PathSensitive(PathSensitivity.RELATIVE)
+  abstract DirectoryProperty getShaderDirectory()
+
+  @InputFile
+  @PathSensitive(PathSensitivity.NONE)
+  abstract RegularFileProperty getCompilerFile()
+
+  @OutputDirectory
+  abstract DirectoryProperty getOutputDirectory()
+
+  @Inject
+  abstract ExecOperations getExecOperations()
+
+  @TaskAction
+  void compile() {
+    def inputFile = shaderDirectory.file("Resizer.comp").get().asFile
+    def outputFile = outputDirectory.file("shaders/Resizer.comp.spv").get().asFile
+    outputFile.parentFile.mkdirs()
+    execOperations.exec {
+      commandLine compilerFile.get().asFile, "-O", inputFile, "-o", outputFile
+    }
+  }
+}
+
+// Own shader compilation on all AGP versions. AGP 9 disables its built-in task by
+// default and requires a compiler path in the consuming app's local.properties.
+android.buildFeatures.shaders = false
+
+def osName = System.getProperty("os.name").toLowerCase(Locale.ROOT)
+def hostTag
+if (osName.contains("windows")) {
+  hostTag = "windows-x86_64"
+} else if (osName.contains("mac") || osName.contains("darwin")) {
+  // The NDK uses this directory on both Intel and Apple Silicon Macs.
+  hostTag = "darwin-x86_64"
+} else if (osName.contains("linux")) {
+  hostTag = "linux-x86_64"
+} else {
+  throw new GradleException("Unsupported host OS for the VisionCamera Resizer shader compiler: ${osName}")
+}
+
+def compilerName = osName.contains("windows") ? "glslc.exe" : "glslc"
+def shaderCompiler = androidComponents.sdkComponents.ndkDirectory.map { ndk ->
+  ndk.file("shader-tools/${hostTag}/${compilerName}")
+}
+def shaderSources = layout.projectDirectory.dir("src/main/shaders")
+
+androidComponents.onVariants(androidComponents.selector().all()) { variant ->
+  def compileShader = tasks.register("compile${variant.name.capitalize()}ResizerShader", CompileResizerShader) {
+    shaderDirectory.set(shaderSources)
+    compilerFile.set(shaderCompiler)
+  }
+  // AGP supplies the output directory and makes asset merging depend on this task.
+  variant.sources.assets.addGeneratedSourceDirectory(compileShader) { it.outputDirectory }
+}

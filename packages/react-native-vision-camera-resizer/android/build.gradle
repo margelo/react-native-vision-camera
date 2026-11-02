@@ -50,10 +50,6 @@ android {
     targetSdkVersion getExtOrIntegerDefault("targetSdkVersion")
     buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString()
 
-    shaders {
-      glslcArgs.addAll(["-O"])
-    }
-
     externalNativeBuild {
       cmake {
         cppFlags "-frtti -fexceptions -Wall -Wextra -fstack-protector-all"
@@ -122,8 +118,6 @@ android {
 
   sourceSets {
     main {
-      shaders.srcDirs = ["src/main/shaders"]
-
       if (isNewArchitectureEnabled()) {
         java.srcDirs += [
           // React Codegen files
@@ -133,6 +127,8 @@ android {
     }
   }
 }
+
+apply from: "./compile-shaders.gradle"
 
 repositories {
   mavenCentral()
