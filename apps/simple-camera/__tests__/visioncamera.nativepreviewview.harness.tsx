@@ -722,6 +722,104 @@ describe('VisionCamera - NativePreviewView', () => {
     }
   })
 
+  it('re-attaches a preview output to a new NativePreviewView that replaces the old one while running', async () => {
+    const session = await VisionCamera.createCameraSession(false)
+    const previewOutput = VisionCamera.createPreviewOutput()
+    await session.configure([
+      {
+        input: backDevice,
+        outputs: [{ output: previewOutput, mirrorMode: 'auto' }],
+        constraints: [],
+      },
+    ])
+
+    const firstRef = deferred<PreviewView>()
+    const secondRef = deferred<PreviewView>()
+    const firstLayout = deferred<Layout>()
+    const secondLayout = deferred<Layout>()
+    const firstPreviewStarted = deferred()
+    const secondPreviewStarted = deferred()
+    const errorSub = session.addOnErrorListener((error) => {
+      firstRef.reject(error)
+      secondRef.reject(error)
+      firstLayout.reject(error)
+      secondLayout.reject(error)
+      firstPreviewStarted.reject(error)
+      secondPreviewStarted.reject(error)
+    })
+
+    try {
+      const { rerender } = await render(
+        <NativePreviewView
+          key="first"
+          style={StyleSheet.absoluteFill}
+          previewOutput={previewOutput}
+          hybridRef={callback((preview: PreviewView) => {
+            firstRef.resolve(preview)
+          })}
+          onLayout={(event) => {
+            firstLayout.resolve(toLayout(event))
+          }}
+          onPreviewStarted={callback(firstPreviewStarted.resolve)}
+        />,
+      )
+
+      const firstPreview = await withTimeout(
+        firstRef.promise,
+        10_000,
+        'first NativePreviewView hybridRef',
+      )
+      const firstPreviewLayout = await withTimeout(
+        firstLayout.promise,
+        10_000,
+        'first NativePreviewView onLayout',
+      )
+
+      await session.start()
+      await withTimeout(
+        firstPreviewStarted.promise,
+        15_000,
+        'first NativePreviewView onPreviewStarted',
+      )
+      expectPreviewGeometry(firstPreview, firstPreviewLayout)
+
+      await rerender(
+        <NativePreviewView
+          key="second"
+          style={StyleSheet.absoluteFill}
+          previewOutput={previewOutput}
+          hybridRef={callback((preview: PreviewView) => {
+            secondRef.resolve(preview)
+          })}
+          onLayout={(event) => {
+            secondLayout.resolve(toLayout(event))
+          }}
+          onPreviewStarted={callback(secondPreviewStarted.resolve)}
+        />,
+      )
+
+      const secondPreview = await withTimeout(
+        secondRef.promise,
+        10_000,
+        'second NativePreviewView hybridRef',
+      )
+      const secondPreviewLayout = await withTimeout(
+        secondLayout.promise,
+        10_000,
+        'second NativePreviewView onLayout',
+      )
+      await withTimeout(
+        secondPreviewStarted.promise,
+        15_000,
+        'second NativePreviewView onPreviewStarted',
+      )
+      expectPreviewGeometry(secondPreview, secondPreviewLayout)
+    } finally {
+      errorSub.remove()
+      await session.stop()
+    }
+  })
+
   it('starts a replacement preview and stops the removed preview while running', async () => {
     const session = await VisionCamera.createCameraSession(false)
     const firstPreviewOutput = VisionCamera.createPreviewOutput()
