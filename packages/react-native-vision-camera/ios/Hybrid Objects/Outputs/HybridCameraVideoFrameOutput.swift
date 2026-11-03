@@ -72,7 +72,7 @@ final class HybridCameraVideoFrameOutput: HybridCameraVideoOutputSpec, NativeCam
       output.preservesDynamicHDRMetadata = true
     }
     // set the delegate to append to the Recorder
-    delegate.onFrame = { [weak self] buffer, timestamp, orientation, isMirrored in
+    delegate.onFrame = { [weak self] buffer, _, _, _, _ in
       guard let self else { return }
       self.onFrame(buffer, type: .video)
     }
