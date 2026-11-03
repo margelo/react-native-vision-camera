@@ -73,7 +73,12 @@ export function createRuntimeThreadProvider(): RuntimeThreadProvider {
       scheduleOnUI(() => {
         'worklet'
         value.addListener(id, (v) => {
-          controller[funcName](v)
+          const result = controller[funcName](v) as unknown
+          if (
+            typeof (result as Promise<void> | undefined)?.catch === 'function'
+          ) {
+            ;(result as Promise<void>).catch(() => {})
+          }
         })
       })
       return {
