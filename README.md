@@ -44,6 +44,14 @@ cd ios && pod install
 - [Example App](./apps/simple-camera/)
 - [AWS Device Farm Tests](https://us-west-2.console.aws.amazon.com/devicefarm/home#/mobile/projects/210b1942-012b-4653-9673-f3ff91c5e649/runs) (sign in via the [AWS Access Portal](https://d-9267d6576e.awsapps.com/start) first)
 
+### AI Agents
+
+Install the [VisionCamera skill](./skills/vision-camera/SKILL.md) in your app project for version-aware setup and camera implementation guidance:
+
+```sh
+npx skills add margelo/react-native-vision-camera --skill vision-camera
+```
+
 ### VisionCamera V4
 
 As VisionCamera V5 is released, VisionCamera V4 is no longer actively maintained.
