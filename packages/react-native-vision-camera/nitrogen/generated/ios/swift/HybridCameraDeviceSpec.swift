@@ -48,6 +48,7 @@ public protocol HybridCameraDeviceSpec_protocol: HybridObject {
   var supportsLowLightBoost: Bool { get }
   var minZoom: Double { get }
   var maxZoom: Double { get }
+  var neutralZoom: Double { get }
   var zoomLensSwitchFactors: [Double] { get }
   var supportsDistortionCorrection: Bool { get }
 
