@@ -35,6 +35,24 @@ export interface BarcodeScannerOutputOptions {
    */
   outputResolution?: BarcodeScannerOutputResolution
   /**
+   * The maximum zoom ratio of the Camera this output is attached to.
+   * Zoom suggestions from {@linkcode onZoomSuggested} never exceed it.
+   * If omitted, ML Kit may suggest an unbounded ratio.
+   *
+   * @platform Android
+   */
+  maxZoomRatio?: number
+  /**
+   * Called when a barcode has been detected but is too far away
+   * to be decoded. Apply the suggested `zoomRatio` to the Camera's
+   * `zoom` to make it decodable.
+   *
+   * @platform Android
+   * @note iOS does not support zoom suggestions, as MLKit on iOS
+   * does not provide them.
+   */
+  onZoomSuggested?: (zoomRatio: number) => void
+  /**
    * Called whenever barcodes have been detected.
    */
   onBarcodeScanned: (barcodes: Barcode[]) => void
