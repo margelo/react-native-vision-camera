@@ -80,18 +80,14 @@ export function renderToTexture(
     {
       const rotation = orientationToDegrees(frame.orientation)
       const counterRotation = normalizeRotationDegrees(rotation * -1)
-      // 5.1. Move it to the center so we rotate around center origin
+      // Move it to the center so we rotate around center origin
       canvas.translate(outWidth / 2, outHeight / 2)
-      // 5.2. Mirror if needed.
-      // Note: Skia concatenates transforms, so call order is reversed at draw-time.
-      // Placing scale() before rotate() makes the rendered result rotate first, then mirror.
+      // Skia applies these in reverse order: mirror source pixels before rotation.
+      canvas.rotate(counterRotation, 0, 0)
       if (frame.isMirrored) {
-        // Mirror alongside the vertical axis (horizontal flip)
         canvas.scale(-1, 1)
       }
-      // 5.3. Rotate the Frame
-      canvas.rotate(counterRotation, 0, 0)
-      // 5.4. Counter back the center origin transforms
+      // Counter back the center origin transforms
       if (isLandscape) {
         canvas.translate(-(outHeight / 2), -(outWidth / 2))
       } else {
