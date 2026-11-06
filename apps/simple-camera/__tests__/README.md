@@ -20,6 +20,7 @@ Tests are split by domain. Each file tests one slice of the imperative `VisionCa
 | File | Covers |
 |------|--------|
 | [visioncamera.devices.harness.ts](visioncamera.devices.harness.ts) | `VisionCamera.createDeviceFactory`, device enumeration, per-device capabilities, `getCameraForId`, `addOnCameraDevicesChangedListener`, `getSupportedExtensions`, `userPreferredCamera` |
+| [visioncamera.permissions.harness.ts](visioncamera.permissions.harness.ts) | `VisionCamera.requestCameraPermission` / `requestMicrophonePermission`, including requests that overlap |
 | [visioncamera.session.harness.ts](visioncamera.session.harness.ts) | `createCameraSession`, `configure`, `start`, `stop`, `addOnStartedListener` / `addOnStoppedListener` / `addOnErrorListener` / interruption listeners, reconfigure-while-running, multi-cam |
 | [visioncamera.photo.harness.ts](visioncamera.photo.harness.ts) | `createPhotoOutput`, `capturePhoto` / `capturePhotoToFile`, container formats (JPEG, HEIC, DNG), flash / mirror / quality / resolution options, capture lifecycle callbacks, preview images |
 | [visioncamera.video.harness.ts](visioncamera.video.harness.ts) | `createVideoOutput`, `Recorder` lifecycle, audio, `maxDuration` / `maxFileSize` stops, pause / resume / cancel, persistent recorder, higher-resolution codecs |
