@@ -1,5 +1,7 @@
 package com.margelo.nitro.camera.hybrids.outputs
 
+import android.content.Context
+import android.media.AudioManager
 import android.media.MediaActionSound
 import android.os.SystemClock
 import android.util.Log
@@ -8,6 +10,7 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.takePicture
+import com.margelo.nitro.NitroModules
 import com.margelo.nitro.camera.CameraOrientation
 import com.margelo.nitro.camera.CapturePhotoCallbacks
 import com.margelo.nitro.camera.CapturePhotoSettings
@@ -150,6 +153,19 @@ class HybridPhotoOutput(
     }
   }
 
+  private fun isRingerSilent(): Boolean {
+    val context = NitroModules.applicationContext ?: return false
+    val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager ?: return false
+    return audioManager.ringerMode != AudioManager.RINGER_MODE_NORMAL
+  }
+
+  private fun shouldPlayShutterSound(settings: CapturePhotoSettings): Boolean {
+    if (CameraInfo.mustPlayShutterSound()) {
+      return true
+    }
+    return (settings.enableShutterSound ?: true) && !isRingerSilent()
+  }
+
   override fun capturePhoto(
     settings: CapturePhotoSettings,
     callbacks: CapturePhotoCallbacks,
@@ -163,7 +179,7 @@ class HybridPhotoOutput(
 
       // 1. Get settings
       val isMirrored = shouldMirror()
-      val enableShutterSound = (settings.enableShutterSound ?: true) || CameraInfo.mustPlayShutterSound()
+      val enableShutterSound = shouldPlayShutterSound(settings)
       imageCapture.flashMode = settings.flashMode?.toFlashMode() ?: ImageCapture.FLASH_MODE_OFF
       val location =
         if (settings.location != null) {
@@ -230,8 +246,7 @@ class HybridPhotoOutput(
 
       // 1. Get settings
       val isMirrored = shouldMirror()
-      val enableShutterSound =
-        (settings.enableShutterSound ?: true) || CameraInfo.mustPlayShutterSound()
+      val enableShutterSound = shouldPlayShutterSound(settings)
       imageCapture.flashMode = settings.flashMode?.toFlashMode() ?: ImageCapture.FLASH_MODE_OFF
       val location =
         if (settings.location != null) {

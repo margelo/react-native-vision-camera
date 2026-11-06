@@ -5,6 +5,7 @@
 //  Created by Marc Rousavy on 29.10.25.
 //
 
+import AudioToolbox
 import AVFoundation
 import Foundation
 
@@ -15,9 +16,11 @@ final class CapturePhotoDelegate: NSObject, AVCapturePhotoCaptureDelegate {
   private let onCaptured: (AVCapturePhoto, MediaSampleMetadata) -> Void
   private let onError: (any Error) -> Void
   private let callbacks: CapturePhotoCallbacks
+  private let shouldDisposeShutterSound: Bool
   private var didResolve = false
 
   init(
+    shouldDisposeShutterSound: Bool,
     onCaptured: @escaping (AVCapturePhoto, MediaSampleMetadata) -> Void,
     onError: @escaping (any Error) -> Void,
     callbacks: CapturePhotoCallbacks
@@ -25,6 +28,7 @@ final class CapturePhotoDelegate: NSObject, AVCapturePhotoCaptureDelegate {
     self.onCaptured = onCaptured
     self.onError = onError
     self.callbacks = callbacks
+    self.shouldDisposeShutterSound = shouldDisposeShutterSound
     super.init()
     // Add a static strong reference while capture is in progress
     CapturePhotoDelegate.delegates.append(self)
@@ -43,6 +47,10 @@ final class CapturePhotoDelegate: NSObject, AVCapturePhotoCaptureDelegate {
     _ output: AVCapturePhotoOutput,
     willCapturePhotoFor resolvedSettings: AVCaptureResolvedPhotoSettings
   ) {
+    if shouldDisposeShutterSound {
+      // disable system shutter sound (see https://stackoverflow.com/a/55235949/5281431)
+      AudioServicesDisposeSystemSoundID(1108)
+    }
     callbacks.onWillCapturePhoto?()
   }
 

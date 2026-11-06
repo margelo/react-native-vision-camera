@@ -115,6 +115,15 @@ final class HybridCameraPhotoOutput: HybridCameraPhotoOutputSpec, NativeCameraOu
     self.output.setPreparedPhotoSettingsArray([avSettings])
   }
 
+  // Below iOS 18 `isShutterSoundSuppressionEnabled` is unavailable, so the system shutter sound is disposed instead.
+  private func shouldDisposeShutterSound(for settings: CapturePhotoSettings) -> Bool {
+    guard settings.enableShutterSound == false else { return false }
+    if #available(iOS 18.0, *) {
+      return false
+    }
+    return true
+  }
+
   func capturePhoto(
     settings: CapturePhotoSettings,
     callbacks: CapturePhotoCallbacks
@@ -129,6 +138,7 @@ final class HybridCameraPhotoOutput: HybridCameraPhotoOutputSpec, NativeCameraOu
     let promise = Promise<any HybridPhotoSpec>()
     let resultingFormat = PhotoContainerFormat(targetFormat: self.options.containerFormat)
     let delegate = CapturePhotoDelegate(
+      shouldDisposeShutterSound: shouldDisposeShutterSound(for: settings),
       onCaptured: { photo, metadata in
         // We received a Photo!
         // 1. Check if we have a Preview Image (if it was requested)
