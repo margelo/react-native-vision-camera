@@ -30,6 +30,9 @@ echo "Provided options: $*"
 
 ensure_github_token
 
+echo "Building all packages before publishing"
+bun run build
+
 for pkg in packages/*; do
   [ -d "$pkg" ] || continue
   echo "Publishing '$(basename "$pkg")' to NPM"

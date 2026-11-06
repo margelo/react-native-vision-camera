@@ -26,37 +26,37 @@ public extension PhotoFile {
   var filePath: String {
     return String(self.__filePath)
   }
-
+  
   @inline(__always)
   var width: Double {
     return self.__width
   }
-
+  
   @inline(__always)
   var height: Double {
     return self.__height
   }
-
+  
   @inline(__always)
   var orientation: CameraOrientation {
     return self.__orientation
   }
-
+  
   @inline(__always)
   var isMirrored: Bool {
     return self.__isMirrored
   }
-
+  
   @inline(__always)
   var timestamp: Double {
     return self.__timestamp
   }
-
+  
   @inline(__always)
   var isRawPhoto: Bool {
     return self.__isRawPhoto
   }
-
+  
   @inline(__always)
   var containerFormat: PhotoContainerFormat {
     return self.__containerFormat

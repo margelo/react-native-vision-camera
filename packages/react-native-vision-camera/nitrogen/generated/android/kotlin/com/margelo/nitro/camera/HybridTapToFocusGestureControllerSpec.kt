@@ -37,9 +37,9 @@ abstract class HybridTapToFocusGestureControllerSpec: HybridGestureControllerSpe
     val __result = addOnTapListener(onTap)
     return __result
   }
-
+  
   abstract fun addOnFocusCompletedListener(onFocusCompleted: (point: HybridMeteringPointSpec) -> Unit): ListenerSubscription
-
+  
   @DoNotStrip
   @Keep
   private fun addOnFocusCompletedListener_cxx(onFocusCompleted: Func_void_std__shared_ptr_HybridMeteringPointSpec_): ListenerSubscription {

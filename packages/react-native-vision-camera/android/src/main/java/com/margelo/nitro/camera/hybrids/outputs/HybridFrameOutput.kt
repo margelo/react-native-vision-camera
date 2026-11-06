@@ -72,7 +72,6 @@ class HybridFrameOutput(
 
           // Configuration
           setAllowDroppingLateFrames(options.dropFramesWhileBusy)
-          setBackgroundExecutor(executor)
 
           // Set current CameraOrientation
           setTargetRotation(outputOrientation.surfaceRotation)

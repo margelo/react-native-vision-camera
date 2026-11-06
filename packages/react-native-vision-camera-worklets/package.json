@@ -1,6 +1,6 @@
 {
   "name": "react-native-vision-camera-worklets",
-  "version": "5.2.3",
+  "version": "5.2.4",
   "description": "react-native-worklets integration for react-native-vision-camera frame processing and threading APIs.",
   "main": "lib/index",
   "module": "lib/index",

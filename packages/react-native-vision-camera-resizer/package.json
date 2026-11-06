@@ -1,6 +1,6 @@
 {
   "name": "react-native-vision-camera-resizer",
-  "version": "5.2.3",
+  "version": "5.2.4",
   "description": "High-performance image and frame resizing plugin using Metal/Vulkan for react-native-vision-camera.",
   "main": "lib/index",
   "module": "lib/index",
@@ -13,6 +13,7 @@
     "lib",
     "nitrogen",
     "android/build.gradle",
+    "android/compile-shaders.gradle",
     "android/gradle.properties",
     "android/fix-prefab.gradle",
     "android/CMakeLists.txt",

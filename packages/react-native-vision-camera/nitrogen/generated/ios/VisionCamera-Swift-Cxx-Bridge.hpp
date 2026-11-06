@@ -1346,7 +1346,7 @@ namespace margelo::nitro::camera::bridge::swift {
   inline Func_void_std__shared_ptr_HybridMeteringPointSpec__Wrapper wrap_Func_void_std__shared_ptr_HybridMeteringPointSpec_(Func_void_std__shared_ptr_HybridMeteringPointSpec_ value) noexcept {
     return Func_void_std__shared_ptr_HybridMeteringPointSpec__Wrapper(std::move(value));
   }
-
+  
   // pragma MARK: std::function<void(double /* zoom */)>
   /**
    * Specialized version of `std::function<void(double)>`.
@@ -1368,7 +1368,7 @@ namespace margelo::nitro::camera::bridge::swift {
   inline Func_void_double_Wrapper wrap_Func_void_double(Func_void_double value) noexcept {
     return Func_void_double_Wrapper(std::move(value));
   }
-
+  
   // pragma MARK: std::vector<std::shared_ptr<HybridCameraDeviceSpec>>
   /**
    * Specialized version of `std::vector<std::shared_ptr<HybridCameraDeviceSpec>>`.

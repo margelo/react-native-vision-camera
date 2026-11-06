@@ -128,5 +128,5 @@
   "patchedDependencies": {
     "react-native@0.85.3": "patches/react-native@0.85.3.patch"
   },
-  "version": "5.2.3"
+  "version": "5.2.4"
 }

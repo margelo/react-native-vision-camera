@@ -465,7 +465,7 @@ namespace margelo::nitro::camera::bridge::swift {
     VisionCamera::HybridNativeThreadFactorySpec_cxx& swiftPart = swiftWrapper->getSwiftPart();
     return swiftPart.toUnsafe();
   }
-
+  
   // pragma MARK: std::function<void(const std::shared_ptr<HybridMeteringPointSpec>& /* point */)>
   Func_void_std__shared_ptr_HybridMeteringPointSpec_ create_Func_void_std__shared_ptr_HybridMeteringPointSpec_(void* NON_NULL swiftClosureWrapper) noexcept {
     auto swiftClosure = VisionCamera::Func_void_std__shared_ptr_HybridMeteringPointSpec_::fromUnsafe(swiftClosureWrapper);
@@ -481,7 +481,7 @@ namespace margelo::nitro::camera::bridge::swift {
       swiftClosure.call(zoom);
     };
   }
-
+  
   // pragma MARK: std::function<void(const std::vector<std::shared_ptr<HybridCameraDeviceSpec>>& /* newDevices */)>
   Func_void_std__vector_std__shared_ptr_HybridCameraDeviceSpec__ create_Func_void_std__vector_std__shared_ptr_HybridCameraDeviceSpec__(void* NON_NULL swiftClosureWrapper) noexcept {
     auto swiftClosure = VisionCamera::Func_void_std__vector_std__shared_ptr_HybridCameraDeviceSpec__::fromUnsafe(swiftClosureWrapper);

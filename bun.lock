@@ -20,7 +20,7 @@
     },
     "apps/simple-camera": {
       "name": "simple-camera",
-      "version": "5.2.3",
+      "version": "5.2.4",
       "dependencies": {
         "@react-native-community/blur": "^4.4.1",
         "@react-native-menu/menu": "^2.0.0",
@@ -103,7 +103,7 @@
     },
     "packages/react-native-vision-camera": {
       "name": "react-native-vision-camera",
-      "version": "5.2.3",
+      "version": "5.2.4",
       "devDependencies": {
         "@types/react": "19.2.15",
         "nitrogen": "0.37.0",
@@ -125,7 +125,7 @@
     },
     "packages/react-native-vision-camera-barcode-scanner": {
       "name": "react-native-vision-camera-barcode-scanner",
-      "version": "5.2.3",
+      "version": "5.2.4",
       "devDependencies": {
         "@types/react": "19.2.15",
         "nitrogen": "0.37.0",
@@ -149,7 +149,7 @@
     },
     "packages/react-native-vision-camera-location": {
       "name": "react-native-vision-camera-location",
-      "version": "5.2.3",
+      "version": "5.2.4",
       "devDependencies": {
         "@types/react": "19.2.15",
         "nitrogen": "0.37.0",
@@ -171,7 +171,7 @@
     },
     "packages/react-native-vision-camera-resizer": {
       "name": "react-native-vision-camera-resizer",
-      "version": "5.2.3",
+      "version": "5.2.4",
       "devDependencies": {
         "@types/react": "19.2.15",
         "nitrogen": "0.37.0",
@@ -193,7 +193,7 @@
     },
     "packages/react-native-vision-camera-skia": {
       "name": "react-native-vision-camera-skia",
-      "version": "5.2.3",
+      "version": "5.2.4",
       "devDependencies": {
         "@shopify/react-native-skia": "2.6.4",
         "@types/react": "19.2.15",
@@ -218,7 +218,7 @@
     },
     "packages/react-native-vision-camera-worklets": {
       "name": "react-native-vision-camera-worklets",
-      "version": "5.2.3",
+      "version": "5.2.4",
       "devDependencies": {
         "@types/react": "19.2.15",
         "nitrogen": "0.37.0",

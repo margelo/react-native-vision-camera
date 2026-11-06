@@ -1,6 +1,6 @@
 {
   "name": "react-native-vision-camera-barcode-scanner",
-  "version": "5.2.3",
+  "version": "5.2.4",
   "description": "Barcode scanning plugin for react-native-vision-camera powered by ML Kit.",
   "main": "lib/index",
   "module": "lib/index",

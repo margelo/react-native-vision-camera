@@ -1,6 +1,6 @@
 {
   "name": "react-native-vision-camera-skia",
-  "version": "5.2.3",
+  "version": "5.2.4",
   "description": "Skia rendering plugin for react-native-vision-camera for drawing camera frames in React Native.",
   "main": "lib/index",
   "module": "lib/index",
