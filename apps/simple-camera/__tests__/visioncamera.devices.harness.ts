@@ -1,6 +1,7 @@
 import { assert, beforeAll, describe, expect, it } from 'react-native-harness'
 import type {
   CameraDeviceFactory,
+  PhysicalDeviceType,
   TargetCameraPosition,
 } from 'react-native-vision-camera'
 import { VisionCamera } from 'react-native-vision-camera'
@@ -151,6 +152,33 @@ describe('VisionCamera - Devices', () => {
       expect(combination).not.toHaveLength(0)
       for (const device of combination) {
         expect(knownIds).toContain(device.id)
+      }
+    }
+  })
+
+  it('reports a physical device type for each physical device of a virtual device', (context) => {
+    const virtualDevices = factory.cameraDevices.filter(
+      (d) => d.isVirtualDevice,
+    )
+    if (virtualDevices.length === 0) {
+      return context.skip(
+        'physical device types: no virtual device on this device',
+      )
+    }
+    const physicalDeviceTypes: PhysicalDeviceType[] = [
+      'ultra-wide-angle',
+      'wide-angle',
+      'telephoto',
+      'true-depth',
+      'lidar-depth',
+      'time-of-flight-depth',
+      'external',
+      'continuity',
+    ]
+    for (const device of virtualDevices) {
+      expect(device.physicalDevices).not.toHaveLength(0)
+      for (const physicalDevice of device.physicalDevices) {
+        expect(physicalDeviceTypes).toContain(physicalDevice.type)
       }
     }
   })
