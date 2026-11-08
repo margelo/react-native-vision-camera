@@ -1,0 +1,124 @@
+name: Harness iOS Simulator (SimCam)
+
+permissions:
+  contents: read
+
+concurrency:
+  group: harness-ios-simcam-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/harness-ios-simcam.yml"
+      - "apps/simple-camera/**"
+      - "packages/react-native-vision-camera/**"
+      - "packages/react-native-vision-camera-barcode-scanner/**"
+      - "packages/react-native-vision-camera-location/**"
+      - "packages/react-native-vision-camera-resizer/**"
+      - "packages/react-native-vision-camera-skia/**"
+      - "packages/react-native-vision-camera-worklets/**"
+      - "bun.lock"
+      - "package.json"
+      - "patches/**"
+  pull_request:
+    paths:
+      - ".github/workflows/harness-ios-simcam.yml"
+      - "apps/simple-camera/**"
+      - "packages/react-native-vision-camera/**"
+      - "packages/react-native-vision-camera-barcode-scanner/**"
+      - "packages/react-native-vision-camera-location/**"
+      - "packages/react-native-vision-camera-resizer/**"
+      - "packages/react-native-vision-camera-skia/**"
+      - "packages/react-native-vision-camera-worklets/**"
+      - "bun.lock"
+      - "package.json"
+      - "patches/**"
+
+env:
+  HARNESS_PROJECT_ROOT: apps/simple-camera
+  HARNESS_APP_PATH: ios/build/harness/DerivedData/Build/Products/Debug-iphonesimulator/SimpleCamera.app
+  HARNESS_IOS_BUNDLE_ID: com.margelo.nitro.camera.example.simple
+  HARNESS_IOS_DEVICE_MODE: simulator
+  HARNESS_IOS_SIMULATOR: iPhone 17 Pro
+  HARNESS_IOS_SIMULATOR_VERSION: "26.5"
+  HARNESS_IOS_METRO_HOST: 127.0.0.1
+  HARNESS_METRO_BIND_HOST: 127.0.0.1
+  HARNESS_SIMCAM: "1"
+  SIMCAM_SOURCE_IMAGE: apps/simple-camera/src/assets/simcam-harness-source.png
+  DERIVED_DATA_PATH: build/harness/DerivedData
+
+jobs:
+  test-ios-simcam:
+    name: Test iOS Simulator With SimCam
+    runs-on: macos-26
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.4.9"
+          bundler-cache: true
+          working-directory: apps/simple-camera
+
+      - name: Install JavaScript dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build packages
+        run: bun run build
+
+      - name: Install Skia binaries
+        run: npx install-skia
+
+      - name: Install CocoaPods
+        working-directory: apps/simple-camera
+        run: bundle exec pod install --project-directory=ios
+
+      - name: Configure SimCam
+        env:
+          SIMCAM_LICENSE_TOKEN: ${{ secrets.SIMCAM_LICENSE_TOKEN }}
+        run: |
+          brew install --cask --appdir="$HOME/Applications" software-mansion/tap/simcam
+          simcamctl license install-token "$SIMCAM_LICENSE_TOKEN"
+          simcamctl set-source --image "$GITHUB_WORKSPACE/$SIMCAM_SOURCE_IMAGE" --fill
+
+      - name: Build iOS app
+        working-directory: apps/simple-camera/ios
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -workspace SimpleCamera.xcworkspace \
+            -scheme SimpleCamera \
+            -configuration Debug \
+            -destination "generic/platform=iOS Simulator" \
+            -derivedDataPath "$DERIVED_DATA_PATH" \
+            build
+
+      - name: Run Harness tests
+        working-directory: apps/simple-camera
+        run: ../../node_modules/.bin/react-native-harness --harnessRunner ios --no-watchman --verbose --forceExit
+
+      - name: Upload Harness logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: harness-ios-simcam-logs
+          path: |
+            apps/simple-camera/.harness/logs
+            apps/simple-camera/ios/build/harness/DerivedData/Logs
+          if-no-files-found: ignore
+          retention-days: 7
