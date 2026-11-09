@@ -18,6 +18,14 @@ def isNewArchitectureEnabled() {
   return rootProject.hasProperty("newArchEnabled") && rootProject.getProperty("newArchEnabled") == "true"
 }
 
+// Build types that compile frame interceptors (FrameInterceptors.kt) in, as listed in the app's
+// package.json under "visionCamera.frameInterceptors.android" (default: debug).
+def frameInterceptorBuildTypes() {
+  def appPackageJson = new File(rootProject.projectDir, "../package.json")
+  def appPackage = appPackageJson.exists() ? new groovy.json.JsonSlurper().parse(appPackageJson) : [:]
+  return appPackage.visionCamera?.frameInterceptors?.android ?: ["debug"]
+}
+
 apply plugin: "com.android.library"
 apply plugin: 'org.jetbrains.kotlin.android'
 apply from: '../nitrogen/generated/android/VisionCamera+autolinking.gradle'
@@ -108,6 +116,19 @@ android {
     release {
       minifyEnabled false
     }
+  }
+
+  def interceptorBuildTypes = frameInterceptorBuildTypes()
+  // A custom build type of the app (e.g. "qa") must exist here too, otherwise the app would get
+  // this library's release variant, which has frame interceptors compiled out.
+  interceptorBuildTypes.findAll { name -> buildTypes.findByName(name) == null }.each { name ->
+    buildTypes.create(name) {
+      initWith(buildTypes.release)
+      matchingFallbacks = ["release"]
+    }
+  }
+  buildTypes.configureEach { buildType ->
+    buildType.buildConfigField "boolean", "FRAME_INTERCEPTORS", String.valueOf(buildType.name in interceptorBuildTypes)
   }
 
   lintOptions {
