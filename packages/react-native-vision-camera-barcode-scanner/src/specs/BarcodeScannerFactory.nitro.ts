@@ -14,6 +14,23 @@ export interface BarcodeScannerOptions {
    * use {@linkcode TargetBarcodeFormat | ['all-formats']}
    */
   barcodeFormats: TargetBarcodeFormat[]
+  /**
+   * Also return Barcodes that were located, but could not be decoded.
+   *
+   * On such a {@linkcode Barcode}, {@linkcode Barcode.rawValue | rawValue}
+   * and {@linkcode Barcode.rawBytes | rawBytes} are `undefined`, while
+   * {@linkcode Barcode.boundingBox | boundingBox} describes the region that
+   * potentially contains a Barcode.
+   *
+   * This distinguishes "no Barcode is in view" from "a Barcode is in view
+   * that cannot be read" — two failures with opposite fixes (lighting and
+   * contrast vs. zoom and distance). It can also drive the camera's zoom:
+   * a code too small to decode still reports where it is.
+   *
+   * @note Android only — the iOS MLKit SDK exposes no equivalent option.
+   * @default false
+   */
+  enableAllPotentialBarcodes?: boolean
 }
 
 export interface BarcodeScannerOutputOptions {
@@ -34,6 +51,23 @@ export interface BarcodeScannerOutputOptions {
    * @default 'preview'
    */
   outputResolution?: BarcodeScannerOutputResolution
+  /**
+   * Also return Barcodes that were located, but could not be decoded.
+   *
+   * On such a {@linkcode Barcode}, {@linkcode Barcode.rawValue | rawValue}
+   * and {@linkcode Barcode.rawBytes | rawBytes} are `undefined`, while
+   * {@linkcode Barcode.boundingBox | boundingBox} describes the region that
+   * potentially contains a Barcode.
+   *
+   * This distinguishes "no Barcode is in view" from "a Barcode is in view
+   * that cannot be read" — two failures with opposite fixes (lighting and
+   * contrast vs. zoom and distance). It can also drive the camera's zoom:
+   * a code too small to decode still reports where it is.
+   *
+   * @note Android only — the iOS MLKit SDK exposes no equivalent option.
+   * @default false
+   */
+  enableAllPotentialBarcodes?: boolean
   /**
    * Called whenever barcodes have been detected.
    */

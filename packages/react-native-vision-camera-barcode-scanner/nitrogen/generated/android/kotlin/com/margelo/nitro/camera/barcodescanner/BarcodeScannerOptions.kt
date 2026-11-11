@@ -20,7 +20,10 @@ import java.util.Objects
 data class BarcodeScannerOptions(
   @DoNotStrip
   @Keep
-  val barcodeFormats: Array<TargetBarcodeFormat>
+  val barcodeFormats: Array<TargetBarcodeFormat>,
+  @DoNotStrip
+  @Keep
+  val enableAllPotentialBarcodes: Boolean?
 ) {
   /* primary constructor */
 
@@ -28,11 +31,13 @@ data class BarcodeScannerOptions(
     if (this === other) return true
     if (other !is BarcodeScannerOptions) return false
     return Objects.deepEquals(this.barcodeFormats, other.barcodeFormats)
+      && Objects.deepEquals(this.enableAllPotentialBarcodes, other.enableAllPotentialBarcodes)
   }
 
   override fun hashCode(): Int {
     return arrayOf<Any?>(
-      barcodeFormats
+      barcodeFormats,
+      enableAllPotentialBarcodes
     ).contentDeepHashCode()
   }
 
@@ -44,8 +49,8 @@ data class BarcodeScannerOptions(
     @Keep
     @Suppress("unused")
     @JvmStatic
-    private fun fromCpp(barcodeFormats: Array<TargetBarcodeFormat>): BarcodeScannerOptions {
-      return BarcodeScannerOptions(barcodeFormats)
+    private fun fromCpp(barcodeFormats: Array<TargetBarcodeFormat>, enableAllPotentialBarcodes: Boolean?): BarcodeScannerOptions {
+      return BarcodeScannerOptions(barcodeFormats, enableAllPotentialBarcodes)
     }
   }
 }

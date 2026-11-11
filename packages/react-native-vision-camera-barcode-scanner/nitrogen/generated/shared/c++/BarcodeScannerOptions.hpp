@@ -33,6 +33,7 @@ namespace margelo::nitro::camera::barcodescanner { enum class TargetBarcodeForma
 
 #include "TargetBarcodeFormat.hpp"
 #include <vector>
+#include <optional>
 
 namespace margelo::nitro::camera::barcodescanner {
 
@@ -42,10 +43,11 @@ namespace margelo::nitro::camera::barcodescanner {
   struct BarcodeScannerOptions final {
   public:
     std::vector<TargetBarcodeFormat> barcodeFormats     SWIFT_PRIVATE;
+    std::optional<bool> enableAllPotentialBarcodes     SWIFT_PRIVATE;
 
   public:
     BarcodeScannerOptions() = default;
-    explicit BarcodeScannerOptions(std::vector<TargetBarcodeFormat> barcodeFormats): barcodeFormats(barcodeFormats) {}
+    explicit BarcodeScannerOptions(std::vector<TargetBarcodeFormat> barcodeFormats, std::optional<bool> enableAllPotentialBarcodes): barcodeFormats(barcodeFormats), enableAllPotentialBarcodes(enableAllPotentialBarcodes) {}
 
   public:
     friend bool operator==(const BarcodeScannerOptions& lhs, const BarcodeScannerOptions& rhs) = default;
@@ -61,12 +63,14 @@ namespace margelo::nitro {
     static inline margelo::nitro::camera::barcodescanner::BarcodeScannerOptions fromJSI(jsi::Runtime& runtime, const jsi::Value& arg) {
       jsi::Object obj = arg.asObject(runtime);
       return margelo::nitro::camera::barcodescanner::BarcodeScannerOptions(
-        JSIConverter<std::vector<margelo::nitro::camera::barcodescanner::TargetBarcodeFormat>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "barcodeFormats")))
+        JSIConverter<std::vector<margelo::nitro::camera::barcodescanner::TargetBarcodeFormat>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "barcodeFormats"))),
+        JSIConverter<std::optional<bool>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "enableAllPotentialBarcodes")))
       );
     }
     static inline jsi::Value toJSI(jsi::Runtime& runtime, const margelo::nitro::camera::barcodescanner::BarcodeScannerOptions& arg) {
       jsi::Object obj(runtime);
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "barcodeFormats"), JSIConverter<std::vector<margelo::nitro::camera::barcodescanner::TargetBarcodeFormat>>::toJSI(runtime, arg.barcodeFormats));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "enableAllPotentialBarcodes"), JSIConverter<std::optional<bool>>::toJSI(runtime, arg.enableAllPotentialBarcodes));
       return obj;
     }
     static inline bool canConvert(jsi::Runtime& runtime, const jsi::Value& value) {
@@ -78,6 +82,7 @@ namespace margelo::nitro {
         return false;
       }
       if (!JSIConverter<std::vector<margelo::nitro::camera::barcodescanner::TargetBarcodeFormat>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "barcodeFormats")))) return false;
+      if (!JSIConverter<std::optional<bool>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "enableAllPotentialBarcodes")))) return false;
       return true;
     }
   };

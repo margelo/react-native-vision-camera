@@ -18,18 +18,36 @@ public extension BarcodeScannerOptions {
   /**
    * Create a new instance of `BarcodeScannerOptions`.
    */
-  init(barcodeFormats: [TargetBarcodeFormat]) {
+  init(barcodeFormats: [TargetBarcodeFormat], enableAllPotentialBarcodes: Bool?) {
     self.init({ () -> bridge.std__vector_TargetBarcodeFormat_ in
       var __vector = bridge.create_std__vector_TargetBarcodeFormat_(barcodeFormats.count)
       for __item in barcodeFormats {
         __vector.push_back(__item)
       }
       return __vector
+    }(), { () -> bridge.std__optional_bool_ in
+      if let __unwrappedValue = enableAllPotentialBarcodes {
+        return bridge.create_std__optional_bool_(__unwrappedValue)
+      } else {
+        return .init()
+      }
     }())
   }
 
   @inline(__always)
   var barcodeFormats: [TargetBarcodeFormat] {
     return self.__barcodeFormats.map({ __item in __item })
+  }
+  
+  @inline(__always)
+  var enableAllPotentialBarcodes: Bool? {
+    return { () -> Bool? in
+      if bridge.has_value_std__optional_bool_(self.__enableAllPotentialBarcodes) {
+        let __unwrapped = bridge.get_std__optional_bool_(self.__enableAllPotentialBarcodes)
+        return __unwrapped
+      } else {
+        return nil
+      }
+    }()
   }
 }
