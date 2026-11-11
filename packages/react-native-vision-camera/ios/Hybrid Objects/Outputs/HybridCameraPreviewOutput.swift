@@ -12,13 +12,18 @@ final class HybridCameraPreviewOutput: HybridCameraPreviewOutputSpec, NativePrev
   let mediaType: MediaType = .video
   let previewLayer: AVCaptureVideoPreviewLayer
   private let orientationManager = HybridInterfaceOrientationManager()
+  /// iOS 17+: drives the preview's rotation instead of `orientationManager`, because the interface
+  /// orientation is 90° off on a display not aligned with the camera (iPhone Duo's inner display).
+  /// Typed as `NSObject` because stored properties can't be `@available`-gated. Main queue only.
+  private var rotationCoordinator: NSObject?
+  private var rotationObservation: NSKeyValueObservation?
   var outputOrientation: CameraOrientation {
     get {
       return previewLayer.connection?.orientation ?? .up
     }
     set {
       // Setting orientation on a Preview output does nothing,
-      // as its orientation is always driven by the `orientationManager`.
+      // as its orientation is always driven by the `rotationCoordinator` or `orientationManager`.
     }
   }
   var currentResolution: Size? {
@@ -50,10 +55,12 @@ final class HybridCameraPreviewOutput: HybridCameraPreviewOutputSpec, NativePrev
     self.previewLayer = AVCaptureVideoPreviewLayer()
     self.previewLayer.videoGravity = .resizeAspectFill
     super.init()
-    self.orientationManager.startOrientationUpdates { [weak self] orientation in
-      guard let self else { return }
-      if let connection = self.previewLayer.connection {
-        try? connection.setOrientation(orientation)
+    if #unavailable(iOS 17.0) {
+      self.orientationManager.startOrientationUpdates { [weak self] orientation in
+        guard let self else { return }
+        if let connection = self.previewLayer.connection {
+          try? connection.setOrientation(orientation)
+        }
       }
     }
   }
@@ -67,8 +74,30 @@ final class HybridCameraPreviewOutput: HybridCameraPreviewOutputSpec, NativePrev
       return
     }
     try? connection.setMirrorMode(config.mirrorMode)
-    if let interfaceOrientation = orientationManager.currentOrientation {
+    if #available(iOS 17.0, *), let device = connection.deviceInput?.device {
+      DispatchQueue.main.async {
+        self.followRotationCoordinator(for: device)
+      }
+    } else if let interfaceOrientation = orientationManager.currentOrientation {
       try? connection.setOrientation(interfaceOrientation)
+    }
+  }
+
+  /// Rotates the preview by the coordinator's horizon-level angle, which accounts for how the
+  /// camera sits relative to the display showing `previewLayer`.
+  @available(iOS 17.0, *)
+  private func followRotationCoordinator(for device: AVCaptureDevice) {
+    let coordinator = AVCaptureDevice.RotationCoordinator(device: device, previewLayer: previewLayer)
+    rotationCoordinator = coordinator
+    rotationObservation = coordinator.observe(
+      \.videoRotationAngleForHorizonLevelPreview,
+      options: [.initial, .new]
+    ) { [weak self] coordinator, _ in
+      let angle = coordinator.videoRotationAngleForHorizonLevelPreview
+      guard let connection = self?.previewLayer.connection,
+        connection.isVideoRotationAngleSupported(angle)
+      else { return }
+      connection.videoRotationAngle = angle
     }
   }
 }
