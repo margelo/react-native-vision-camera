@@ -17,6 +17,19 @@ Unlike [the Object Output](object-output) (which is iOS-only), the Barcode Scann
 > If you only need a one-shot native QR/Barcode scanner, use [react-native-data-scanner](https://github.com/mrousavy/react-native-data-scanner) instead.
 > See ["VisionCamera vs Data Scanner"](visioncamera-vs-data-scanner) for more information.
 
+> [!WARNING]
+> **Simulator limitation on Apple Silicon Macs (M1/M2/...)**
+>
+> The Barcode Scanner uses Google's MLKit. MLKit's iOS code is not built for the Simulator's own chip architecture (arm64).
+> Because of this, Xcode will hide the Simulator from your list of run targets when this library is installed.
+>
+> This is not a bug in `react-native-vision-camera-barcode-scanner`. See [this related issue](https://github.com/EYALIN/community-cordova-plugin-barcodescanner/issues/1) for a clear summary of this problem in a different project.
+>
+> **Workarounds:**
+> - Use [margelo/react-native-nitro-zxing](https://github.com/margelo/react-native-nitro-zxing)
+> - Test your app on a real device instead of the Simulator.
+> - Or run the intel version of Xcode with Rosetta, but Xcode will be slower.
+
 ### Using the Barcode Scanner
 
 <Tabs items={["<CodeScanner /> (view)", "CameraOutput", "Frame Processor Plugin", "Still Images"]} groupId="barcode-api-style" persist>
