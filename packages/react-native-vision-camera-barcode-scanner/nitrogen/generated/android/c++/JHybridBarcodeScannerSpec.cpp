@@ -97,6 +97,20 @@ namespace margelo::nitro::camera::barcodescanner {
       return __promise;
     }();
   }
+  std::vector<std::shared_ptr<HybridBarcodeSpec>> JHybridBarcodeScannerSpec::scanCodesInImage(const std::shared_ptr<margelo::nitro::image::HybridImageSpec>& image) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<jni::JArrayClass<JHybridBarcodeSpec::JavaPart>>(jni::alias_ref<margelo::nitro::image::JHybridImageSpec::JavaPart> /* image */)>("scanCodesInImage");
+    auto __result = method(_javaPart, std::dynamic_pointer_cast<margelo::nitro::image::JHybridImageSpec>(image)->getJavaPart());
+    return [&](auto&& __input) {
+      size_t __size = __input->size();
+      std::vector<std::shared_ptr<HybridBarcodeSpec>> __vector;
+      __vector.reserve(__size);
+      for (size_t __i = 0; __i < __size; __i++) {
+        auto __element = __input->getElement(__i);
+        __vector.push_back(__element->getJHybridBarcodeSpec());
+      }
+      return __vector;
+    }(__result);
+  }
   std::shared_ptr<Promise<std::vector<std::shared_ptr<HybridBarcodeSpec>>>> JHybridBarcodeScannerSpec::scanCodesInImageAsync(const std::shared_ptr<margelo::nitro::image::HybridImageSpec>& image) {
     static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>(jni::alias_ref<margelo::nitro::image::JHybridImageSpec::JavaPart> /* image */)>("scanCodesInImageAsync");
     auto __result = method(_javaPart, std::dynamic_pointer_cast<margelo::nitro::image::JHybridImageSpec>(image)->getJavaPart());

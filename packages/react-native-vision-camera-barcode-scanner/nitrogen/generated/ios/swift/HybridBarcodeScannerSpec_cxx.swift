@@ -184,6 +184,31 @@ open class HybridBarcodeScannerSpec_cxx {
   }
   
   @inline(__always)
+  public final func scanCodesInImage(image: bridge.std__shared_ptr_margelo__nitro__image__HybridImageSpec_) -> bridge.Result_std__vector_std__shared_ptr_HybridBarcodeSpec___ {
+    do {
+      let __result = try self.__implementation.scanCodesInImage(image: { () -> any HybridImageSpec in
+        let __unsafePointer = bridge.get_std__shared_ptr_margelo__nitro__image__HybridImageSpec_(image)
+        let __instance = HybridImageSpec_cxx.fromUnsafe(__unsafePointer)
+        return __instance.getHybridImageSpec()
+      }())
+      let __resultCpp = { () -> bridge.std__vector_std__shared_ptr_HybridBarcodeSpec__ in
+        var __vector = bridge.create_std__vector_std__shared_ptr_HybridBarcodeSpec__(__result.count)
+        for __item in __result {
+          __vector.push_back({ () -> bridge.std__shared_ptr_HybridBarcodeSpec_ in
+            let __cxxWrapped = __item.getCxxWrapper()
+            return __cxxWrapped.getCxxPart()
+          }())
+        }
+        return __vector
+      }()
+      return bridge.create_Result_std__vector_std__shared_ptr_HybridBarcodeSpec___(__resultCpp)
+    } catch (let __error) {
+      let __exceptionPtr = __error.toCpp()
+      return bridge.create_Result_std__vector_std__shared_ptr_HybridBarcodeSpec___(__exceptionPtr)
+    }
+  }
+
+  @inline(__always)
   public final func scanCodesInImageAsync(image: bridge.std__shared_ptr_margelo__nitro__image__HybridImageSpec_) -> bridge.Result_std__shared_ptr_Promise_std__vector_std__shared_ptr_HybridBarcodeSpec_____ {
     do {
       let __result = try self.__implementation.scanCodesInImageAsync(image: { () -> any HybridImageSpec in

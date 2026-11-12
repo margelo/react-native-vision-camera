@@ -32,6 +32,12 @@ class HybridBarcodeScanner(
     return process(inputImage)
   }
 
+  override fun scanCodesInImage(image: HybridImageSpec): Array<HybridBarcodeSpec> {
+    val inputImage = image.toInputImage()
+    val barcodes = Tasks.await(scanner.process(inputImage))
+    return barcodes.map { HybridBarcode(it) }.toTypedArray<HybridBarcodeSpec>()
+  }
+
   override fun scanCodesInImageAsync(image: HybridImageSpec): Promise<Array<HybridBarcodeSpec>> {
     val inputImage = image.toInputImage()
     return process(inputImage)
