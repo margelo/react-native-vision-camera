@@ -120,6 +120,7 @@ namespace margelo::nitro::camera {
       virtual bool getSupportsLowLightBoost() = 0;
       virtual double getMinZoom() = 0;
       virtual double getMaxZoom() = 0;
+      virtual double getNeutralZoom() = 0;
       virtual std::vector<double> getZoomLensSwitchFactors() = 0;
       virtual bool getSupportsDistortionCorrection() = 0;
 

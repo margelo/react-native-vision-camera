@@ -52,6 +52,7 @@ namespace margelo::nitro::camera {
       prototype.registerHybridGetter("supportsLowLightBoost", &HybridCameraDeviceSpec::getSupportsLowLightBoost);
       prototype.registerHybridGetter("minZoom", &HybridCameraDeviceSpec::getMinZoom);
       prototype.registerHybridGetter("maxZoom", &HybridCameraDeviceSpec::getMaxZoom);
+      prototype.registerHybridGetter("neutralZoom", &HybridCameraDeviceSpec::getNeutralZoom);
       prototype.registerHybridGetter("zoomLensSwitchFactors", &HybridCameraDeviceSpec::getZoomLensSwitchFactors);
       prototype.registerHybridGetter("supportsDistortionCorrection", &HybridCameraDeviceSpec::getSupportsDistortionCorrection);
       prototype.registerHybridMethod("getSupportedResolutions", &HybridCameraDeviceSpec::getSupportedResolutions);
