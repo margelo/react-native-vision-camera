@@ -15,6 +15,7 @@ namespace margelo::nitro::camera {
     // load custom methods/properties
     registerHybrids(this, [](Prototype& prototype) {
       prototype.registerHybridGetter("selectedFPS", &HybridCameraSessionConfigSpec::getSelectedFPS);
+      prototype.registerHybridGetter("selectedVideoResolution", &HybridCameraSessionConfigSpec::getSelectedVideoResolution);
       prototype.registerHybridGetter("selectedVideoStabilizationMode", &HybridCameraSessionConfigSpec::getSelectedVideoStabilizationMode);
       prototype.registerHybridGetter("selectedPreviewStabilizationMode", &HybridCameraSessionConfigSpec::getSelectedPreviewStabilizationMode);
       prototype.registerHybridGetter("selectedVideoDynamicRange", &HybridCameraSessionConfigSpec::getSelectedVideoDynamicRange);

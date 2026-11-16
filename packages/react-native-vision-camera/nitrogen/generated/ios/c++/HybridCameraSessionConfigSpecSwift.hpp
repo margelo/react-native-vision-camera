@@ -12,6 +12,8 @@
 // Forward declaration of `HybridCameraSessionConfigSpec_cxx` to properly resolve imports.
 namespace VisionCamera { class HybridCameraSessionConfigSpec_cxx; }
 
+// Forward declaration of `Size` to properly resolve imports.
+namespace margelo::nitro::camera { struct Size; }
 // Forward declaration of `TargetStabilizationMode` to properly resolve imports.
 namespace margelo::nitro::camera { enum class TargetStabilizationMode; }
 // Forward declaration of `TargetDynamicRange` to properly resolve imports.
@@ -28,6 +30,7 @@ namespace margelo::nitro::camera { enum class PixelFormat; }
 namespace margelo::nitro::camera { enum class AutoFocusSystem; }
 
 #include <optional>
+#include "Size.hpp"
 #include "TargetStabilizationMode.hpp"
 #include "TargetDynamicRange.hpp"
 #include "TargetDynamicRangeBitDepth.hpp"
@@ -84,6 +87,10 @@ namespace margelo::nitro::camera {
     // Properties
     inline std::optional<double> getSelectedFPS() noexcept override {
       auto __result = _swiftPart.getSelectedFPS();
+      return __result;
+    }
+    inline std::optional<Size> getSelectedVideoResolution() noexcept override {
+      auto __result = _swiftPart.getSelectedVideoResolution();
       return __result;
     }
     inline std::optional<TargetStabilizationMode> getSelectedVideoStabilizationMode() noexcept override {
