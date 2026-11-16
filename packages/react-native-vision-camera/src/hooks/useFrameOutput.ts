@@ -165,6 +165,11 @@ export function useFrameOutput({
       if (callback != null) callback(reason)
       else console.warn(`Frame Dropped! Reason: ${reason}`)
     })
+    return () => {
+      // The native output holds the callback (and everything it closes over)
+      // as a GC root until it is cleared.
+      frameOutput.setOnFrameDroppedCallback(undefined)
+    }
   }, [frameOutput])
 
   // 4. Create Worklet Runtime for NativeThread
@@ -175,6 +180,9 @@ export function useFrameOutput({
   // 5. Update onFrame() callback if it changed
   useEffect(() => {
     runtime.setOnFrameCallback(frameOutput, onFrame)
+    return () => {
+      runtime.setOnFrameCallback(frameOutput, undefined)
+    }
   }, [runtime, frameOutput, onFrame])
 
   // 6. Return :)

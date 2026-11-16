@@ -106,6 +106,9 @@ export function useDepthOutput({
       if (callback != null) callback(reason)
       else console.warn(`Depth Frame Dropped! Reason: ${reason}`)
     })
+    return () => {
+      depthOutput.setOnDepthFrameDroppedCallback(undefined)
+    }
   }, [depthOutput])
 
   // 4. Create Worklet Runtime for NativeThread
@@ -116,6 +119,9 @@ export function useDepthOutput({
   // 5. Update onDepth() callback if it changed
   useEffect(() => {
     runtime.setOnDepthFrameCallback(depthOutput, onDepth)
+    return () => {
+      runtime.setOnDepthFrameCallback(depthOutput, undefined)
+    }
   }, [runtime, depthOutput, onDepth])
 
   // 6. Return :)
