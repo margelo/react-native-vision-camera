@@ -48,6 +48,8 @@ namespace margelo::nitro::camera::barcodescanner {
       jni::local_ref<jni::JArrayClass<JTargetBarcodeFormat>> barcodeFormats = this->getFieldValue(fieldBarcodeFormats);
       static const auto fieldOutputResolution = clazz->getField<JBarcodeScannerOutputResolution>("outputResolution");
       jni::local_ref<JBarcodeScannerOutputResolution> outputResolution = this->getFieldValue(fieldOutputResolution);
+      static const auto fieldEnableAllPotentialBarcodes = clazz->getField<jni::JBoolean>("enableAllPotentialBarcodes");
+      jni::local_ref<jni::JBoolean> enableAllPotentialBarcodes = this->getFieldValue(fieldEnableAllPotentialBarcodes);
       static const auto fieldOnBarcodeScanned = clazz->getField<JFunc_void_std__vector_std__shared_ptr_HybridBarcodeSpec__::javaobject>("onBarcodeScanned");
       jni::local_ref<JFunc_void_std__vector_std__shared_ptr_HybridBarcodeSpec__::javaobject> onBarcodeScanned = this->getFieldValue(fieldOnBarcodeScanned);
       static const auto fieldOnError = clazz->getField<JFunc_void_std__exception_ptr::javaobject>("onError");
@@ -64,6 +66,7 @@ namespace margelo::nitro::camera::barcodescanner {
           return __vector;
         }(barcodeFormats),
         outputResolution != nullptr ? std::make_optional(outputResolution->toCpp()) : std::nullopt,
+        enableAllPotentialBarcodes != nullptr ? std::make_optional(static_cast<bool>(enableAllPotentialBarcodes->value())) : std::nullopt,
         [&]() -> std::function<void(const std::vector<std::shared_ptr<HybridBarcodeSpec>>& /* barcodes */)> {
           if (onBarcodeScanned->isInstanceOf(JFunc_void_std__vector_std__shared_ptr_HybridBarcodeSpec___cxx::javaClassStatic())) [[likely]] {
             auto downcast = jni::static_ref_cast<JFunc_void_std__vector_std__shared_ptr_HybridBarcodeSpec___cxx::javaobject>(onBarcodeScanned);
@@ -91,7 +94,7 @@ namespace margelo::nitro::camera::barcodescanner {
      */
     [[maybe_unused]]
     static jni::local_ref<JBarcodeScannerOutputOptions::javaobject> fromCpp(const BarcodeScannerOutputOptions& value) {
-      using JSignature = JBarcodeScannerOutputOptions(jni::alias_ref<jni::JArrayClass<JTargetBarcodeFormat>>, jni::alias_ref<JBarcodeScannerOutputResolution>, jni::alias_ref<JFunc_void_std__vector_std__shared_ptr_HybridBarcodeSpec__::javaobject>, jni::alias_ref<JFunc_void_std__exception_ptr::javaobject>);
+      using JSignature = JBarcodeScannerOutputOptions(jni::alias_ref<jni::JArrayClass<JTargetBarcodeFormat>>, jni::alias_ref<JBarcodeScannerOutputResolution>, jni::alias_ref<jni::JBoolean>, jni::alias_ref<JFunc_void_std__vector_std__shared_ptr_HybridBarcodeSpec__::javaobject>, jni::alias_ref<JFunc_void_std__exception_ptr::javaobject>);
       static const auto clazz = javaClassStatic();
       static const auto create = clazz->getStaticMethod<JSignature>("fromCpp");
       return create(
@@ -107,6 +110,7 @@ namespace margelo::nitro::camera::barcodescanner {
           return __array;
         }(value.barcodeFormats),
         value.outputResolution.has_value() ? JBarcodeScannerOutputResolution::fromCpp(value.outputResolution.value()) : nullptr,
+        value.enableAllPotentialBarcodes.has_value() ? jni::JBoolean::valueOf(value.enableAllPotentialBarcodes.value()) : nullptr,
         JFunc_void_std__vector_std__shared_ptr_HybridBarcodeSpec___cxx::fromCpp(value.onBarcodeScanned),
         JFunc_void_std__exception_ptr_cxx::fromCpp(value.onError)
       );
