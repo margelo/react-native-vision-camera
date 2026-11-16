@@ -13,6 +13,24 @@ extension AVCaptureConnection {
     return CameraOrientation(avOrientation: videoOrientation)
   }
 
+  /**
+   * The orientation of the buffers this connection delivers,
+   * i.e. the rotation that turns them upright before any mirroring.
+   *
+   * AVFoundation names a front camera's `videoOrientation` after its
+   * mirrored (selfie) image: its data outputs report `landscapeLeft`
+   * while their un-mirrored buffers are laid out like the back camera's
+   * `landscapeRight` ones. So when the connection does not mirror its
+   * buffers, the front camera's quarter turns are inverted.
+   */
+  var bufferOrientation: CameraOrientation {
+    let isFrontCamera = deviceInput?.device.position == .front
+    return CameraOrientation.bufferOrientation(
+      reportedOrientation: orientation,
+      isFrontCamera: isFrontCamera,
+      isVideoMirrored: isVideoMirrored)
+  }
+
   func setOrientation(_ orientation: CameraOrientation) throws {
     guard self.isVideoOrientationSupported else {
       throw RuntimeError.error(

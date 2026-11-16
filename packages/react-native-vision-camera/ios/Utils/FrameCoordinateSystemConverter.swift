@@ -23,8 +23,10 @@ enum FrameCoordinateSystemConverter {
   ) -> CGAffineTransform {
     var matrix = CGAffineTransform.identity
 
-    // 1. Counter-rotate by the orientation to get it up-right
-    switch orientation {
+    // 1. Counter-rotate by the orientation to get it up-right.
+    //    The mirror below is applied first (in the buffer), and a mirror
+    //    inverts a rotation, so a mirrored orientation is inverted.
+    switch isMirrored ? orientation.inverted : orientation {
     case .up:
       break
     case .down:

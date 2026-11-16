@@ -10,8 +10,13 @@ import Foundation
 import NitroModules
 
 extension CameraOrientation {
+  /**
+   * Converts this `CameraOrientation` to the EXIF orientation that displays
+   * the image this orientation (and `isMirrored`) describes.
+   * See ``appleName(isMirrored:)``.
+   */
   func toCGOrientation(isMirrored: Bool) -> CGImagePropertyOrientation {
-    switch self {
+    switch self.appleName(isMirrored: isMirrored) {
     case .up:
       return isMirrored ? .upMirrored : .up
     case .down:

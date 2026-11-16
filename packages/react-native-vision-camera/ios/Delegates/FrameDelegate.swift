@@ -27,7 +27,7 @@ final class FrameDelegate: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
   ) {
     if let onFrame {
       onFrame(
-        sampleBuffer, sampleBuffer.presentationTimeStamp, connection.orientation,
+        sampleBuffer, sampleBuffer.presentationTimeStamp, connection.bufferOrientation,
         connection.isVideoMirrored)
     }
   }

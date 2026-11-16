@@ -24,6 +24,22 @@ extension CameraOrientation {
     }
   }
 
+  /**
+   * The orientation of the buffers of a connection whose
+   * `videoOrientation` is `reportedOrientation`.
+   * See `AVCaptureConnection.bufferOrientation`.
+   */
+  static func bufferOrientation(
+    reportedOrientation: CameraOrientation,
+    isFrontCamera: Bool,
+    isVideoMirrored: Bool
+  ) -> CameraOrientation {
+    if isFrontCamera && !isVideoMirrored {
+      return reportedOrientation.inverted
+    }
+    return reportedOrientation
+  }
+
   func toAVCaptureVideoOrientation() -> AVCaptureVideoOrientation {
     switch self {
     case .up:
