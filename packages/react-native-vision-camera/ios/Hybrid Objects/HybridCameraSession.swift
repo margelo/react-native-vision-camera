@@ -83,6 +83,14 @@ final class HybridCameraSession: HybridCameraSessionSpec {
         self.configureOutputs(connection)
       }
 
+      // RAW photos need the `.photo` preset, which picks its own Format
+      if self.applyRawPhotoPresetIfNeeded(connections) {
+        // Fit the outputs (e.g. max photo dimensions) to the Format the preset picked
+        for connection in connections {
+          self.configureOutputs(connection)
+        }
+      }
+
       // If we have any Dynamic Range Constraints, we disable automatic color space selection on the AVCaptureSession.
       let hasCustomDynamicRangeConstraint = connections.contains { connection in
         return connection.constraints.contains { constraint in
@@ -196,6 +204,36 @@ final class HybridCameraSession: HybridCameraSessionSpec {
         }
       }
     }
+  }
+
+  /**
+   * AVFoundation only offers Bayer RAW photo formats (`availableRawPhotoPixelFormatTypes`)
+   * with the `.photo` session preset, not with `.inputPriority` (which setting
+   * `device.activeFormat` implies). On devices without Apple ProRAW (e.g. an iPhone 11),
+   * a `dng` PhotoOutput could therefore never capture.
+   * While a `dng` PhotoOutput is connected, use the `.photo` preset (it picks the device's
+   * photo Format itself), and go back to `.inputPriority` otherwise.
+   * Multi-cam sessions only support `.inputPriority`, so they stay on it.
+   * - Returns: Whether the `.photo` preset is used.
+   */
+  private func applyRawPhotoPresetIfNeeded(_ connections: [ResolvedCameraSessionConnection]) -> Bool {
+    let capturesRawPhotos = connections.contains { connection in
+      return connection.outputs.contains { outputConfiguration in
+        guard case .output(let output) = outputConfiguration.output,
+          let photoOutput = output as? HybridCameraPhotoOutput
+        else {
+          return false
+        }
+        return photoOutput.capturesRawPhotos
+      }
+    }
+    let usesPhotoPreset = capturesRawPhotos && self.session.canSetSessionPreset(.photo)
+    let preset: AVCaptureSession.Preset = usesPhotoPreset ? .photo : .inputPriority
+    if self.session.sessionPreset != preset {
+      logger.info("Switching CameraSession to the \(preset.rawValue) preset (RAW photos: \(capturesRawPhotos))...")
+      self.session.sessionPreset = preset
+    }
+    return usesPhotoPreset
   }
 
   private func configureOutputs(_ connection: ResolvedCameraSessionConnection) {
