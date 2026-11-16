@@ -26,7 +26,7 @@ final class DepthFrameDelegate: NSObject, AVCaptureDepthDataOutputDelegate {
     connection: AVCaptureConnection
   ) {
     if let onDepthFrame {
-      onDepthFrame(depthData, timestamp, connection.orientation, connection.isVideoMirrored)
+      onDepthFrame(depthData, timestamp, connection.bufferOrientation, connection.isVideoMirrored)
     }
   }
 }

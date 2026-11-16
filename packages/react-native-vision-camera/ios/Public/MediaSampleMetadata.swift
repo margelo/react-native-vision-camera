@@ -23,7 +23,7 @@ public struct MediaSampleMetadata {
   }
   init(timestamp: CMTime, orientationFromConnection connection: AVCaptureConnection) {
     self.timestamp = timestamp
-    self.orientation = connection.orientation
+    self.orientation = connection.bufferOrientation
     self.isMirrored = connection.isVideoMirrored
   }
   init(timestamp: CMTime, orientation: CameraOrientation, isMirrored: Bool) {
