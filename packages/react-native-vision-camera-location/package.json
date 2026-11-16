@@ -65,17 +65,17 @@
   },
   "devDependencies": {
     "@types/react": "19.2.15",
-    "nitrogen": "0.37.0",
+    "nitrogen": "0.37.2",
     "react": "19.2.3",
     "react-native": "0.85.3",
-    "react-native-nitro-modules": "0.37.0",
+    "react-native-nitro-modules": "0.37.2",
     "react-native-vision-camera": "*",
     "typescript": "6.0.3"
   },
   "peerDependencies": {
     "react": "*",
     "react-native": "*",
-    "react-native-nitro-modules": "*",
+    "react-native-nitro-modules": ">=0.37.2",
     "react-native-vision-camera": "*"
   },
   "peerDependenciesMeta": {
