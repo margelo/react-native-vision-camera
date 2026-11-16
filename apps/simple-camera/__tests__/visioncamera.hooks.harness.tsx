@@ -1,6 +1,17 @@
-import { useEffect } from 'react'
-import { StyleSheet } from 'react-native'
 import {
+  Activity,
+  Component,
+  type ErrorInfo,
+  type ReactNode,
+  StrictMode,
+  Suspense,
+  use,
+  useEffect,
+  useState,
+} from 'react'
+import { Platform, StyleSheet } from 'react-native'
+import {
+  assert,
   beforeAll,
   describe,
   expect,
@@ -10,6 +21,7 @@ import {
   render,
   waitFor,
 } from 'react-native-harness'
+import { NitroModules } from 'react-native-nitro-modules'
 import {
   Screen,
   type ScreenOrientationTypes,
@@ -18,24 +30,60 @@ import {
 import type {
   CameraDevice,
   CameraDeviceFactory,
+  CameraFrameOutput,
   CameraOrientation,
   CameraPhotoOutput,
   CameraPosition,
   CameraVideoOutput,
   DeviceFilter,
+  Frame,
   TargetCameraPosition,
+  TargetVideoPixelFormat,
 } from 'react-native-vision-camera'
 import {
   CommonResolutions,
   getUIRotation,
   useCamera,
   useCameraDevice,
+  useFrameOutput,
   useOrientation,
   usePhotoOutput,
   usePreviewOutput,
   useVideoOutput,
   VisionCamera,
 } from 'react-native-vision-camera'
+import {
+  createWorkletRuntimeForThread,
+  getCurrentThreadMarker,
+} from 'react-native-vision-camera-worklets'
+import { scheduleOnRN, scheduleOnRuntime } from 'react-native-worklets'
+import { deferred, withTimeout } from './test-utils'
+
+// Mirrors `IdentifiableExecutor.IDLE_THREAD_TIMEOUT_MS` on Android.
+const FRAME_THREAD_IDLE_TIMEOUT_MS = 5_000
+
+interface RecordingErrorBoundaryProps {
+  onError: (error: Error, errorInfo: ErrorInfo) => void
+  children?: ReactNode
+}
+
+// Catches errors below the harness ErrorBoundary, which would
+// otherwise remount the tree and hide them.
+class RecordingErrorBoundary extends Component<
+  RecordingErrorBoundaryProps,
+  { hasError: boolean }
+> {
+  override state = { hasError: false }
+  static getDerivedStateFromError(): { hasError: boolean } {
+    return { hasError: true }
+  }
+  override componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
+    this.props.onError(error, errorInfo)
+  }
+  override render(): ReactNode {
+    return this.state.hasError ? null : this.props.children
+  }
+}
 
 interface DeviceSnapshot {
   requestedPosition: TargetCameraPosition
@@ -641,6 +689,560 @@ describe('VisionCamera - Hooks', () => {
       { timeout: 15_000 },
     )
 
+    expect(onError).not.toHaveBeenCalled()
+  })
+
+  // Red before (head 441123f8): `expect(NitroModules.isHybridObject(frameOutput)).toBe(true)`
+  // - the hook disposed its output one microtask after the unmount cleanup.
+  it('keeps the useFrameOutput output usable after the component unmounts', async () => {
+    const onFrameOutput = fn<(frameOutput: CameraFrameOutput) => void>()
+    const onUnmounted = fn<() => void>()
+
+    function TestFrameOutput(): null {
+      const frameOutput = useFrameOutput({
+        onFrame(frame) {
+          'worklet'
+          frame.dispose()
+        },
+      })
+      useEffect(() => {
+        onFrameOutput(frameOutput)
+      }, [frameOutput])
+      useEffect(() => onUnmounted, [])
+      return null
+    }
+
+    const { unmount } = await render(<TestFrameOutput />)
+    await waitFor(() => {
+      expect(onFrameOutput).toHaveBeenCalledTimes(1)
+    })
+    const frameOutput = onFrameOutput.mock.lastCall?.[0]
+    assert.exists(frameOutput, 'useFrameOutput did not return an output')
+
+    unmount()
+    await waitFor(() => {
+      expect(onUnmounted).toHaveBeenCalledTimes(1)
+    })
+
+    expect(NitroModules.isHybridObject(frameOutput)).toBe(true)
+    const ranAfterUnmount = deferred()
+    frameOutput.thread.runOnThread(() => ranAfterUnmount.resolve())
+    await withTimeout(
+      ranAfterUnmount.promise,
+      5_000,
+      'run on the frame output thread after unmount',
+    )
+  })
+
+  // Red before (head 441123f8): the second `readThreadMarker()` rejects with
+  // "Timed out after 5000ms: read the frame thread marker" - the disposed
+  // output's thread dropped the probe job. On main, `markerAfterIdle` equals
+  // `markerBeforeIdle`.
+  it('lets the useFrameOutput thread exit after the component unmounts', async (context) => {
+    if (Platform.OS !== 'android') {
+      return context.skip(
+        'idle thread exit: Android only, only Android gives each output its own OS thread',
+      )
+    }
+    const onFrameOutput = fn<(frameOutput: CameraFrameOutput) => void>()
+    const onUnmounted = fn<() => void>()
+
+    function TestFrameOutput(): null {
+      const frameOutput = useFrameOutput({
+        onFrame(frame) {
+          'worklet'
+          frame.dispose()
+        },
+      })
+      useEffect(() => {
+        onFrameOutput(frameOutput)
+      }, [frameOutput])
+      useEffect(() => onUnmounted, [])
+      return null
+    }
+
+    const { unmount } = await render(<TestFrameOutput />)
+    await waitFor(() => {
+      expect(onFrameOutput).toHaveBeenCalledTimes(1)
+    })
+    const frameOutput = onFrameOutput.mock.lastCall?.[0]
+    assert.exists(frameOutput, 'useFrameOutput did not return an output')
+    const probe = createWorkletRuntimeForThread(frameOutput.thread)
+    const readThreadMarker = async (): Promise<number> => {
+      const marker = deferred<number>()
+      const onMarker = (value: number) => marker.resolve(value)
+      scheduleOnRuntime(probe, () => {
+        'worklet'
+        scheduleOnRN(onMarker, getCurrentThreadMarker())
+      })
+      return withTimeout(marker.promise, 5_000, 'read the frame thread marker')
+    }
+
+    const markerBeforeIdle = await readThreadMarker()
+    unmount()
+    await waitFor(() => {
+      expect(onUnmounted).toHaveBeenCalledTimes(1)
+    })
+    // Elapsed idle time is the behavior under test. Nothing may touch the
+    // thread during the wait, because each job restarts the idle timer.
+    await new Promise<void>((resolve) =>
+      setTimeout(resolve, FRAME_THREAD_IDLE_TIMEOUT_MS + 2_000),
+    )
+    const markerAfterIdle = await readThreadMarker()
+
+    expect(markerAfterIdle).not.toBe(markerBeforeIdle)
+  })
+
+  // Red before (head 441123f8): `expect(onFrameOutput.mock.lastCall?.[1]).toBe(hiddenFrameOutput)`
+  // - the hook replaced its disposed output after the reveal.
+  it('keeps the same working useFrameOutput output after <Activity> hides and shows it', async () => {
+    const onFrameOutput =
+      fn<(instanceId: number, frameOutput: CameraFrameOutput) => void>()
+    const onError = fn<(error: Error, errorInfo: ErrorInfo) => void>()
+    let mountCount = 0
+
+    function TestFrameOutput(): null {
+      const [instanceId] = useState(() => ++mountCount)
+      const frameOutput = useFrameOutput({
+        onFrame(frame) {
+          'worklet'
+          frame.dispose()
+        },
+      })
+      useEffect(() => {
+        onFrameOutput(instanceId, frameOutput)
+      }, [instanceId, frameOutput])
+      return null
+    }
+
+    const renderTree = (mode: 'visible' | 'hidden') => (
+      <RecordingErrorBoundary onError={onError}>
+        <Activity mode={mode}>
+          <TestFrameOutput />
+        </Activity>
+      </RecordingErrorBoundary>
+    )
+
+    const { rerender } = await render(renderTree('visible'))
+    await waitFor(() => {
+      expect(onFrameOutput).toHaveBeenCalledTimes(1)
+    })
+    const hiddenFrameOutput = onFrameOutput.mock.lastCall?.[1]
+    assert.exists(hiddenFrameOutput, 'useFrameOutput did not return an output')
+
+    await rerender(renderTree('hidden'))
+    // Let any deferred work from the hide run before the output is shown again.
+    await new Promise<void>((resolve) => setTimeout(resolve, 0))
+    await rerender(renderTree('visible'))
+
+    // The reveal re-runs the effect once.
+    await waitFor(() => {
+      expect(onFrameOutput).toHaveBeenCalledTimes(2)
+    })
+    expect(onError).not.toHaveBeenCalled()
+    expect(onFrameOutput.mock.lastCall?.[1]).toBe(hiddenFrameOutput)
+    // Same component instance: no remount happened during hide and show.
+    const firstInstanceId = onFrameOutput.mock.calls[0]?.[0]
+    const instanceIds = onFrameOutput.mock.calls.map(([id]) => id)
+    expect(instanceIds).toEqual([firstInstanceId, firstInstanceId])
+
+    const ranOnShownThread = deferred()
+    hiddenFrameOutput.thread.runOnThread(() => ranOnShownThread.resolve())
+    await withTimeout(
+      ranOnShownThread.promise,
+      5_000,
+      'run on the shown frame output thread',
+    )
+  })
+
+  // Red before (head 441123f8): `expect(onError).not.toHaveBeenCalled()` - on
+  // the effect-only reveal, Child's effect ran first on the disposed output,
+  // and its `outputOrientation` setter threw a JSError into the boundary.
+  it('hands child effects a live useFrameOutput output on an effect-only <Activity> reveal', async () => {
+    const onChildEffect =
+      fn<(isHybridObject: boolean, output: CameraFrameOutput) => void>()
+    const onError = fn<(error: Error, errorInfo: ErrorInfo) => void>()
+    let parentRenderCount = 0
+
+    function Child({ output }: { output: CameraFrameOutput }): null {
+      useEffect(() => {
+        onChildEffect(NitroModules.isHybridObject(output), output)
+        output.outputOrientation = 'up'
+      }, [output])
+      return null
+    }
+
+    function Parent(): ReactNode {
+      parentRenderCount++
+      const frameOutput = useFrameOutput({
+        onFrame(frame) {
+          'worklet'
+          frame.dispose()
+        },
+      })
+      return <Child output={frameOutput} />
+    }
+
+    // Created once, so the reveal bails out of rendering Parent and only
+    // reconnects the committed effects.
+    const parent = <Parent />
+    const renderTree = (mode: 'visible' | 'hidden') => (
+      <RecordingErrorBoundary onError={onError}>
+        <Activity mode={mode}>{parent}</Activity>
+      </RecordingErrorBoundary>
+    )
+
+    const { rerender } = await render(renderTree('visible'))
+    await waitFor(() => {
+      expect(onChildEffect).toHaveBeenCalledTimes(1)
+    })
+    const mountedOutput = onChildEffect.mock.lastCall?.[1]
+    assert.exists(mountedOutput, 'useFrameOutput did not return an output')
+
+    await rerender(renderTree('hidden'))
+    // Let any deferred work from the hide run before the reveal.
+    await new Promise<void>((resolve) => setTimeout(resolve, 0))
+    const parentRendersBeforeReveal = parentRenderCount
+    await rerender(renderTree('visible'))
+    await waitFor(() => {
+      expect(onChildEffect).toHaveBeenCalledTimes(2)
+    })
+
+    expect(onError).not.toHaveBeenCalled()
+    expect(parentRenderCount).toBe(parentRendersBeforeReveal)
+    const recordedLiveness = onChildEffect.mock.calls.map(([isLive]) => isLive)
+    expect(recordedLiveness).toEqual([true, true])
+    expect(onChildEffect.mock.lastCall?.[1]).toBe(mountedOutput)
+  })
+
+  // Red before (head 441123f8): `expect(NitroModules.isHybridObject(firstOutput)).toBe(true)`
+  // - the hook disposed the first output at the hide.
+  it('keeps both outputs usable when a hidden re-render changes options and the tree unmounts while hidden', async () => {
+    const onRenderedOutput = fn<(frameOutput: CameraFrameOutput) => void>()
+    const onError = fn<(error: Error, errorInfo: ErrorInfo) => void>()
+
+    function TestFrameOutput({
+      pixelFormat,
+    }: {
+      pixelFormat: TargetVideoPixelFormat
+    }): null {
+      const frameOutput = useFrameOutput({
+        pixelFormat: pixelFormat,
+        onFrame(frame) {
+          'worklet'
+          frame.dispose()
+        },
+      })
+      onRenderedOutput(frameOutput)
+      return null
+    }
+
+    const renderTree = (
+      mode: 'visible' | 'hidden',
+      pixelFormat: TargetVideoPixelFormat,
+    ) => (
+      <RecordingErrorBoundary onError={onError}>
+        <Activity mode={mode}>
+          <TestFrameOutput pixelFormat={pixelFormat} />
+        </Activity>
+      </RecordingErrorBoundary>
+    )
+
+    const { rerender } = await render(renderTree('visible', 'yuv'))
+    const firstOutput = onRenderedOutput.mock.lastCall?.[0]
+    assert.exists(firstOutput, 'useFrameOutput did not return an output')
+
+    await rerender(renderTree('hidden', 'yuv'))
+    await rerender(renderTree('hidden', 'native'))
+    // React renders a hidden subtree at a lower priority.
+    await waitFor(
+      () => {
+        expect(onRenderedOutput.mock.lastCall?.[0]).not.toBe(firstOutput)
+      },
+      { timeout: 5_000 },
+    )
+    const hiddenOutput = onRenderedOutput.mock.lastCall?.[0]
+    assert.exists(hiddenOutput, 'useFrameOutput did not return an output')
+    await rerender(<RecordingErrorBoundary onError={onError} />)
+
+    expect(NitroModules.isHybridObject(firstOutput)).toBe(true)
+    expect(NitroModules.isHybridObject(hiddenOutput)).toBe(true)
+    expect(hiddenOutput).not.toBe(firstOutput)
+    expect(onError).not.toHaveBeenCalled()
+  })
+
+  // Red before (head 441123f8): the second `readThreadMarker()` rejects with
+  // "Timed out after 5000ms: read the frame thread marker" - the hide disposed
+  // the first output, so its thread dropped the probe job. On main,
+  // `markerAfterIdle` equals `markerBeforeIdle`.
+  it('lets the useFrameOutput thread exit when the tree unmounts while hidden', async (context) => {
+    if (Platform.OS !== 'android') {
+      return context.skip(
+        'idle thread exit: Android only, only Android gives each output its own OS thread',
+      )
+    }
+    const onRenderedOutput = fn<(frameOutput: CameraFrameOutput) => void>()
+    const onError = fn<(error: Error, errorInfo: ErrorInfo) => void>()
+
+    function TestFrameOutput({
+      pixelFormat,
+    }: {
+      pixelFormat: TargetVideoPixelFormat
+    }): null {
+      const frameOutput = useFrameOutput({
+        pixelFormat: pixelFormat,
+        onFrame(frame) {
+          'worklet'
+          frame.dispose()
+        },
+      })
+      onRenderedOutput(frameOutput)
+      return null
+    }
+
+    const renderTree = (
+      mode: 'visible' | 'hidden',
+      pixelFormat: TargetVideoPixelFormat,
+    ) => (
+      <RecordingErrorBoundary onError={onError}>
+        <Activity mode={mode}>
+          <TestFrameOutput pixelFormat={pixelFormat} />
+        </Activity>
+      </RecordingErrorBoundary>
+    )
+
+    const { rerender } = await render(renderTree('visible', 'yuv'))
+    const firstOutput = onRenderedOutput.mock.lastCall?.[0]
+    assert.exists(firstOutput, 'useFrameOutput did not return an output')
+    const probe = createWorkletRuntimeForThread(firstOutput.thread)
+    const readThreadMarker = async (): Promise<number> => {
+      const marker = deferred<number>()
+      const onMarker = (value: number) => marker.resolve(value)
+      scheduleOnRuntime(probe, () => {
+        'worklet'
+        scheduleOnRN(onMarker, getCurrentThreadMarker())
+      })
+      return withTimeout(marker.promise, 5_000, 'read the frame thread marker')
+    }
+
+    const markerBeforeIdle = await readThreadMarker()
+    await rerender(renderTree('hidden', 'yuv'))
+    await rerender(renderTree('hidden', 'native'))
+    // React renders a hidden subtree at a lower priority.
+    await waitFor(
+      () => {
+        expect(onRenderedOutput.mock.lastCall?.[0]).not.toBe(firstOutput)
+      },
+      { timeout: 5_000 },
+    )
+    await rerender(<RecordingErrorBoundary onError={onError} />)
+    // Elapsed idle time is the behavior under test. Nothing may touch the
+    // thread during the wait, because each job restarts the idle timer.
+    await new Promise<void>((resolve) =>
+      setTimeout(resolve, FRAME_THREAD_IDLE_TIMEOUT_MS + 2_000),
+    )
+    const markerAfterIdle = await readThreadMarker()
+
+    expect(markerAfterIdle).not.toBe(markerBeforeIdle)
+    expect(onError).not.toHaveBeenCalled()
+  })
+
+  // Red before (head 441123f8): `expect(NitroModules.isHybridObject(firstOutput)).toBe(true)`
+  // - the hook disposed the first output one microtask after the replacement.
+  it('keeps the previous useFrameOutput output usable after an options change', async () => {
+    const onFrameOutput = fn<(frameOutput: CameraFrameOutput) => void>()
+
+    function TestFrameOutput({
+      pixelFormat,
+    }: {
+      pixelFormat: TargetVideoPixelFormat
+    }): null {
+      const frameOutput = useFrameOutput({
+        pixelFormat: pixelFormat,
+        onFrame(frame) {
+          'worklet'
+          frame.dispose()
+        },
+      })
+      useEffect(() => {
+        onFrameOutput(frameOutput)
+      }, [frameOutput])
+      return null
+    }
+
+    const { rerender } = await render(<TestFrameOutput pixelFormat="yuv" />)
+    await waitFor(() => {
+      expect(onFrameOutput).toHaveBeenCalledTimes(1)
+    })
+    const firstOutput = onFrameOutput.mock.lastCall?.[0]
+    assert.exists(firstOutput, 'useFrameOutput did not return an output')
+
+    await rerender(<TestFrameOutput pixelFormat="native" />)
+    await waitFor(() => {
+      expect(onFrameOutput.mock.lastCall?.[0]).not.toBe(firstOutput)
+    })
+    const secondOutput = onFrameOutput.mock.lastCall?.[0]
+    assert.exists(secondOutput, 'useFrameOutput did not return an output')
+    const ranOnSecondThread = deferred()
+    secondOutput.thread.runOnThread(() => ranOnSecondThread.resolve())
+    await withTimeout(
+      ranOnSecondThread.promise,
+      5_000,
+      'run on the second frame output thread',
+    )
+
+    expect(NitroModules.isHybridObject(firstOutput)).toBe(true)
+  })
+
+  // Guard: green before and after. Red if the hook touches an output that the
+  // user disposed.
+  it('guard: throws nothing from useFrameOutput after the user disposes its output', async () => {
+    const onFrameOutput = fn<(frameOutput: CameraFrameOutput) => void>()
+    const onError = fn<(error: Error, errorInfo: ErrorInfo) => void>()
+    const onFrameA = (frame: Frame) => {
+      'worklet'
+      frame.dispose()
+    }
+    const onFrameB = (frame: Frame) => {
+      'worklet'
+      frame.dispose()
+    }
+
+    function TestFrameOutput({
+      onFrame,
+    }: {
+      onFrame: (frame: Frame) => void
+    }): null {
+      const frameOutput = useFrameOutput({ onFrame: onFrame })
+      useEffect(() => {
+        onFrameOutput(frameOutput)
+      }, [frameOutput])
+      return null
+    }
+
+    const { rerender } = await render(
+      <RecordingErrorBoundary onError={onError}>
+        <TestFrameOutput onFrame={onFrameA} />
+      </RecordingErrorBoundary>,
+    )
+    await waitFor(() => {
+      expect(onFrameOutput).toHaveBeenCalledTimes(1)
+    })
+    const frameOutput = onFrameOutput.mock.lastCall?.[0]
+    assert.exists(frameOutput, 'useFrameOutput did not return an output')
+
+    frameOutput.dispose()
+    await rerender(
+      <RecordingErrorBoundary onError={onError}>
+        <TestFrameOutput onFrame={onFrameB} />
+      </RecordingErrorBoundary>,
+    )
+    await rerender(<RecordingErrorBoundary onError={onError} />)
+    // Let the unmount cleanups and any deferred work run.
+    await new Promise<void>((resolve) => setTimeout(resolve, 0))
+
+    expect(onError).not.toHaveBeenCalled()
+  })
+
+  // Guard: green before and after. StrictMode re-runs the effects with the
+  // same output, which must stay usable.
+  it('guard: keeps one working useFrameOutput output under <StrictMode>', async () => {
+    const onFrameOutput = fn<(frameOutput: CameraFrameOutput) => void>()
+
+    function TestFrameOutput(): null {
+      const frameOutput = useFrameOutput({
+        onFrame(frame) {
+          'worklet'
+          frame.dispose()
+        },
+      })
+      useEffect(() => {
+        onFrameOutput(frameOutput)
+      }, [frameOutput])
+      return null
+    }
+
+    await render(
+      <StrictMode>
+        <TestFrameOutput />
+      </StrictMode>,
+    )
+    await waitFor(() => {
+      expect(onFrameOutput).toHaveBeenCalled()
+    })
+    // Let any deferred work from the StrictMode effect re-run finish.
+    await new Promise<void>((resolve) => setTimeout(resolve, 0))
+
+    const distinctOutputs = new Set(
+      onFrameOutput.mock.calls.map(([output]) => output),
+    )
+    expect(distinctOutputs.size).toBe(1)
+    const frameOutput = onFrameOutput.mock.lastCall?.[0]
+    assert.exists(frameOutput, 'useFrameOutput did not return an output')
+    expect(NitroModules.isHybridObject(frameOutput)).toBe(true)
+    const ranOnThread = deferred()
+    frameOutput.thread.runOnThread(() => ranOnThread.resolve())
+    await withTimeout(
+      ranOnThread.promise,
+      5_000,
+      'run on the frame output thread',
+    )
+  })
+
+  // Guard: green before and after. A Suspense boundary keeps passive effects
+  // connected while it shows its fallback.
+  it('guard: keeps the same useFrameOutput output while <Suspense> shows its fallback', async () => {
+    const onFrameOutput = fn<(frameOutput: CameraFrameOutput) => void>()
+    const onResumed = fn<() => void>()
+    const onError = fn<(error: Error, errorInfo: ErrorInfo) => void>()
+
+    function TestFrameOutput(): null {
+      const frameOutput = useFrameOutput({
+        onFrame(frame) {
+          'worklet'
+          frame.dispose()
+        },
+      })
+      useEffect(() => {
+        onFrameOutput(frameOutput)
+      }, [frameOutput])
+      return null
+    }
+
+    function Suspender({ pending }: { pending: Promise<void> }): null {
+      use(pending)
+      onResumed()
+      return null
+    }
+
+    const renderTree = (pending?: Promise<void>) => (
+      <RecordingErrorBoundary onError={onError}>
+        <Suspense fallback={null}>
+          <TestFrameOutput />
+          {pending != null && <Suspender pending={pending} />}
+        </Suspense>
+      </RecordingErrorBoundary>
+    )
+
+    const { rerender } = await render(renderTree())
+    await waitFor(() => {
+      expect(onFrameOutput).toHaveBeenCalledTimes(1)
+    })
+    const mountedOutput = onFrameOutput.mock.lastCall?.[0]
+    assert.exists(mountedOutput, 'useFrameOutput did not return an output')
+
+    const pending = deferred()
+    await rerender(renderTree(pending.promise))
+    pending.resolve()
+    await waitFor(() => {
+      expect(onResumed).toHaveBeenCalled()
+    })
+
+    const distinctOutputs = new Set(
+      onFrameOutput.mock.calls.map(([output]) => output),
+    )
+    expect(distinctOutputs.size).toBe(1)
+    expect(onFrameOutput.mock.lastCall?.[0]).toBe(mountedOutput)
     expect(onError).not.toHaveBeenCalled()
   })
 })

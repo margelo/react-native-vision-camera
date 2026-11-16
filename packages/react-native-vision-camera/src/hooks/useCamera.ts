@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { NitroModules } from 'react-native-nitro-modules'
 import type { SharedValue } from 'react-native-reanimated'
 import { getCameraDevice } from '../devices/getCameraDevice'
 import type {
@@ -291,6 +292,8 @@ export function useCamera({
   useEffect(() => {
     if (orientation == null) return
     for (const output of outputs) {
+      // A disposed output has no native object. Its setter would crash in release builds.
+      if (!NitroModules.isHybridObject(output)) continue
       output.outputOrientation = orientation
     }
   }, [orientation, outputs])
