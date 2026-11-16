@@ -141,10 +141,37 @@ final class HybridCameraVideoOutput: HybridCameraVideoOutputSpec, NativeCameraOu
     let currentSettings = output.outputSettings(for: connection)
     let currentCodec = currentSettings[AVVideoCodecKey] as? AVVideoCodecType ?? AVVideoCodecType.hevc
 
-    setOutputSettings(bitRate: bitRate, codec: currentCodec, for: connection)
+    // A `targetBitRate` is a request for a compressed codec. On a format whose
+    // default movie codec is ProRes (the 10-bit 4:2:2 formats of Pro iPhones)
+    // the connection reports that codec and does not list compression
+    // properties, so applying the bit-rate to the current codec silently keeps
+    // ProRes and the recorder writes ~250 Mbps. Keep HEVC or H.264 when the
+    // connection already holds one; otherwise move to the first the output
+    // offers (HEVC, else H.264). With neither, leave the connection untouched:
+    // setting a codec the output does not offer raises.
+    guard let codec = compressedCodec(preferring: currentCodec) else {
+      logger.error("No compressed video codec is available - cannot use custom bit-rate!")
+      return
+    }
+    setOutputSettings(bitRate: bitRate, codec: codec, for: connection)
+  }
+
+  private func compressedCodec(preferring currentCodec: AVVideoCodecType) -> AVVideoCodecType? {
+    // An allow-list, not a ProRes deny-list: any other codec (one the converter
+    // does not know, or JPEG) would drop the bit-rate the same way ProRes did.
+    let compressed: [AVVideoCodecType] = [.hevc, .h264]
+    let available = output.availableVideoCodecTypes
+    if compressed.contains(currentCodec) && available.contains(currentCodec) {
+      return currentCodec
+    }
+    return compressed.first { available.contains($0) }
   }
 
   private func setOutputSettings(bitRate: Int, codec: AVVideoCodecType, for connection: AVCaptureConnection) {
+    // Apply the codec on its own first: the supported keys are reported for the
+    // connection's current codec, and a ProRes connection does not list
+    // compression properties until it has been moved to a compressed codec.
+    setOutputSettings(codec: codec, for: connection)
     let supportedKeys = output.supportedOutputSettingsKeys(for: connection)
     guard supportedKeys.contains(AVVideoCompressionPropertiesKey) else {
       logger.error(
