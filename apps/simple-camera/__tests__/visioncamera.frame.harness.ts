@@ -106,6 +106,31 @@ describe('VisionCamera - Frame', () => {
     expect(framesReceived).toBeGreaterThanOrEqual(3)
   })
 
+  it('stops accepting work on the frame output thread after dispose()', async () => {
+    const frameOutput = VisionCamera.createFrameOutput({
+      targetResolution: CommonResolutions.VGA_16_9,
+      pixelFormat: 'native',
+      enablePreviewSizedOutputBuffers: false,
+      enablePhysicalBufferRotation: false,
+      enableCameraMatrixDelivery: false,
+      allowDeferredStart: false,
+      dropFramesWhileBusy: true,
+    })
+    const thread = frameOutput.thread
+
+    const ranBeforeDispose = deferred()
+    thread.runOnThread(() => ranBeforeDispose.resolve())
+    await withTimeout(
+      ranBeforeDispose.promise,
+      5_000,
+      'run on frame output thread',
+    )
+
+    frameOutput.dispose()
+
+    expect(() => thread.runOnThread(() => {})).toThrow()
+  })
+
   for (const {
     targetPixelFormat,
     description,
