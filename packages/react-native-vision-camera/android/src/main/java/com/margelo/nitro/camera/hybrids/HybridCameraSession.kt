@@ -18,10 +18,12 @@ import com.margelo.nitro.camera.InterruptionReason
 import com.margelo.nitro.camera.ListenerSubscription
 import com.margelo.nitro.camera.extensions.getCameraInfo
 import com.margelo.nitro.camera.extensions.mapToArray
+import com.margelo.nitro.camera.hybrids.outputs.HybridVideoOutput
 import com.margelo.nitro.camera.public.NativeCameraOutput
 import com.margelo.nitro.camera.session.ActiveCameraSession
 import com.margelo.nitro.camera.session.ActiveCameraSessionMulti
 import com.margelo.nitro.camera.session.ActiveCameraSessionSingle
+import com.margelo.nitro.camera.session.CameraSessionConfig
 import com.margelo.nitro.camera.session.ConstraintResolver
 import com.margelo.nitro.camera.session.toConfig
 import com.margelo.nitro.camera.utils.CustomLifecycle
@@ -78,16 +80,37 @@ class HybridCameraSession(
           val connection = connections.single()
           val cameraInfo = connection.getCameraInfo(cameraProvider)
           val outputConfigurations = connection.outputs
-          val config = ConstraintResolver.resolveConstraints(cameraInfo, outputConfigurations, connection.constraints)
-          Log.i(TAG, "Binding use-cases: ${config.sessionConfig.useCases}")
+          val videoOutputs = outputConfigurations.mapNotNull { it.output as? HybridVideoOutput }
+          // Outputs can be re-used across configurations - give each one its aspect ratio back
+          // in case a previous Camera could not bind it.
+          videoOutputs.forEach { it.rearmAspectRatio() }
+
+          fun resolveAndBind(): Pair<CameraSessionConfig, Camera> {
+            val config = ConstraintResolver.resolveConstraints(cameraInfo, outputConfigurations, connection.constraints)
+            Log.i(TAG, "Binding use-cases: ${config.sessionConfig.useCases}")
+            val camera = cameraProvider.bindToLifecycle(lifecycleOwner, cameraInfo.cameraSelector, config.sessionConfig)
+            return config to camera
+          }
+          val (config, camera) =
+            try {
+              resolveAndBind()
+            } catch (error: IllegalArgumentException) {
+              // CameraX could not find a video resolution in the requested aspect ratio.
+              // Rebuild the Recorders without it and resolve again from scratch - the
+              // first pass may have dropped constraints trying to make the aspect ratio fit.
+              val didFallback = videoOutputs.map { it.fallbackToUnconstrainedAspectRatio() }.any { it }
+              if (!didFallback) throw error
+              Log.w(TAG, "Failed to bind with the video aspect ratio, retrying without it...", error)
+              resolveAndBind()
+            }
 
           if (connection.onSessionConfigSelected != null) {
-            // Notify JS callback that we resolved the constraints to a specific `config`
+            // Notify JS callback that we resolved the constraints to a specific `config`.
+            // This runs after binding so that it only ever reports the config that was bound.
             val hybridConfig = HybridCameraSessionConfig(config.sessionConfig, config.resolvedConfig)
             connection.onSessionConfigSelected(hybridConfig)
           }
 
-          val camera = cameraProvider.bindToLifecycle(lifecycleOwner, cameraInfo.cameraSelector, config.sessionConfig)
           // Notify outputs that their use-cases are now attached to the Camera
           config.preparedUseCases.forEach { it.notifyAttached() }
           activeSession = ActiveCameraSessionSingle(camera, this)
