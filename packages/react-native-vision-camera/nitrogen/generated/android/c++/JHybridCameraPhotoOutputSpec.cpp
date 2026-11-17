@@ -118,6 +118,11 @@ namespace margelo::nitro::camera {
     static const auto method = _javaPart->javaClassStatic()->getMethod<void(jni::alias_ref<JCameraOrientation> /* outputOrientation */)>("setOutputOrientation");
     method(_javaPart, JCameraOrientation::fromCpp(outputOrientation));
   }
+  std::optional<double> JHybridCameraPhotoOutputSpec::getRotationDegrees() {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<jni::JDouble>()>("getRotationDegrees");
+    auto __result = method(_javaPart);
+    return __result != nullptr ? std::make_optional(__result->value()) : std::nullopt;
+  }
   std::optional<Size> JHybridCameraPhotoOutputSpec::getCurrentResolution() {
     static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JSize>()>("getCurrentResolution");
     auto __result = method(_javaPart);

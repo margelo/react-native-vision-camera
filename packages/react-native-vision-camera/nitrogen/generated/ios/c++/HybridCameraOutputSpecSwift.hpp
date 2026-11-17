@@ -21,8 +21,8 @@ namespace margelo::nitro::camera { struct Size; }
 
 #include "MediaType.hpp"
 #include "CameraOrientation.hpp"
-#include "Size.hpp"
 #include <optional>
+#include "Size.hpp"
 
 #include "VisionCamera-Swift-Cxx-Umbrella.hpp"
 
@@ -80,6 +80,10 @@ namespace margelo::nitro::camera {
     }
     inline void setOutputOrientation(CameraOrientation outputOrientation) noexcept override {
       _swiftPart.setOutputOrientation(static_cast<int>(outputOrientation));
+    }
+    inline std::optional<double> getRotationDegrees() noexcept override {
+      auto __result = _swiftPart.getRotationDegrees();
+      return __result;
     }
     inline std::optional<Size> getCurrentResolution() noexcept override {
       auto __result = _swiftPart.getCurrentResolution();

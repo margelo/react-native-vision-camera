@@ -71,7 +71,7 @@ describe('VisionCamera - Session', () => {
   it('configures a session directly from each target camera position', async () => {
     const positions: TargetCameraPosition[] = ['back', 'front', 'external']
     const session = await VisionCamera.createCameraSession(false)
-    const previewOutput = VisionCamera.createPreviewOutput()
+    const previewOutput = VisionCamera.createPreviewOutput({})
     const photoOutput = VisionCamera.createPhotoOutput({
       containerFormat: 'native',
       quality: 1,

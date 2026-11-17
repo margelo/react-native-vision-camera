@@ -35,6 +35,8 @@ class HybridBarcodeScannerOutput(
     }
   override val currentResolution: com.margelo.nitro.camera.Size?
     get() = imageAnalysis?.resolutionInfo?.resolution?.toSize()
+  override val rotationDegrees: Double?
+    get() = imageAnalysis?.resolutionInfo?.rotationDegrees?.toDouble()
   override val mirrorMode: MirrorMode = MirrorMode.AUTO
   private var imageAnalysis: ImageAnalysis? = null
   private val executor = Executors.newSingleThreadExecutor()

@@ -82,7 +82,7 @@ describe('VisionCamera - Multi-Output', () => {
   it('reuses removed preview, photo, and video outputs in a new session', async () => {
     const firstSession = await VisionCamera.createCameraSession(false)
     const secondSession = await VisionCamera.createCameraSession(false)
-    const previewOutput = VisionCamera.createPreviewOutput()
+    const previewOutput = VisionCamera.createPreviewOutput({})
     const photoOutput = VisionCamera.createPhotoOutput({
       targetResolution: CommonResolutions.HD_4_3,
       containerFormat: 'jpeg',

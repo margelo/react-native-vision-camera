@@ -12,6 +12,7 @@ public protocol HybridCameraOutputSpec_protocol: HybridObject {
   // Properties
   var mediaType: MediaType { get }
   var outputOrientation: CameraOrientation { get set }
+  var rotationDegrees: Double? { get }
   var currentResolution: Size? { get }
 
   // Methods

@@ -7,20 +7,24 @@
 
 #include "JHybridCameraPreviewOutputSpec.hpp"
 
+// Forward declaration of `PreviewConfiguration` to properly resolve imports.
+namespace margelo::nitro::camera { struct PreviewConfiguration; }
+// Forward declaration of `Size` to properly resolve imports.
+namespace margelo::nitro::camera { struct Size; }
 // Forward declaration of `MediaType` to properly resolve imports.
 namespace margelo::nitro::camera { enum class MediaType; }
 // Forward declaration of `CameraOrientation` to properly resolve imports.
 namespace margelo::nitro::camera { enum class CameraOrientation; }
-// Forward declaration of `Size` to properly resolve imports.
-namespace margelo::nitro::camera { struct Size; }
 
+#include "PreviewConfiguration.hpp"
+#include <optional>
+#include "JPreviewConfiguration.hpp"
+#include "Size.hpp"
+#include "JSize.hpp"
 #include "MediaType.hpp"
 #include "JMediaType.hpp"
 #include "CameraOrientation.hpp"
 #include "JCameraOrientation.hpp"
-#include "Size.hpp"
-#include <optional>
-#include "JSize.hpp"
 
 namespace margelo::nitro::camera {
 
@@ -52,6 +56,11 @@ namespace margelo::nitro::camera {
   }
 
   // Properties
+  std::optional<PreviewConfiguration> JHybridCameraPreviewOutputSpec::getCurrentConfiguration() {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPreviewConfiguration>()>("getCurrentConfiguration");
+    auto __result = method(_javaPart);
+    return __result != nullptr ? std::make_optional(__result->toCpp()) : std::nullopt;
+  }
   MediaType JHybridCameraPreviewOutputSpec::getMediaType() {
     static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JMediaType>()>("getMediaType");
     auto __result = method(_javaPart);
@@ -65,6 +74,11 @@ namespace margelo::nitro::camera {
   void JHybridCameraPreviewOutputSpec::setOutputOrientation(CameraOrientation outputOrientation) {
     static const auto method = _javaPart->javaClassStatic()->getMethod<void(jni::alias_ref<JCameraOrientation> /* outputOrientation */)>("setOutputOrientation");
     method(_javaPart, JCameraOrientation::fromCpp(outputOrientation));
+  }
+  std::optional<double> JHybridCameraPreviewOutputSpec::getRotationDegrees() {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<jni::JDouble>()>("getRotationDegrees");
+    auto __result = method(_javaPart);
+    return __result != nullptr ? std::make_optional(__result->value()) : std::nullopt;
   }
   std::optional<Size> JHybridCameraPreviewOutputSpec::getCurrentResolution() {
     static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JSize>()>("getCurrentResolution");

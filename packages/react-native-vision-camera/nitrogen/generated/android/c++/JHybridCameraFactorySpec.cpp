@@ -93,6 +93,10 @@ namespace margelo::nitro::camera { struct FrameOutputOptions; }
 namespace margelo::nitro::camera { enum class TargetVideoPixelFormat; }
 // Forward declaration of `DepthFrameOutputOptions` to properly resolve imports.
 namespace margelo::nitro::camera { struct DepthFrameOutputOptions; }
+// Forward declaration of `PreviewOutputOptions` to properly resolve imports.
+namespace margelo::nitro::camera { struct PreviewOutputOptions; }
+// Forward declaration of `PreviewConfiguration` to properly resolve imports.
+namespace margelo::nitro::camera { struct PreviewConfiguration; }
 // Forward declaration of `ObjectOutputOptions` to properly resolve imports.
 namespace margelo::nitro::camera { struct ObjectOutputOptions; }
 // Forward declaration of `ScannedObjectType` to properly resolve imports.
@@ -193,6 +197,13 @@ namespace margelo::nitro::camera { enum class OrientationSource; }
 #include "JTargetVideoPixelFormat.hpp"
 #include "DepthFrameOutputOptions.hpp"
 #include "JDepthFrameOutputOptions.hpp"
+#include "PreviewOutputOptions.hpp"
+#include "JPreviewOutputOptions.hpp"
+#include "PreviewConfiguration.hpp"
+#include <functional>
+#include "JFunc_void_PreviewConfiguration.hpp"
+#include <NitroModules/JNICallable.hpp>
+#include "JPreviewConfiguration.hpp"
 #include "ObjectOutputOptions.hpp"
 #include "JObjectOutputOptions.hpp"
 #include "ScannedObjectType.hpp"
@@ -365,9 +376,9 @@ namespace margelo::nitro::camera {
     auto __result = method(_javaPart, JDepthFrameOutputOptions::fromCpp(options));
     return __result->getJHybridCameraDepthFrameOutputSpec();
   }
-  std::shared_ptr<HybridCameraPreviewOutputSpec> JHybridCameraFactorySpec::createPreviewOutput() {
-    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JHybridCameraPreviewOutputSpec::JavaPart>()>("createPreviewOutput");
-    auto __result = method(_javaPart);
+  std::shared_ptr<HybridCameraPreviewOutputSpec> JHybridCameraFactorySpec::createPreviewOutput(const PreviewOutputOptions& options) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JHybridCameraPreviewOutputSpec::JavaPart>(jni::alias_ref<JPreviewOutputOptions> /* options */)>("createPreviewOutput");
+    auto __result = method(_javaPart, JPreviewOutputOptions::fromCpp(options));
     return __result->getJHybridCameraPreviewOutputSpec();
   }
   std::shared_ptr<HybridCameraObjectOutputSpec> JHybridCameraFactorySpec::createObjectOutput(const ObjectOutputOptions& options) {
