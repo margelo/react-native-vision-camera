@@ -210,6 +210,13 @@ class HybridCameraController(
     return Promise.async {
       when (mode) {
         TorchMode.OFF -> {
+          if (!camera.cameraInfo.hasFlashUnit()) {
+            // We want to turn off the torch, but the device
+            // doesn't have a flash.
+            // We can ignore this call so CameraX doesn't throw.
+            return@async
+          }
+
           camera.cameraControl
             .enableTorch(false)
             .await()
