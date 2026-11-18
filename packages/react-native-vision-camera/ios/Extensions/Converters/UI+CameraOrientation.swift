@@ -47,9 +47,9 @@ extension CameraOrientation {
     case .down:
       return isMirrored ? .downMirrored : .down
     case .left:
-      return isMirrored ? .leftMirrored : .left
-    case .right:
       return isMirrored ? .rightMirrored : .right
+    case .right:
+      return isMirrored ? .leftMirrored : .left
     }
   }
 }
