@@ -57,6 +57,19 @@ extension DataType {
   }
 }
 
+extension Optional where Wrapped == DownscaleFilter {
+  /// Returns the integer ordinal expected by the GPU shaders for this downscale filter.
+  /// `nil` is the default, `.bilinear`.
+  var shaderOrdinal: UInt32 {
+    switch self {
+    case .none, .bilinear:
+      return 0
+    case .area:
+      return 1
+    }
+  }
+}
+
 extension ScaleMode {
   /// Returns the integer ordinal expected by the GPU shaders for this scale mode.
   var shaderOrdinal: UInt32 {

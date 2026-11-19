@@ -24,6 +24,8 @@ namespace margelo::nitro::camera::resizer { enum class DataType; }
 namespace margelo::nitro::camera::resizer { enum class ScaleMode; }
 // Forward declaration of `PixelLayout` to properly resolve imports.
 namespace margelo::nitro::camera::resizer { enum class PixelLayout; }
+// Forward declaration of `DownscaleFilter` to properly resolve imports.
+namespace margelo::nitro::camera::resizer { enum class DownscaleFilter; }
 
 #include <memory>
 #include "HybridResizerSpec.hpp"
@@ -33,6 +35,8 @@ namespace margelo::nitro::camera::resizer { enum class PixelLayout; }
 #include "DataType.hpp"
 #include "ScaleMode.hpp"
 #include "PixelLayout.hpp"
+#include "DownscaleFilter.hpp"
+#include <optional>
 
 #include "VisionCameraResizer-Swift-Cxx-Umbrella.hpp"
 

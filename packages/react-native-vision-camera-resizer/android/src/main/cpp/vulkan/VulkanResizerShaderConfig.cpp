@@ -15,7 +15,7 @@ namespace margelo::nitro::camera::resizer::vulkan::shader_config {
 
 namespace {
 
-  const std::array<VkSpecializationMapEntry, 5> kShaderSpecializationMapEntries = {
+  const std::array<VkSpecializationMapEntry, 6> kShaderSpecializationMapEntries = {
       VkSpecializationMapEntry{
           .constantID = 0,
           .offset = offsetof(ShaderSpecializationData, dataType),
@@ -41,6 +41,11 @@ namespace {
           .offset = offsetof(ShaderSpecializationData, scaleMode),
           .size = sizeof(uint32_t),
       },
+      VkSpecializationMapEntry{
+          .constantID = 5,
+          .offset = offsetof(ShaderSpecializationData, downscaleFilter),
+          .size = sizeof(uint32_t),
+      },
   };
 
 } // namespace
@@ -52,6 +57,7 @@ ShaderSpecializationData ShaderSpecializationData::make(const ResizerOptions& op
       .pixelLayout = getPixelLayoutOrdinal(options.pixelLayout),
       .channelCount = margelo::nitro::camera::resizer::utils::getChannelsPerPixel(options.channelOrder),
       .scaleMode = getScaleModeOrdinal(options.scaleMode),
+      .downscaleFilter = getDownscaleFilterOrdinal(options.downscaleFilter),
   };
 }
 
@@ -120,6 +126,17 @@ ShaderPushConstants ShaderPushConstants::make(uint32_t outputWidth, uint32_t out
       .rotationDegrees = rotationDegrees,
       .isMirrored = isMirrored ? 1u : 0u,
   };
+}
+
+uint32_t ShaderSpecializationData::getDownscaleFilterOrdinal(std::optional<DownscaleFilter> downscaleFilter) {
+  switch (downscaleFilter.value_or(DownscaleFilter::BILINEAR)) {
+    case DownscaleFilter::BILINEAR:
+      return 0u;
+    case DownscaleFilter::AREA:
+      return 1u;
+  }
+
+  throw std::runtime_error("Unsupported Resizer DownscaleFilter.");
 }
 
 } // namespace margelo::nitro::camera::resizer::vulkan::shader_config
