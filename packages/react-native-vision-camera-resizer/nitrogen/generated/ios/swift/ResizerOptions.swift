@@ -18,8 +18,14 @@ public extension ResizerOptions {
   /**
    * Create a new instance of `ResizerOptions`.
    */
-  init(width: Double, height: Double, channelOrder: ChannelOrder, dataType: DataType, scaleMode: ScaleMode, pixelLayout: PixelLayout) {
-    self.init(width, height, channelOrder, dataType, scaleMode, pixelLayout)
+  init(width: Double, height: Double, channelOrder: ChannelOrder, dataType: DataType, scaleMode: ScaleMode, pixelLayout: PixelLayout, downscaleFilter: DownscaleFilter?) {
+    self.init(width, height, channelOrder, dataType, scaleMode, pixelLayout, { () -> bridge.std__optional_DownscaleFilter_ in
+      if let __unwrappedValue = downscaleFilter {
+        return bridge.create_std__optional_DownscaleFilter_(__unwrappedValue)
+      } else {
+        return .init()
+      }
+    }())
   }
 
   @inline(__always)
@@ -50,5 +56,10 @@ public extension ResizerOptions {
   @inline(__always)
   var pixelLayout: PixelLayout {
     return self.__pixelLayout
+  }
+  
+  @inline(__always)
+  var downscaleFilter: DownscaleFilter? {
+    return self.__downscaleFilter.value
   }
 }

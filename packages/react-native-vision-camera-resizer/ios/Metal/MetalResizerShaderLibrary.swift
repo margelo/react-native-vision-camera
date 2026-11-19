@@ -25,6 +25,7 @@ enum MetalResizerShaderLibrary {
     case pixelLayout = 1
     case channelCount = 2
     case scaleMode = 3
+    case downscaleFilter = 4
   }
 
   /**
@@ -91,6 +92,7 @@ enum MetalResizerShaderLibrary {
     var pixelLayout = options.pixelLayout.shaderOrdinal
     var channelCount = UInt32(options.channelOrder.channelsPerPixel)
     var scaleMode = options.scaleMode.shaderOrdinal
+    var downscaleFilter = options.downscaleFilter.shaderOrdinal
 
     functionConstantValues.setConstantValue(
       &channelOrder, type: .uint, index: FunctionConstantIndex.channelOrder.rawValue)
@@ -100,6 +102,8 @@ enum MetalResizerShaderLibrary {
       &channelCount, type: .uint, index: FunctionConstantIndex.channelCount.rawValue)
     functionConstantValues.setConstantValue(
       &scaleMode, type: .uint, index: FunctionConstantIndex.scaleMode.rawValue)
+    functionConstantValues.setConstantValue(
+      &downscaleFilter, type: .uint, index: FunctionConstantIndex.downscaleFilter.rawValue)
 
     return functionConstantValues
   }

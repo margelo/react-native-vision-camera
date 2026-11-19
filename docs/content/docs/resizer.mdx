@@ -188,6 +188,15 @@ When the [`Frame`](/api/react-native-vision-camera/hybrid-objects/Frame)'s aspec
 > [!TIP]
 > See [`ScaleMode`](/api/react-native-vision-camera-resizer/type-aliases/ScaleMode) for more information.
 
+#### Downscale Filter
+
+The [`downscaleFilter`](/api/react-native-vision-camera-resizer/interfaces/ResizerOptions#downscalefilter) specifies how the Resizer samples the [`Frame`](/api/react-native-vision-camera/hybrid-objects/Frame) when the output is smaller than the input.
+
+- [`'bilinear'`](/api/react-native-vision-camera-resizer/type-aliases/DownscaleFilter) (the default) takes one bilinear sample per output pixel. It is the fastest, but at large downscales (e.g. 1920×1080 → 512×288) it skips most of the source pixels, so thin lines and fine detail alias.
+- [`'area'`](/api/react-native-vision-camera-resizer/type-aliases/DownscaleFilter) averages up to 8×8 bilinear samples per output pixel, which approximates OpenCV's `INTER_AREA`. Use it if your ML model was trained on area-downscaled images, or if fine detail matters. Above an 8× downscale the samples are more than one source pixel apart, so some aliasing returns.
+
+Upscaling always uses a single bilinear sample.
+
 ### Orientation and Mirroring
 
 The [`Resizer`](/api/react-native-vision-camera-resizer/hybrid-objects/Resizer) automatically counter-rotates and possibly counter-mirrors the [`Frame`](/api/react-native-vision-camera/hybrid-objects/Frame) to be in its intended up-right and non-mirrored presentation.

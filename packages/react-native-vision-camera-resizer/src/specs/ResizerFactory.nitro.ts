@@ -20,6 +20,19 @@ import type { Resizer } from './Resizer.nitro'
 export type ScaleMode = 'cover' | 'contain' | 'stretch'
 
 /**
+ * Configures how a {@linkcode Resizer} samples the source
+ * {@linkcode Frame} when the output is smaller than it.
+ *
+ * - `'bilinear'`: One bilinear sample per output pixel. Fastest, but
+ *   a large downscale skips most of the source, so thin lines and
+ *   fine detail alias.
+ * - `'area'`: Averages the source pixels each output pixel covers,
+ *   like OpenCV's `INTER_AREA` (up to 8x8 samples per output pixel).
+ *   An upscale takes a single sample, the same as `'bilinear'`.
+ */
+export type DownscaleFilter = 'bilinear' | 'area'
+
+/**
  * Configures options for a {@linkcode Resizer}.
  */
 export interface ResizerOptions {
@@ -63,6 +76,14 @@ export interface ResizerOptions {
    * @see {@linkcode PixelLayout}
    */
   pixelLayout: PixelLayout
+  /**
+   * Configures how the source is sampled when the output
+   * is smaller than it.
+   *
+   * @default 'bilinear'
+   * @see {@linkcode DownscaleFilter}
+   */
+  downscaleFilter?: DownscaleFilter
 }
 
 /**

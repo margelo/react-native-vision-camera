@@ -12,6 +12,8 @@
 namespace margelo::nitro::camera::resizer { enum class ChannelOrder; }
 // Forward declaration of `DataType` to properly resolve imports.
 namespace margelo::nitro::camera::resizer { enum class DataType; }
+// Forward declaration of `DownscaleFilter` to properly resolve imports.
+namespace margelo::nitro::camera::resizer { enum class DownscaleFilter; }
 // Forward declaration of `HybridFrameSpec` to properly resolve imports.
 namespace margelo::nitro::camera { class HybridFrameSpec; }
 // Forward declaration of `HybridGPUFrameSpec` to properly resolve imports.
@@ -30,6 +32,7 @@ namespace margelo::nitro::camera::resizer { enum class ScaleMode; }
 // Include C++ defined types
 #include "ChannelOrder.hpp"
 #include "DataType.hpp"
+#include "DownscaleFilter.hpp"
 #include "HybridGPUFrameSpec.hpp"
 #include "HybridResizerFactorySpec.hpp"
 #include "HybridResizerSpec.hpp"
