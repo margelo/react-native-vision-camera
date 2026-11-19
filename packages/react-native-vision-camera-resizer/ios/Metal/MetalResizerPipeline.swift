@@ -104,7 +104,8 @@ final class MetalResizerPipeline {
       pixelLayout: options.pixelLayout)
     let uniforms = makeUniforms(
       rotationDegrees: rotationDegrees,
-      isMirrored: isMirrored)
+      isMirrored: isMirrored,
+      colorMatrix: Self.colorMatrixOrdinal(of: pixelBuffer))
     let inputTextures = try MetalResizerInputTextures.make(
       from: pixelBuffer,
       textureCache: textureCache)
@@ -118,12 +119,37 @@ final class MetalResizerPipeline {
   /**
    * Builds the shader uniforms for one dispatch.
    */
-  private func makeUniforms(rotationDegrees: Int32, isMirrored: Bool) -> MetalResizerUniforms {
+  private func makeUniforms(rotationDegrees: Int32, isMirrored: Bool, colorMatrix: UInt32)
+    -> MetalResizerUniforms
+  {
     return MetalResizerUniforms(
       outputWidth: UInt32(outputWidth),
       outputHeight: UInt32(outputHeight),
       rotationDegrees: rotationDegrees,
-      isMirrored: isMirrored ? 1 : 0)
+      isMirrored: isMirrored ? 1 : 0,
+      colorMatrix: colorMatrix)
+  }
+
+  /**
+   * The YCbCr matrix the camera tagged this buffer with, so the shader converts it
+   * the same way AVFoundation's own BGRA conversion would. HD capture is BT.709.
+   * Untagged buffers keep BT.601.
+   */
+  private static func colorMatrixOrdinal(of pixelBuffer: CVPixelBuffer) -> UInt32 {
+    guard
+      let attachment = CVBufferCopyAttachment(pixelBuffer, kCVImageBufferYCbCrMatrixKey, nil),
+      CFGetTypeID(attachment) == CFStringGetTypeID()
+    else {
+      return 0
+    }
+    let matrix = attachment as! CFString
+    if CFEqual(matrix, kCVImageBufferYCbCrMatrix_ITU_R_709_2) {
+      return 1
+    }
+    if CFEqual(matrix, kCVImageBufferYCbCrMatrix_ITU_R_2020) {
+      return 2
+    }
+    return 0
   }
 
   /**

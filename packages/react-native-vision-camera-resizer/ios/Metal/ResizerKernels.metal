@@ -6,6 +6,8 @@ struct ResizeUniforms {
   uint outputHeight;
   int rotationDegrees;
   uint isMirrored;
+  // The YCbCr matrix the input buffer is tagged with. 0u == BT.601, 1u == BT.709, 2u == BT.2020
+  uint colorMatrix;
 };
 
 constexpr sampler resizeSampler(coord::normalized, address::clamp_to_edge, filter::linear);
@@ -19,13 +21,31 @@ constant uint kChannelCount [[function_constant(2)]];
 // 0u == ScaleMode::COVER, 1u == ScaleMode::CONTAIN, 2u == ScaleMode::STRETCH
 constant uint kScaleMode [[function_constant(3)]];
 
-inline float3 yuvToRgb(float y, float2 uv) {
+// Full-range YCbCr -> RGB with the matrix the input buffer is tagged with.
+inline float3 yuvToRgb(float y, float2 uv, uint colorMatrix) {
   float cb = uv.x - 0.5f;
   float cr = uv.y - 0.5f;
 
-  float r = y + 1.402f * cr;
-  float g = y - 0.344136f * cb - 0.714136f * cr;
-  float b = y + 1.772f * cb;
+  float r;
+  float g;
+  float b;
+  switch (colorMatrix) {
+    case 1u: // 1u == BT.709
+      r = y + 1.5748f * cr;
+      g = y - 0.187324f * cb - 0.468124f * cr;
+      b = y + 1.8556f * cb;
+      break;
+    case 2u: // 2u == BT.2020
+      r = y + 1.4746f * cr;
+      g = y - 0.164553f * cb - 0.571353f * cr;
+      b = y + 1.8814f * cb;
+      break;
+    default: // 0u == BT.601
+      r = y + 1.402f * cr;
+      g = y - 0.344136f * cb - 0.714136f * cr;
+      b = y + 1.772f * cb;
+      break;
+  }
 
   return clamp(float3(r, g, b), 0.0f, 1.0f);
 }
@@ -108,7 +128,7 @@ inline float3 sampleRgb(
 
   float y = yTexture.sample(resizeSampler, coordinate).r;
   float2 uv = uvTexture.sample(resizeSampler, coordinate).rg;
-  return yuvToRgb(y, uv);
+  return yuvToRgb(y, uv, uniforms.colorMatrix);
 }
 
 inline float3 orderedColor(
