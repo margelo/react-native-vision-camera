@@ -5,6 +5,8 @@ import android.util.Log
 import androidx.annotation.UiThread
 import androidx.camera.core.Camera
 import androidx.camera.core.ConcurrentCamera
+import androidx.camera.core.SessionConfig
+import androidx.camera.core.UseCase
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.lifecycle.ProcessCameraProvider
 import com.facebook.react.bridge.ReactApplicationContext
@@ -44,6 +46,11 @@ class HybridCameraSession(
     get() = activeSession?.isRunning ?: false
 
   private var activeSession: ActiveCameraSession? = null
+
+  // `cameraProvider` is shared by every CameraSession in the app, so only unbind what this session bound.
+  // `unbindAll()` would also unbind another mounted (but inactive) Camera, which then stays black when it becomes active again.
+  private var boundSessionConfig: SessionConfig? = null
+  private var boundUseCases: List<UseCase> = emptyList()
   private var onStartedListeners = arrayListOf<() -> Unit>()
   private var onStoppedListeners = arrayListOf<() -> Unit>()
   private var onErrorListeners = arrayListOf<(Throwable) -> Unit>()
@@ -62,8 +69,8 @@ class HybridCameraSession(
       //       could avoid unbindAll() + bindToLifecycle() calls.
       //       I think SessionConfig can be rebound directly for faster switches?
 
-      // 1. Unbind all inputs/outputs
-      cameraProvider.unbindAll()
+      // 1. Unbind this session's inputs/outputs
+      unbindOwnUseCases()
       activeSession?.close()
       activeSession = null
 
@@ -88,6 +95,7 @@ class HybridCameraSession(
           }
 
           val camera = cameraProvider.bindToLifecycle(lifecycleOwner, cameraInfo.cameraSelector, config.sessionConfig)
+          boundSessionConfig = config.sessionConfig
           // Notify outputs that their use-cases are now attached to the Camera
           config.preparedUseCases.forEach { it.notifyAttached() }
           activeSession = ActiveCameraSessionSingle(camera, this)
@@ -122,6 +130,7 @@ class HybridCameraSession(
             }
           Log.i(TAG, "Binding configs: ${configs.joinToString { it.useCaseGroup.useCases.joinToString { it.name } }}")
           val concurrentCamera = cameraProvider.bindToLifecycle(configs)
+          boundUseCases = allPreparedUseCases.map { it.useCase }
           // Notify all outputs that their use-cases are now attached to the Camera
           allPreparedUseCases.forEach { it.notifyAttached() }
           activeSession = ActiveCameraSessionMulti(concurrentCamera, this)
@@ -153,9 +162,19 @@ class HybridCameraSession(
     Promise.async(uiScope) {
       lifecycleOwner.destroy()
       activeSession?.close()
-      cameraProvider.unbindAll()
+      unbindOwnUseCases()
     }
     DirectByteBufferPool.Shared.clear()
+  }
+
+  @UiThread
+  private fun unbindOwnUseCases() {
+    boundSessionConfig?.let { cameraProvider.unbind(it) }
+    boundSessionConfig = null
+    if (boundUseCases.isNotEmpty()) {
+      cameraProvider.unbind(*boundUseCases.toTypedArray())
+    }
+    boundUseCases = emptyList()
   }
 
   @UiThread
