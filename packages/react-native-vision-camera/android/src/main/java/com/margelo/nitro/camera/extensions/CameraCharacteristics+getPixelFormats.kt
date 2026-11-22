@@ -11,6 +11,9 @@ fun CameraCharacteristics.getPixelFormats(): Array<PixelFormat> {
       ?: return emptyArray()
   return streams.outputFormats
     .map { PixelFormat.fromImageFormat(it, PixelRange.UNKNOWN) }
+    // Output formats without a pixel layout (e.g. JPEG, HEIC, RAW10) map to UNKNOWN
+    // and are not streamable pixel formats, so leave them out.
+    .filter { it != PixelFormat.UNKNOWN }
     .distinct()
     .toTypedArray()
 }
