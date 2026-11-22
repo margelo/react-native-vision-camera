@@ -13,11 +13,38 @@ val HardwareBuffer.isCpuReadable: Boolean
     return (usage and readableUsageFlags) != 0L
   }
 
+/**
+ * Formats with a fixed bytes-per-pixel layout that can be exposed as a flat pixel buffer.
+ * Everything else (YUV planes, BLOB, and the opaque `IMPLEMENTATION_DEFINED` format camera
+ * HALs use for `PRIVATE` streams) has no single pixel layout, even when the usage flags say
+ * the buffer is CPU-readable.
+ */
+private val hardwareBufferFormatsWithPixelLayout =
+  intArrayOf(
+    HardwareBuffer.RGBA_8888,
+    HardwareBuffer.RGBX_8888,
+    HardwareBuffer.RGB_888,
+    HardwareBuffer.RGB_565,
+    HardwareBuffer.RGBA_FP16,
+    HardwareBuffer.RGBA_1010102,
+    HardwareBuffer.D_16,
+    HardwareBuffer.D_24,
+    HardwareBuffer.DS_24UI8,
+    HardwareBuffer.D_FP32,
+    HardwareBuffer.DS_FP32UI8,
+    HardwareBuffer.S_UI8,
+    HardwareBuffer.R_8,
+    HardwareBuffer.RGBA_10101010,
+  )
+
+val HardwareBuffer.isCpuReadablePixelBuffer: Boolean
+  get() = isCpuReadable && hardwareBufferFormatsWithPixelLayout.contains(format)
+
 val ImageProxy.hasPixelBuffer: Boolean
   get() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
       hardwareBuffer?.use { hardwareBuffer ->
-        if (hardwareBuffer.isCpuReadable) {
+        if (hardwareBuffer.isCpuReadablePixelBuffer) {
           // We have CPU-readable GPU-backed Pixel Data.
           return true
         }
@@ -52,7 +79,7 @@ private fun ByteBuffer.wrapOrCopyIntoArrayBuffer(): DisposableArrayBuffer {
 fun ImageProxy.getPixelBuffer(): DisposableArrayBuffer {
   if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
     hardwareBuffer?.use { hardwareBuffer ->
-      if (hardwareBuffer.isCpuReadable) {
+      if (hardwareBuffer.isCpuReadablePixelBuffer) {
         // Fast Path: We have a CPU-readable HardwareBuffer.
         val arrayBuffer = ArrayBuffer.wrap(hardwareBuffer)
         return DisposableArrayBuffer(arrayBuffer) {
