@@ -36,7 +36,6 @@ import com.margelo.nitro.camera.extensions.getDepthSizes
 import com.margelo.nitro.camera.extensions.getPhotoSizes
 import com.margelo.nitro.camera.extensions.getPixelFormats
 import com.margelo.nitro.camera.extensions.getStreamSizes
-import com.margelo.nitro.camera.extensions.getVideoSizes
 import com.margelo.nitro.camera.extensions.localizedName
 import com.margelo.nitro.camera.extensions.mapToArray
 import com.margelo.nitro.camera.extensions.modelID
@@ -205,11 +204,27 @@ class HybridCameraDevice(
     val sizes =
       when (outputStreamType) {
         OutputStreamType.PHOTO -> cameraCharacteristics.getPhotoSizes()
-        OutputStreamType.VIDEO -> cameraCharacteristics.getVideoSizes()
+        OutputStreamType.VIDEO -> getRecordableVideoSizes()
         OutputStreamType.STREAM -> cameraCharacteristics.getStreamSizes()
         OutputStreamType.DEPTH_PHOTO, OutputStreamType.DEPTH_STREAM -> cameraCharacteristics.getDepthSizes()
       }
     return sizes.mapToArray { it.toSize() }
+  }
+
+  /**
+   * The resolutions a [androidx.camera.video.Recorder] can actually produce on this device.
+   * The Camera2 stream configuration map lists sizes the sensor can stream, but the Recorder
+   * only records at CameraX [androidx.camera.video.Quality] tiers, so a video output asked
+   * for a stream size is silently snapped to the nearest Quality.
+   */
+  private fun getRecordableVideoSizes(): Array<android.util.Size> {
+    return videoCapabilities.supportedDynamicRanges
+      .flatMap { dynamicRange ->
+        videoCapabilities
+          .getSupportedQualities(dynamicRange)
+          .mapNotNull { quality -> videoCapabilities.getResolution(quality, dynamicRange) }
+      }.distinct()
+      .toTypedArray()
   }
 
   override fun supportsOutput(output: HybridCameraOutputSpec): Boolean {
