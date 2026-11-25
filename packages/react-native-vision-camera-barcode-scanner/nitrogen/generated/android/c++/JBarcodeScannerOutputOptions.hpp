@@ -13,6 +13,7 @@
 #include "BarcodeScannerOutputResolution.hpp"
 #include "HybridBarcodeSpec.hpp"
 #include "JBarcodeScannerOutputResolution.hpp"
+#include "JFunc_void_double.hpp"
 #include "JFunc_void_std__exception_ptr.hpp"
 #include "JFunc_void_std__vector_std__shared_ptr_HybridBarcodeSpec__.hpp"
 #include "JHybridBarcodeSpec.hpp"
@@ -48,6 +49,10 @@ namespace margelo::nitro::camera::barcodescanner {
       jni::local_ref<jni::JArrayClass<JTargetBarcodeFormat>> barcodeFormats = this->getFieldValue(fieldBarcodeFormats);
       static const auto fieldOutputResolution = clazz->getField<JBarcodeScannerOutputResolution>("outputResolution");
       jni::local_ref<JBarcodeScannerOutputResolution> outputResolution = this->getFieldValue(fieldOutputResolution);
+      static const auto fieldMaxZoomRatio = clazz->getField<jni::JDouble>("maxZoomRatio");
+      jni::local_ref<jni::JDouble> maxZoomRatio = this->getFieldValue(fieldMaxZoomRatio);
+      static const auto fieldOnZoomSuggested = clazz->getField<JFunc_void_double::javaobject>("onZoomSuggested");
+      jni::local_ref<JFunc_void_double::javaobject> onZoomSuggested = this->getFieldValue(fieldOnZoomSuggested);
       static const auto fieldOnBarcodeScanned = clazz->getField<JFunc_void_std__vector_std__shared_ptr_HybridBarcodeSpec__::javaobject>("onBarcodeScanned");
       jni::local_ref<JFunc_void_std__vector_std__shared_ptr_HybridBarcodeSpec__::javaobject> onBarcodeScanned = this->getFieldValue(fieldOnBarcodeScanned);
       static const auto fieldOnError = clazz->getField<JFunc_void_std__exception_ptr::javaobject>("onError");
@@ -64,6 +69,16 @@ namespace margelo::nitro::camera::barcodescanner {
           return __vector;
         }(barcodeFormats),
         outputResolution != nullptr ? std::make_optional(outputResolution->toCpp()) : std::nullopt,
+        maxZoomRatio != nullptr ? std::make_optional(maxZoomRatio->value()) : std::nullopt,
+        onZoomSuggested != nullptr ? std::make_optional([&]() -> std::function<void(double /* zoomRatio */)> {
+          if (onZoomSuggested->isInstanceOf(JFunc_void_double_cxx::javaClassStatic())) [[likely]] {
+            auto downcast = jni::static_ref_cast<JFunc_void_double_cxx::javaobject>(onZoomSuggested);
+            return downcast->cthis()->getFunction();
+          } else {
+            auto onZoomSuggestedRef = jni::make_global(onZoomSuggested);
+            return JNICallable<JFunc_void_double, void(double)>(std::move(onZoomSuggestedRef));
+          }
+        }()) : std::nullopt,
         [&]() -> std::function<void(const std::vector<std::shared_ptr<HybridBarcodeSpec>>& /* barcodes */)> {
           if (onBarcodeScanned->isInstanceOf(JFunc_void_std__vector_std__shared_ptr_HybridBarcodeSpec___cxx::javaClassStatic())) [[likely]] {
             auto downcast = jni::static_ref_cast<JFunc_void_std__vector_std__shared_ptr_HybridBarcodeSpec___cxx::javaobject>(onBarcodeScanned);
@@ -91,7 +106,7 @@ namespace margelo::nitro::camera::barcodescanner {
      */
     [[maybe_unused]]
     static jni::local_ref<JBarcodeScannerOutputOptions::javaobject> fromCpp(const BarcodeScannerOutputOptions& value) {
-      using JSignature = JBarcodeScannerOutputOptions(jni::alias_ref<jni::JArrayClass<JTargetBarcodeFormat>>, jni::alias_ref<JBarcodeScannerOutputResolution>, jni::alias_ref<JFunc_void_std__vector_std__shared_ptr_HybridBarcodeSpec__::javaobject>, jni::alias_ref<JFunc_void_std__exception_ptr::javaobject>);
+      using JSignature = JBarcodeScannerOutputOptions(jni::alias_ref<jni::JArrayClass<JTargetBarcodeFormat>>, jni::alias_ref<JBarcodeScannerOutputResolution>, jni::alias_ref<jni::JDouble>, jni::alias_ref<JFunc_void_double::javaobject>, jni::alias_ref<JFunc_void_std__vector_std__shared_ptr_HybridBarcodeSpec__::javaobject>, jni::alias_ref<JFunc_void_std__exception_ptr::javaobject>);
       static const auto clazz = javaClassStatic();
       static const auto create = clazz->getStaticMethod<JSignature>("fromCpp");
       return create(
@@ -107,6 +122,8 @@ namespace margelo::nitro::camera::barcodescanner {
           return __array;
         }(value.barcodeFormats),
         value.outputResolution.has_value() ? JBarcodeScannerOutputResolution::fromCpp(value.outputResolution.value()) : nullptr,
+        value.maxZoomRatio.has_value() ? jni::JDouble::valueOf(value.maxZoomRatio.value()) : nullptr,
+        value.onZoomSuggested.has_value() ? JFunc_void_double_cxx::fromCpp(value.onZoomSuggested.value()) : nullptr,
         JFunc_void_std__vector_std__shared_ptr_HybridBarcodeSpec___cxx::fromCpp(value.onBarcodeScanned),
         JFunc_void_std__exception_ptr_cxx::fromCpp(value.onError)
       );

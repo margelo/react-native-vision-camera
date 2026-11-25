@@ -18,7 +18,7 @@ public extension BarcodeScannerOutputOptions {
   /**
    * Create a new instance of `BarcodeScannerOutputOptions`.
    */
-  init(barcodeFormats: [TargetBarcodeFormat], outputResolution: BarcodeScannerOutputResolution?, onBarcodeScanned: @escaping (_ barcodes: [(any HybridBarcodeSpec)]) -> Void, onError: @escaping (_ error: Error) -> Void) {
+  init(barcodeFormats: [TargetBarcodeFormat], outputResolution: BarcodeScannerOutputResolution?, maxZoomRatio: Double?, onZoomSuggested: ((_ zoomRatio: Double) -> Void)?, onBarcodeScanned: @escaping (_ barcodes: [(any HybridBarcodeSpec)]) -> Void, onError: @escaping (_ error: Error) -> Void) {
     self.init({ () -> bridge.std__vector_TargetBarcodeFormat_ in
       var __vector = bridge.create_std__vector_TargetBarcodeFormat_(barcodeFormats.count)
       for __item in barcodeFormats {
@@ -28,6 +28,21 @@ public extension BarcodeScannerOutputOptions {
     }(), { () -> bridge.std__optional_BarcodeScannerOutputResolution_ in
       if let __unwrappedValue = outputResolution {
         return bridge.create_std__optional_BarcodeScannerOutputResolution_(__unwrappedValue)
+      } else {
+        return .init()
+      }
+    }(), { () -> bridge.std__optional_double_ in
+      if let __unwrappedValue = maxZoomRatio {
+        return bridge.create_std__optional_double_(__unwrappedValue)
+      } else {
+        return .init()
+      }
+    }(), { () -> bridge.std__optional_std__function_void_double____zoomRatio______ in
+      if let __unwrappedValue = onZoomSuggested {
+        return bridge.create_std__optional_std__function_void_double____zoomRatio______({ () -> bridge.Func_void_double in
+          let __closureWrapper = Func_void_double(__unwrappedValue)
+          return bridge.create_Func_void_double(__closureWrapper.toUnsafe())
+        }())
       } else {
         return .init()
       }
@@ -48,6 +63,35 @@ public extension BarcodeScannerOutputOptions {
   @inline(__always)
   var outputResolution: BarcodeScannerOutputResolution? {
     return self.__outputResolution.value
+  }
+  
+  @inline(__always)
+  var maxZoomRatio: Double? {
+    return { () -> Double? in
+      if bridge.has_value_std__optional_double_(self.__maxZoomRatio) {
+        let __unwrapped = bridge.get_std__optional_double_(self.__maxZoomRatio)
+        return __unwrapped
+      } else {
+        return nil
+      }
+    }()
+  }
+  
+  @inline(__always)
+  var onZoomSuggested: ((_ zoomRatio: Double) -> Void)? {
+    return { () -> ((_ zoomRatio: Double) -> Void)? in
+      if bridge.has_value_std__optional_std__function_void_double____zoomRatio______(self.__onZoomSuggested) {
+        let __unwrapped = bridge.get_std__optional_std__function_void_double____zoomRatio______(self.__onZoomSuggested)
+        return { () -> (Double) -> Void in
+          let __wrappedFunction = bridge.wrap_Func_void_double(__unwrapped)
+          return { (__zoomRatio: Double) -> Void in
+            __wrappedFunction.call(__zoomRatio)
+          }
+        }()
+      } else {
+        return nil
+      }
+    }()
   }
   
   @inline(__always)

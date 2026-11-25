@@ -1,5 +1,6 @@
 package com.margelo.nitro.camera.barcodescanner.extensions
 
+import com.google.mlkit.vision.barcode.ZoomSuggestionOptions
 import com.margelo.nitro.camera.barcodescanner.BarcodeScannerOptions
 import com.margelo.nitro.camera.barcodescanner.BarcodeScannerOutputOptions
 import com.margelo.nitro.camera.barcodescanner.TargetBarcodeFormat
@@ -23,8 +24,19 @@ fun BarcodeScannerOptions.toMLBarcodeScannerOptions(): com.google.mlkit.vision.b
 }
 
 fun BarcodeScannerOutputOptions.toMLBarcodeScannerOptions(): com.google.mlkit.vision.barcode.BarcodeScannerOptions {
-  return com.google.mlkit.vision.barcode.BarcodeScannerOptions
-    .Builder()
-    .setBarcodeFormats(this.barcodeFormats)
-    .build()
+  val builder =
+    com.google.mlkit.vision.barcode.BarcodeScannerOptions
+      .Builder()
+      .setBarcodeFormats(this.barcodeFormats)
+  val onZoomSuggested = this.onZoomSuggested
+  if (onZoomSuggested != null) {
+    val zoomSuggestionOptions =
+      ZoomSuggestionOptions.Builder { zoomRatio ->
+        onZoomSuggested(zoomRatio.toDouble())
+        true
+      }
+    this.maxZoomRatio?.let { zoomSuggestionOptions.setMaxSupportedZoomRatio(it.toFloat()) }
+    builder.setZoomSuggestionOptions(zoomSuggestionOptions.build())
+  }
+  return builder.build()
 }

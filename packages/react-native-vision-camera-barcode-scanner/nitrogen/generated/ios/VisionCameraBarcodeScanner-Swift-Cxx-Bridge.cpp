@@ -96,6 +96,14 @@ namespace margelo::nitro::camera::barcodescanner::bridge::swift {
     return margelo::nitro::camera::bridge::swift::get_std__shared_ptr_HybridCameraOutputSpec_(cppType);
   }
   
+  // pragma MARK: std::function<void(double /* zoomRatio */)>
+  Func_void_double create_Func_void_double(void* NON_NULL swiftClosureWrapper) noexcept {
+    auto swiftClosure = VisionCameraBarcodeScanner::Func_void_double::fromUnsafe(swiftClosureWrapper);
+    return [swiftClosure = std::move(swiftClosure)](double zoomRatio) mutable -> void {
+      swiftClosure.call(zoomRatio);
+    };
+  }
+  
   // pragma MARK: std::shared_ptr<HybridBarcodeScannerFactorySpec>
   std::shared_ptr<HybridBarcodeScannerFactorySpec> create_std__shared_ptr_HybridBarcodeScannerFactorySpec_(void* NON_NULL swiftUnsafePointer) noexcept {
     VisionCameraBarcodeScanner::HybridBarcodeScannerFactorySpec_cxx swiftPart = VisionCameraBarcodeScanner::HybridBarcodeScannerFactorySpec_cxx::fromUnsafe(swiftUnsafePointer);

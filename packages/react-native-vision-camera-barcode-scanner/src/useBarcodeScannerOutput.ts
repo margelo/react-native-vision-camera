@@ -25,6 +25,11 @@ import type { BarcodeScannerOutputOptions } from './specs/BarcodeScannerFactory.
  *   },
  *   onError(error) {
  *     console.error(`Failed to scan barcodes!`, error)
+ *   },
+ *   maxZoomRatio: device.maxZoom,
+ *   onZoomSuggested(zoomRatio) {
+ *     // Android only - apply to the Camera's `zoom`
+ *     setZoom(zoomRatio)
  *   }
  * })
  *
@@ -59,8 +64,10 @@ import type { BarcodeScannerOutputOptions } from './specs/BarcodeScannerFactory.
 export function useBarcodeScannerOutput({
   barcodeFormats,
   outputResolution = 'preview',
+  maxZoomRatio,
   onBarcodeScanned,
   onError,
+  onZoomSuggested,
 }: BarcodeScannerOutputOptions): CameraOutput {
   const stableOnBarcodeScanned = useRef(onBarcodeScanned)
   stableOnBarcodeScanned.current = onBarcodeScanned
@@ -68,18 +75,28 @@ export function useBarcodeScannerOutput({
   const stableOnError = useRef(onError)
   stableOnError.current = onError
 
+  const stableOnZoomSuggested = useRef(onZoomSuggested)
+  stableOnZoomSuggested.current = onZoomSuggested
+  const hasZoomSuggestions = onZoomSuggested != null
+
   return useMemo(
     () =>
       createBarcodeScannerOutput({
         barcodeFormats: barcodeFormats,
         outputResolution: outputResolution,
+        maxZoomRatio: maxZoomRatio,
         onBarcodeScanned(barcodes) {
           stableOnBarcodeScanned.current(barcodes)
         },
         onError(error) {
           stableOnError.current(error)
         },
+        onZoomSuggested: hasZoomSuggestions
+          ? (zoomRatio) => {
+              stableOnZoomSuggested.current?.(zoomRatio)
+            }
+          : undefined,
       }),
-    [barcodeFormats, outputResolution],
+    [barcodeFormats, outputResolution, maxZoomRatio, hasZoomSuggestions],
   )
 }
