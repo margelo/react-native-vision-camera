@@ -79,4 +79,5 @@ phases:
 
 artifacts:
   - $WORKING_DIRECTORY/harness-artifacts
+  - $WORKING_DIRECTORY/react-native-vision-camera/apps/simple-camera/.harness/logs
   - $WORKING_DIRECTORY/react-native-vision-camera/apps/simple-camera/.harness/crash-reports
