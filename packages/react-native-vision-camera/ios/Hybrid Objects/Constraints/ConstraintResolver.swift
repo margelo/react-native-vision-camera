@@ -87,14 +87,18 @@ enum ConstraintResolver {
     // Hard requirements: filter out formats that are not possible at all.
     let formats = try filterFormats(device.formats, outputs: outputs, isMultiCam: isMultiCam)
 
-    // Evaluate all formats and pick the one with the lowest total penalty.
+    // Evaluate all formats and pick the one with the best penalty vector.
+    // Constraints are ordered by priority, so we compare penalties lexicographically
+    // instead of summing heterogeneous units (fps deltas, pixel distances,
+    // fallback steps, ...). This makes a higher-priority constraint impossible
+    // to swamp numerically with a lower-priority one.
     // This is a single pass - format selection and enabled constraints
     // are computed together from the same resolve() calls.
     guard
       let best =
         try formats
         .map({ try evaluate($0, constraints: constraints) })
-        .min(by: { $0.totalPenalty < $1.totalPenalty })
+        .min(by: { $0.isBetterMatch(than: $1) })
     else {
       throw RuntimeError.error(withMessage: "The given `device` does not have any `formats`!")
     }
@@ -114,13 +118,13 @@ enum ConstraintResolver {
   // MARK: - Format Evaluation
 
   /// Evaluates all constraints against a single format in one pass.
-  /// Returns the format, its total weighted penalty, and the enabled constraints
+  /// Returns the format, its ordered penalties, and the enabled constraints
   /// that would apply if this format is selected.
   private static func evaluate(
     _ format: AVCaptureDevice.Format,
     constraints: [InternalConstraint]
   ) throws(RuntimeError) -> FormatEvaluation {
-    var totalPenalty = 0.0
+    var penalties: [ConstraintPenalty] = []
 
     // First-match-wins accumulators (priority order = array order)
     var fps: Double?
@@ -128,10 +132,9 @@ enum ConstraintResolver {
     var previewStabilizationMode: TargetStabilizationMode?
     var videoDynamicRange: TargetDynamicRange?
 
-    for (index, constraint) in constraints.enumerated() {
-      let weight = Double(constraints.count - index)
+    for constraint in constraints {
       let evaluation = try constraint.evaluate(for: format)
-      totalPenalty += evaluation.penalty.distance * weight
+      penalties.append(evaluation.penalty)
 
       // Accumulate enabled values - first of each type wins (= highest priority)
       switch evaluation.resolved {
@@ -156,7 +159,7 @@ enum ConstraintResolver {
 
     return FormatEvaluation(
       format: format,
-      totalPenalty: totalPenalty,
+      penalties: penalties,
       enabledConstraints: enabledConstraints)
   }
 
@@ -231,8 +234,16 @@ struct ConstraintEvaluation {
 /// Result of evaluating all constraints against a single format.
 struct FormatEvaluation {
   let format: AVCaptureDevice.Format
-  let totalPenalty: Double
+  let penalties: [ConstraintPenalty]
   let enabledConstraints: EnabledConstraints
+
+  func isBetterMatch(than other: FormatEvaluation) -> Bool {
+    for (left, right) in zip(penalties, other.penalties) {
+      if left == right { continue }
+      return left < right
+    }
+    return false
+  }
 }
 
 // MARK: - Constraint / InternalConstraint Dispatchers
@@ -255,7 +266,7 @@ extension Constraint {
     case .fifth(let dynamicRange):
       let r = dynamicRange.resolve(for: format)
       return ConstraintEvaluation(penalty: r.penalty, resolved: .videoDynamicRange(r.resolvedValue))
-    case .sixth( /* photoHDR */_):
+    case .sixth(_):
       // Photo HDR is not supported on iOS.
       return ConstraintEvaluation(penalty: .noPenalty, resolved: .formatOnly)
     case .seventh(let pixelFormat):
