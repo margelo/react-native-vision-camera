@@ -6,6 +6,13 @@ import type { Frame } from '../instances/Frame.nitro'
 /**
  * The {@linkcode FrameConverter} can convert {@linkcode Frame}s
  * and {@linkcode Depth} to {@linkcode Image}s.
+ *
+ * On Android, the resulting {@linkcode Image} is always upright.
+ * On iOS, the resulting {@linkcode Image} follows the orientation
+ * of the source {@linkcode Frame}.
+ *
+ * This means consumers should not assume both platforms return
+ * images with the same orientation metadata or visual rotation.
  */
 export interface FrameConverter
   extends HybridObject<{ ios: 'swift'; android: 'kotlin' }> {
