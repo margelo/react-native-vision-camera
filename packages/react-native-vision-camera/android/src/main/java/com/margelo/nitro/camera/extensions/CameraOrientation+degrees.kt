@@ -7,8 +7,8 @@ val CameraOrientation.degrees: Int
     return when (this) {
       CameraOrientation.UP -> 0
       CameraOrientation.DOWN -> 180
-      CameraOrientation.LEFT -> 270
-      CameraOrientation.RIGHT -> 90
+      CameraOrientation.LEFT -> 90
+      CameraOrientation.RIGHT -> 270
     }
   }
 
