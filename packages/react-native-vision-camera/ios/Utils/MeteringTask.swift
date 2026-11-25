@@ -157,16 +157,17 @@ final class MeteringTask {
       logger.info(
         "All metering operations have been settled for at least \(self.minStableFocusDurationUntilResolve) seconds - completed!"
       )
-      onComplete?()
       isFinished = true
       destroy()
-      // After completion, update AE/AF/AWB to locked or continuous tracking
+      // Update AE/AF/AWB to locked or continuous tracking *before* resolving,
+      // so callers observe the final modes as soon as the Promise resolves.
       switch adaptiveness {
       case .continuous:
         try? setMeteringValuesToContinuous()
       case .locked:
         try? setMeteringValuesToLocked()
       }
+      onComplete?()
       // Start the timer for auto reset (if enabled)
       if case .after(let seconds) = self.autoReset {
         self.queue.asyncAfter(deadline: .now() + seconds) { [weak self] in
