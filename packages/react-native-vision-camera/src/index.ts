@@ -94,6 +94,8 @@ export * from './utils/CommonDynamicRanges'
 export * from './utils/CommonResolutions'
 export * from './utils/FrameConverter'
 export * from './utils/getUIRotation'
+export * from './utils/getUprightPreviewAspectRatio'
+export * from './utils/getUprightPreviewResolution'
 // Main factory
 export * from './VisionCamera'
 // Views

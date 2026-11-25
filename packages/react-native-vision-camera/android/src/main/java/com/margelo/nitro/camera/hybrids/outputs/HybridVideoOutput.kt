@@ -44,6 +44,8 @@ class HybridVideoOutput(
     }
   override val currentResolution: Size?
     get() = videoCapture?.resolutionInfo?.resolution?.toSize()
+  override val rotationDegrees: Double?
+    get() = videoCapture?.resolutionInfo?.rotationDegrees?.toDouble()
 
   private val context: Context
     get() = NitroModules.applicationContext ?: throw Error("No ApplicationContext!")

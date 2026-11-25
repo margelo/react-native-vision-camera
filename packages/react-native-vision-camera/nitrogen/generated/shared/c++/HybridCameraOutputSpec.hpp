@@ -22,8 +22,8 @@ namespace margelo::nitro::camera { struct Size; }
 
 #include "MediaType.hpp"
 #include "CameraOrientation.hpp"
-#include "Size.hpp"
 #include <optional>
+#include "Size.hpp"
 
 namespace margelo::nitro::camera {
 
@@ -55,6 +55,7 @@ namespace margelo::nitro::camera {
       virtual MediaType getMediaType() = 0;
       virtual CameraOrientation getOutputOrientation() = 0;
       virtual void setOutputOrientation(CameraOrientation outputOrientation) = 0;
+      virtual std::optional<double> getRotationDegrees() = 0;
       virtual std::optional<Size> getCurrentResolution() = 0;
 
     public:

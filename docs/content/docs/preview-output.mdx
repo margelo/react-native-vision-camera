@@ -53,15 +53,70 @@ await session.start()
 
 ### Preview Resolution
 
-A [`CameraPreviewOutput`](/api/react-native-vision-camera/hybrid-objects/CameraPreviewOutput) does not have a configurable target resolution - since it can never display more pixels than the screen has, it simply prefers any Camera Format that is at least as large as the screen.
+By default, a [`CameraPreviewOutput`](/api/react-native-vision-camera/hybrid-objects/CameraPreviewOutput) chooses its own resolution. That is fine when the Preview is the only output, but as soon as other outputs are attached (e.g. a Frame Output for processing, or a Photo/Video Output for capture), their aspect ratios can disagree.
 
-This preference is only a small _bias_ in [resolution negotiation](constraints) - a Preview can be upscaled cheaply, whereas a recording's resolution cannot be recovered after capture. If you list a [`{ resolutionBias: ... }`](/api/react-native-vision-camera/interfaces/ResolutionBiasConstraint) constraint for a recording output (e.g. a [`CameraVideoOutput`](/api/react-native-vision-camera/hybrid-objects/CameraVideoOutput) targeting 1080p), it takes priority over the Preview's preference and the session streams at your requested resolution:
+Every output is a view of the same sensor, and outputs with different aspect ratios crop the sensor area differently. The Preview may then show more (or less) to the user than your Frame, Photo or Video output can actually see.
 
+#### Why this matters most on Android
+
+CameraX picks a default aspect ratio per use case, and they do not agree with each other:
+
+- Image capture and image analysis (the Frame Output) default to **4:3**.
+- Video usually resolves to **16:9**.
+- The Preview defaults to **4:3**.
+
+A 16:9 video next to a 4:3 Preview therefore covers a different area of the sensor than what the user sees on screen.
+
+On iOS this is not an issue, since every output is derived from the active format selected on the capture device - the Preview simply follows the resolved format. Android ignores [`{ resolutionBias: ... }`](/api/react-native-vision-camera/interfaces/ResolutionBiasConstraint) constraints, which is why the Preview needs its own target there.
+
+#### Setting a target resolution
+
+> [!NOTE]
+> The Preview `targetResolution` is mainly meant for **Android**. On **iOS, do not specify it** - the Preview follows the resolved format. Instead, steer the resolution via a [`{ resolutionBias: ... }`](/api/react-native-vision-camera/interfaces/ResolutionBiasConstraint) constraint (e.g. `{ resolutionBias: videoOutput }`), see [resolution negotiation](constraints).
+
+On Android, pick the output whose field of view matters most (e.g. the Video Output) and give the Preview the **same `targetResolution`** (or at least the same aspect ratio). The Preview is then negotiated with the session as close to that resolution as possible, so the Preview and that output cover the same field of view:
+
+<Tabs items={["<Camera /> (view)", "usePreviewOutput(...) (hook)"]} groupId="preview-target-resolution">
+<Tab value="<Camera /> (view)">
 ```tsx
-const constraints = [
-  { resolutionBias: videoOutput }
-]
+const targetResolution = CommonResolutions.FHD_16_9
+
+function App() {
+  const videoOutput = useVideoOutput({
+    targetResolution: targetResolution,
+  })
+
+  return (
+    <Camera
+      outputs={[videoOutput]}
+      // [!code ++]
+      previewTargetResolution={targetResolution}
+    />
+  )
+}
 ```
+</Tab>
+<Tab value="usePreviewOutput(...) (hook)">
+```tsx
+const targetResolution = CommonResolutions.FHD_16_9
+
+function App() {
+  const videoOutput = useVideoOutput({
+    targetResolution: targetResolution,
+  })
+  const previewOutput = usePreviewOutput({
+    // [!code ++]
+    targetResolution: targetResolution,
+  })
+}
+```
+</Tab>
+</Tabs>
+
+> [!NOTE]
+> The `targetResolution` is a preference, not a guarantee. The Camera Session negotiates it with all other outputs, so the resulting resolution may differ. Use `onConfigurationChanged` (or `onPreviewResolution` on the [`<Camera />`](/api/react-native-vision-camera/views/Camera) view) to read the Preview's actual resolution and rotation, e.g. to size a wrapper to the Preview's exact aspect ratio and align buttons or overlays to its edges.
+
+When omitted, the platform's default Preview resolution preference is used.
 
 ### Connecting the Preview Output to a View
 

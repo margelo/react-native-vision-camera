@@ -349,9 +349,9 @@ open class HybridCameraFactorySpec_cxx {
   }
   
   @inline(__always)
-  public final func createPreviewOutput() -> bridge.Result_std__shared_ptr_HybridCameraPreviewOutputSpec__ {
+  public final func createPreviewOutput(options: PreviewOutputOptions) -> bridge.Result_std__shared_ptr_HybridCameraPreviewOutputSpec__ {
     do {
-      let __result = try self.__implementation.createPreviewOutput()
+      let __result = try self.__implementation.createPreviewOutput(options: options)
       let __resultCpp = { () -> bridge.std__shared_ptr_HybridCameraPreviewOutputSpec_ in
         let __cxxWrapped = __result.getCxxWrapper()
         return __cxxWrapped.getCxxPart()

@@ -105,8 +105,8 @@ class VisionCamera : HybridCameraFactorySpec() {
     return HybridDepthFrameOutput(options)
   }
 
-  override fun createPreviewOutput(): HybridCameraPreviewOutputSpec {
-    return HybridPreviewOutput()
+  override fun createPreviewOutput(options: PreviewOutputOptions): HybridCameraPreviewOutputSpec {
+    return HybridPreviewOutput(options)
   }
 
   override fun createObjectOutput(options: ObjectOutputOptions): HybridCameraObjectOutputSpec {

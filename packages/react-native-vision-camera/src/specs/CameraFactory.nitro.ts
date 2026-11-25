@@ -27,7 +27,10 @@ import type {
   CameraPhotoOutput,
   PhotoOutputOptions,
 } from './outputs/CameraPhotoOutput.nitro'
-import type { CameraPreviewOutput } from './outputs/CameraPreviewOutput.nitro'
+import type {
+  CameraPreviewOutput,
+  PreviewOutputOptions,
+} from './outputs/CameraPreviewOutput.nitro'
 import type {
   CameraVideoOutput,
   VideoOutputOptions,
@@ -183,7 +186,7 @@ export interface CameraFactory
   /**
    * Create a new {@linkcode CameraPreviewOutput}.
    */
-  createPreviewOutput(): CameraPreviewOutput
+  createPreviewOutput(options: PreviewOutputOptions): CameraPreviewOutput
   /**
    * Create a new {@linkcode CameraObjectOutput}
    * with the given {@linkcode ObjectOutputOptions}.
