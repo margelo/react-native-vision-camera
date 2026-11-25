@@ -36,6 +36,12 @@ final class HybridCameraObjectOutput: HybridCameraObjectOutputSpec, NativeCamera
     self.output = AVCaptureMetadataOutput()
     self.delegate = MetadataDelegate()
 
+    if #available(iOS 26.0, *), output.isDeferredStartSupported {
+      // Deferred start allows the session to delay this output's startup in favor
+      // of preview-related outputs to make preview appear faster.
+      output.isDeferredStartEnabled = true
+    }
+
     output.setMetadataObjectsDelegate(delegate, queue: queue)
   }
 
