@@ -15,9 +15,12 @@ final class HybridInterfaceOrientationManager: HybridOrientationManagerSpec {
 
   override init() {
     super.init()
-    DispatchQueue.main.async {
-      let interfaceOrientation = UIApplication.shared.interfaceOrientation
-      self.currentOrientation = CameraOrientation(interfaceOrientation: interfaceOrientation)
+    if Thread.isMainThread {
+      updateCurrentOrientation()
+    } else {
+      DispatchQueue.main.async {
+        self.updateCurrentOrientation()
+      }
     }
   }
 
@@ -59,6 +62,7 @@ final class HybridInterfaceOrientationManager: HybridOrientationManagerSpec {
           onChanged(orientation)
         }
       }
+      self.updateCurrentOrientation(onChanged: onChanged)
     }
   }
 
@@ -70,6 +74,22 @@ final class HybridInterfaceOrientationManager: HybridOrientationManagerSpec {
         self.observer = nil
         UIDevice.current.endGeneratingDeviceOrientationNotifications()
       }
+    }
+  }
+
+  private func updateCurrentOrientation(onChanged: ((CameraOrientation) -> Void)? = nil) {
+    let interfaceOrientation = UIApplication.shared.interfaceOrientation
+    guard interfaceOrientation != .unknown else {
+      logger.warning("UIInterfaceOrientation is .unknown!")
+      return
+    }
+    let orientation = CameraOrientation(interfaceOrientation: interfaceOrientation)
+    if self.currentOrientation != orientation {
+      if onChanged != nil {
+        logger.info("Interface orientation changed: \(orientation.stringValue)")
+      }
+      self.currentOrientation = orientation
+      onChanged?(orientation)
     }
   }
 }
