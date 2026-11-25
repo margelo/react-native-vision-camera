@@ -17,6 +17,11 @@ final class HybridCameraSession: HybridCameraSessionSpec {
     autoreleaseFrequency: .inherit,
     target: nil)
 
+  // Whether JS wants the session running, so it can be restarted after a runtime error (as V4 did).
+  private var shouldBeRunning = false
+  private var lastRuntimeErrorRestart: Date?
+  private var runtimeErrorObserver: NSObjectProtocol?
+
   init(enableMultiCam: Bool) {
     if enableMultiCam {
       self.session = AVCaptureMultiCamSession()
@@ -27,6 +32,18 @@ final class HybridCameraSession: HybridCameraSessionSpec {
     // session's preset-based format selection upfront.
     self.session.sessionPreset = .inputPriority
     super.init()
+    // AVFoundation stops the session on a runtime error (e.g. when media services are reset) and never restarts it.
+    self.runtimeErrorObserver = NotificationCenter.default.addObserver(
+      forName: AVCaptureSession.runtimeErrorNotification, object: self.session, queue: nil
+    ) { [weak self] _ in
+      self?.restartAfterRuntimeError()
+    }
+  }
+
+  deinit {
+    if let runtimeErrorObserver {
+      NotificationCenter.default.removeObserver(runtimeErrorObserver)
+    }
   }
 
   var isRunning: Bool {
@@ -213,6 +230,7 @@ final class HybridCameraSession: HybridCameraSessionSpec {
   // pragma MARK: Start/Stop
   func start() -> Promise<Void> {
     return Promise.parallel(Self.queue) {
+      self.shouldBeRunning = true
       if self.session.isRunning {
         return
       }
@@ -222,10 +240,26 @@ final class HybridCameraSession: HybridCameraSessionSpec {
 
   func stop() -> Promise<Void> {
     return Promise.parallel(Self.queue) {
+      self.shouldBeRunning = false
       if !self.session.isRunning {
         return
       }
       self.session.stopRunning()
+    }
+  }
+
+  private func restartAfterRuntimeError() {
+    Self.queue.async { [weak self] in
+      guard let self, self.shouldBeRunning, !self.session.isRunning else {
+        return
+      }
+      // At most one restart per burst of errors, so a camera that keeps failing doesn't restart in a loop.
+      if let lastRestart = self.lastRuntimeErrorRestart, Date().timeIntervalSince(lastRestart) < 5 {
+        return
+      }
+      self.lastRuntimeErrorRestart = Date()
+      logger.info("Restarting CameraSession after a runtime error...")
+      self.session.startRunning()
     }
   }
 
