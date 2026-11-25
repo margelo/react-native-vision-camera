@@ -16,6 +16,7 @@ namespace margelo::nitro::camera::barcodescanner {
     registerHybrids(this, [](Prototype& prototype) {
       prototype.registerHybridMethod("scanCodes", &HybridBarcodeScannerSpec::scanCodes);
       prototype.registerHybridMethod("scanCodesAsync", &HybridBarcodeScannerSpec::scanCodesAsync);
+      prototype.registerHybridMethod("scanCodesInImage", &HybridBarcodeScannerSpec::scanCodesInImage);
       prototype.registerHybridMethod("scanCodesInImageAsync", &HybridBarcodeScannerSpec::scanCodesInImageAsync);
     });
   }

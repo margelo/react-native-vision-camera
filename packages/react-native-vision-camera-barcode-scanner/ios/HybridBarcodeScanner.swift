@@ -30,6 +30,12 @@ class HybridBarcodeScanner: HybridBarcodeScannerSpec {
     return process(mlImage)
   }
 
+  func scanCodesInImage(image: any HybridImageSpec) throws -> [any HybridBarcodeSpec] {
+    let mlImage = try image.toMLImage()
+    let barcodes = try scanner.results(in: mlImage)
+    return barcodes.map { HybridBarcode(barcode: $0) }
+  }
+
   func scanCodesInImageAsync(image: any HybridImageSpec) throws -> Promise<[any HybridBarcodeSpec]> {
     let mlImage = try image.toMLImage()
     return process(mlImage)

@@ -11,6 +11,7 @@ import type { Barcode } from './Barcode.nitro'
  * The {@linkcode BarcodeScanner} can be used in a
  * Frame Processor by calling {@linkcode BarcodeScanner.scanCodes | scanCodes(...)},
  * or for static images by calling
+ * {@linkcode BarcodeScanner.scanCodesInImage | scanCodesInImage(...)} or
  * {@linkcode BarcodeScanner.scanCodesInImageAsync | scanCodesInImageAsync(...)}.
  *
  * @see {@linkcode useBarcodeScanner | useBarcodeScanner(...)}
@@ -60,6 +61,21 @@ export interface BarcodeScanner
   scanCodesAsync(frame: Frame): Promise<Barcode[]>
 
   /**
+   * Synchronously detects {@linkcode Barcode}s in the
+   * given {@linkcode Image}.
+   *
+   * This can be used to scan codes in an existing still image, such as
+   * an image loaded from disk, bundled resources or a URL via
+   * `react-native-nitro-image`.
+   *
+   * All coordinates in the returned {@linkcode Barcode}s are relative
+   * to the given {@linkcode Image}'s coordinate system.
+   *
+   * @see {@linkcode scanCodesInImageAsync}
+   */
+  scanCodesInImage(image: Image): Barcode[]
+
+  /**
    * Asynchronously detects {@linkcode Barcode}s in the
    * given {@linkcode Image}.
    *
@@ -86,6 +102,8 @@ export interface BarcodeScanner
    *   scanner.dispose()
    * }
    * ```
+   *
+   * @see {@linkcode scanCodesInImage}
    */
   scanCodesInImageAsync(image: Image): Promise<Barcode[]>
 }

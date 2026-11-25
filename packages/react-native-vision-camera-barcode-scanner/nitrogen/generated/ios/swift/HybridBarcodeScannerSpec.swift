@@ -17,6 +17,7 @@ public protocol HybridBarcodeScannerSpec_protocol: HybridObject {
   // Methods
   func scanCodes(frame: (any HybridFrameSpec)) throws -> [(any HybridBarcodeSpec)]
   func scanCodesAsync(frame: (any HybridFrameSpec)) throws -> Promise<[(any HybridBarcodeSpec)]>
+  func scanCodesInImage(image: (any HybridImageSpec)) throws -> [(any HybridBarcodeSpec)]
   func scanCodesInImageAsync(image: (any HybridImageSpec)) throws -> Promise<[(any HybridBarcodeSpec)]>
 }
 
