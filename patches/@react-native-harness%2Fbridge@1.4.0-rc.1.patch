@@ -1,0 +1,308 @@
+diff --git a/node_modules/@react-native-harness/bridge/.bun-tag-4e1dddf76dc4a424 b/.bun-tag-4e1dddf76dc4a424
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+diff --git a/node_modules/@react-native-harness/bridge/.bun-tag-ff075f6681da61c4 b/.bun-tag-ff075f6681da61c4
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+diff --git a/dist/rpc-peer.d.ts b/dist/rpc-peer.d.ts
+index bfa6a02159cb459ebdb98d2e9f343223801a147f..7b4b9899d4bddfe0d2adf501b3e2a07747add0fc 100644
+--- a/dist/rpc-peer.d.ts
++++ b/dist/rpc-peer.d.ts
+@@ -19,6 +19,11 @@ export type CreateRpcPeerOptions<Local extends RpcMethods, Event extends {
+     transport: RpcTransport;
+     onEvent?: (event: Event) => void;
+     callTimeoutMs?: number;
++    /**
++     * Identifies incoming events that prove a pending call is still making
++     * progress. The call's timeout is restarted whenever this returns true.
++     */
++    isCallProgressEvent?: (event: Event, method: string, args: unknown[]) => boolean;
+     createTimeoutError?: (method: string, args: unknown[]) => Error;
+ };
+ export declare const createRpcPeer: <Local extends RpcMethods, Remote extends RpcMethods, Event extends {
+diff --git a/dist/rpc-peer.js b/dist/rpc-peer.js
+index 8f8058ca07daf982d16e93c48f5b91b5388d3f17..b3d49813f1cd6bfb08a523495e5892bfb1d524a2 100644
+--- a/dist/rpc-peer.js
++++ b/dist/rpc-peer.js
+@@ -6,6 +6,21 @@ export const createRpcPeer = (options) => {
+     const pendingInvocations = new Map();
+     let nextMessageId = 1;
+     let closedReason = null;
++    const scheduleInvocationTimeout = (id, invocation) => {
++        if (invocation.timeout) {
++            clearTimeout(invocation.timeout);
++        }
++        if (options.callTimeoutMs === undefined) {
++            invocation.timeout = null;
++            return;
++        }
++        invocation.timeout = setTimeout(() => {
++            invocation.timeout = null;
++            pendingInvocations.delete(id);
++            invocation.reject(options.createTimeoutError?.(invocation.method, invocation.args) ??
++                new Error(`RPC call timed out: ${invocation.method}`));
++        }, options.callTimeoutMs);
++    };
+     const rejectPendingInvocations = (reason) => {
+         for (const [id, invocation] of pendingInvocations) {
+             if (invocation.timeout) {
+@@ -45,13 +60,7 @@ export const createRpcPeer = (options) => {
+                     },
+                     timeout: null,
+                 };
+-                if (options.callTimeoutMs !== undefined) {
+-                    invocation.timeout = setTimeout(() => {
+-                        pendingInvocations.delete(id);
+-                        reject(options.createTimeoutError?.(methodName, args) ??
+-                            new Error(`RPC call timed out: ${methodName}`));
+-                    }, options.callTimeoutMs);
+-                }
++                scheduleInvocationTimeout(id, invocation);
+                 pendingInvocations.set(id, invocation);
+                 try {
+                     sendMessage({
+@@ -132,7 +141,13 @@ export const createRpcPeer = (options) => {
+                     return null;
+                 }
+                 case 'event': {
+-                    options.onEvent?.(message.event);
++                    const event = message.event;
++                    for (const [id, invocation] of pendingInvocations) {
++                        if (options.isCallProgressEvent?.(event, invocation.method, invocation.args) === true) {
++                            scheduleInvocationTimeout(id, invocation);
++                        }
++                    }
++                    options.onEvent?.(event);
+                     return null;
+                 }
+                 case 'ready':
+diff --git a/dist/server.js b/dist/server.js
+index 16ba50eaab5636872b26f5f85ec607f68ef7c08b..8a5231218dc304c91d7c73b1eacc9b5f5f668eeb 100644
+--- a/dist/server.js
++++ b/dist/server.js
+@@ -73,6 +73,9 @@ export const createHarnessBridge = async (options) => {
+                 emitter.emit('event', event);
+             },
+             callTimeoutMs: timeout,
++            isCallProgressEvent: (event, method, args) => method === 'runTests' &&
++                (event.type === 'test-started' || event.type === 'test-finished') &&
++                event.file === args[0],
+             createTimeoutError: (functionName, args) => {
+                 return new DeviceNotRespondingError(functionName, args);
+             },
+diff --git a/src/__tests__/rpc-peer.test.ts b/src/__tests__/rpc-peer.test.ts
+index 31c770de7d6fa2edcb7b37b460106e24ae793889..cbd7790efe075bae2ef40a2eb388a7343b09f71b 100644
+--- a/src/__tests__/rpc-peer.test.ts
++++ b/src/__tests__/rpc-peer.test.ts
+@@ -168,6 +168,106 @@ describe('rpc-peer', () => {
+     await expect(pending).rejects.toThrow('timed out');
+   });
+ 
++  it('restarts a pending call timeout when the remote reports progress', async () => {
++    vi.useFakeTimers();
++
++    try {
++      const peer = createRpcPeer<
++        Record<string, never>,
++        { runTests: (path: string, options: { runner: string }) => Promise<void> },
++        BridgeEvents
++      >({
++        localMethods: {},
++        transport: createMockTransport(),
++        callTimeoutMs: 1_000,
++        isCallProgressEvent: (event, method, args) =>
++          method === 'runTests' &&
++          event.type === 'test-finished' &&
++          event.file === args[0],
++        createTimeoutError: () => new Error('timed out'),
++      });
++
++      let rejection: unknown;
++      const pending = peer.invoke('runTests', 'example.ts', { runner: '/runner.js' });
++      void pending.catch((error) => {
++        rejection = error;
++      });
++
++      await vi.advanceTimersByTimeAsync(900);
++      await peer.handleMessage(
++        JSON.stringify({
++          type: 'event',
++          event: {
++            type: 'test-finished',
++            file: 'example.ts',
++            suite: 'suite',
++            name: 'first test',
++            ancestorTitles: ['suite'],
++            fullName: 'suite first test',
++            startedAt: 0,
++            duration: 900,
++            status: 'passed',
++          },
++        }),
++      );
++      await vi.advanceTimersByTimeAsync(900);
++
++      expect(rejection).toBeUndefined();
++
++      await vi.advanceTimersByTimeAsync(100);
++      await expect(pending).rejects.toThrow('timed out');
++    } finally {
++      vi.useRealTimers();
++    }
++  });
++
++  it('does not restart a pending call timeout for another test file', async () => {
++    vi.useFakeTimers();
++
++    try {
++      const peer = createRpcPeer<
++        Record<string, never>,
++        { runTests: (path: string, options: { runner: string }) => Promise<void> },
++        BridgeEvents
++      >({
++        localMethods: {},
++        transport: createMockTransport(),
++        callTimeoutMs: 1_000,
++        isCallProgressEvent: (event, method, args) =>
++          method === 'runTests' &&
++          event.type === 'test-finished' &&
++          event.file === args[0],
++        createTimeoutError: () => new Error('timed out'),
++      });
++
++      const pending = peer.invoke('runTests', 'example.ts', { runner: '/runner.js' });
++      const expectedTimeout = expect(pending).rejects.toThrow('timed out');
++
++      await vi.advanceTimersByTimeAsync(900);
++      await peer.handleMessage(
++        JSON.stringify({
++          type: 'event',
++          event: {
++            type: 'test-finished',
++            file: 'another-example.ts',
++            suite: 'suite',
++            name: 'another test',
++            ancestorTitles: ['suite'],
++            fullName: 'suite another test',
++            startedAt: 0,
++            duration: 900,
++            status: 'passed',
++          },
++        }),
++      );
++      await vi.advanceTimersByTimeAsync(100);
++
++      await expectedTimeout;
++    } finally {
++      vi.useRealTimers();
++    }
++  });
++
+   it('throws on malformed messages', async () => {
+     const peer = createRpcPeer<Record<string, never>, Record<string, never>, BridgeEvents>({
+       localMethods: {},
+diff --git a/src/rpc-peer.ts b/src/rpc-peer.ts
+index e4ca71446c0c2fe30cea73ec3122869e10dc794e..94ae78eaedcb74029a2dc35d44ce39ce7d2b26ed 100644
+--- a/src/rpc-peer.ts
++++ b/src/rpc-peer.ts
+@@ -41,6 +41,15 @@ export type CreateRpcPeerOptions<
+   transport: RpcTransport;
+   onEvent?: (event: Event) => void;
+   callTimeoutMs?: number;
++  /**
++   * Identifies incoming events that prove a pending call is still making
++   * progress. The call's timeout is restarted whenever this returns true.
++   */
++  isCallProgressEvent?: (
++    event: Event,
++    method: string,
++    args: unknown[],
++  ) => boolean;
+   createTimeoutError?: (method: string, args: unknown[]) => Error;
+ };
+ 
+@@ -59,6 +68,29 @@ export const createRpcPeer = <
+   let nextMessageId = 1;
+   let closedReason: Error | null = null;
+ 
++  const scheduleInvocationTimeout = (
++    id: number,
++    invocation: PendingInvocation,
++  ) => {
++    if (invocation.timeout) {
++      clearTimeout(invocation.timeout);
++    }
++
++    if (options.callTimeoutMs === undefined) {
++      invocation.timeout = null;
++      return;
++    }
++
++    invocation.timeout = setTimeout(() => {
++      invocation.timeout = null;
++      pendingInvocations.delete(id);
++      invocation.reject(
++        options.createTimeoutError?.(invocation.method, invocation.args) ??
++          new Error(`RPC call timed out: ${invocation.method}`),
++      );
++    }, options.callTimeoutMs);
++  };
++
+   const rejectPendingInvocations = (reason: Error) => {
+     for (const [id, invocation] of pendingInvocations) {
+       if (invocation.timeout) {
+@@ -107,15 +139,7 @@ export const createRpcPeer = <
+           timeout: null,
+         };
+ 
+-        if (options.callTimeoutMs !== undefined) {
+-          invocation.timeout = setTimeout(() => {
+-            pendingInvocations.delete(id);
+-            reject(
+-              options.createTimeoutError?.(methodName, args) ??
+-                new Error(`RPC call timed out: ${methodName}`),
+-            );
+-          }, options.callTimeoutMs);
+-        }
++        scheduleInvocationTimeout(id, invocation);
+ 
+         pendingInvocations.set(id, invocation);
+ 
+@@ -208,7 +232,21 @@ export const createRpcPeer = <
+           return null;
+         }
+         case 'event': {
+-          options.onEvent?.(message.event as unknown as Event);
++          const event = message.event as unknown as Event;
++
++          for (const [id, invocation] of pendingInvocations) {
++            if (
++              options.isCallProgressEvent?.(
++                event,
++                invocation.method,
++                invocation.args,
++              ) === true
++            ) {
++              scheduleInvocationTimeout(id, invocation);
++            }
++          }
++
++          options.onEvent?.(event);
+           return null;
+         }
+         case 'ready':
+diff --git a/src/server.ts b/src/server.ts
+index 3cded6184d33110309ae5cc76ddef868a83ce047..35a62cecab902969d23062994ddd3016a06a7e55 100644
+--- a/src/server.ts
++++ b/src/server.ts
+@@ -161,6 +161,10 @@ export const createHarnessBridge = async (
+         emitter.emit('event', event);
+       },
+       callTimeoutMs: timeout,
++      isCallProgressEvent: (event, method, args) =>
++        method === 'runTests' &&
++        (event.type === 'test-started' || event.type === 'test-finished') &&
++        event.file === args[0],
+       createTimeoutError: (functionName, args) => {
+         return new DeviceNotRespondingError(functionName, args) as unknown as Error;
+       },
