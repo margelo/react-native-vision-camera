@@ -186,8 +186,8 @@ class HybridCameraSession(
     onErrorListeners.forEach { listener -> listener(error) }
   }
 
-  override fun onInterruptionStarted() {
-    onInterruptionStartedListeners.forEach { listener -> listener(InterruptionReason.UNKNOWN) }
+  override fun onInterruptionStarted(reason: InterruptionReason) {
+    onInterruptionStartedListeners.forEach { listener -> listener(reason) }
   }
 
   override fun onInterruptionEnded() {

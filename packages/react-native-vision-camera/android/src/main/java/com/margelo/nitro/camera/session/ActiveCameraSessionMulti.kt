@@ -2,6 +2,7 @@ package com.margelo.nitro.camera.session
 
 import androidx.camera.core.Camera
 import androidx.camera.core.ConcurrentCamera
+import com.margelo.nitro.camera.InterruptionReason
 import java.io.Closeable
 
 class ActiveCameraSessionMulti(
@@ -50,8 +51,8 @@ class ActiveCameraSessionMulti(
     listener.onError(error)
   }
 
-  override fun onInterruptionStarted() {
-    listener.onInterruptionStarted()
+  override fun onInterruptionStarted(reason: InterruptionReason) {
+    listener.onInterruptionStarted(reason)
   }
 
   override fun onInterruptionEnded() {

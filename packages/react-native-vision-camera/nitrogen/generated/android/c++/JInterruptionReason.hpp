@@ -63,6 +63,12 @@ namespace margelo::nitro::camera {
         case InterruptionReason::SENSITIVE_CONTENT_MITIGATION_ACTIVATED:
           static const auto fieldSENSITIVE_CONTENT_MITIGATION_ACTIVATED = clazz->getStaticField<JInterruptionReason>("SENSITIVE_CONTENT_MITIGATION_ACTIVATED");
           return clazz->getStaticFieldValue(fieldSENSITIVE_CONTENT_MITIGATION_ACTIVATED);
+        case InterruptionReason::MAX_CAMERAS_IN_USE:
+          static const auto fieldMAX_CAMERAS_IN_USE = clazz->getStaticField<JInterruptionReason>("MAX_CAMERAS_IN_USE");
+          return clazz->getStaticFieldValue(fieldMAX_CAMERAS_IN_USE);
+        case InterruptionReason::OTHER_RECOVERABLE_ERROR:
+          static const auto fieldOTHER_RECOVERABLE_ERROR = clazz->getStaticField<JInterruptionReason>("OTHER_RECOVERABLE_ERROR");
+          return clazz->getStaticFieldValue(fieldOTHER_RECOVERABLE_ERROR);
         default:
           std::string stringValue = std::to_string(static_cast<int>(value));
           throw std::invalid_argument("Invalid enum value (" + stringValue + "!");
