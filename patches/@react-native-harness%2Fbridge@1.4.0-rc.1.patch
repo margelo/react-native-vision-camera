@@ -1,0 +1,145 @@
+diff --git a/dist/server.d.ts b/dist/server.d.ts
+index be42f719cc837e28e3eeacb342ffab4b57ee5a81..5da6a6055183ef7d7bc532d0fa7fb6fc5e65d90b 100644
+--- a/dist/server.d.ts
++++ b/dist/server.d.ts
+@@ -31,7 +31,7 @@ export type HarnessBridge = {
+     nextConnection: (signal?: AbortSignal) => Promise<AppConnection>;
+     on: <T extends keyof HarnessBridgeEvents>(event: T, listener: HarnessBridgeEvents[T]) => void;
+     off: <T extends keyof HarnessBridgeEvents>(event: T, listener: HarnessBridgeEvents[T]) => void;
+-    dispose: () => void;
++    dispose: () => Promise<void>;
+ };
+ export declare const createHarnessBridge: (options: HarnessBridgeOptions) => Promise<HarnessBridge>;
+ //# sourceMappingURL=server.d.ts.map
+diff --git a/dist/server.js b/dist/server.js
+index 16ba50eaab5636872b26f5f85ec607f68ef7c08b..84bb166b6ae7c122934c2d1cebfe4b1ddd7aec50 100644
+--- a/dist/server.js
++++ b/dist/server.js
+@@ -43,7 +43,17 @@ export const createHarnessBridge = async (options) => {
+     const emitter = new EventEmitter();
+     let currentConnection = null;
+     let activeSession = null;
++    let disposePromise = null;
+     const connectionWaiters = [];
++    const closeServer = () => new Promise((resolve, reject) => {
++        wss.close((error) => {
++            if (error) {
++                reject(error);
++                return;
++            }
++            resolve();
++        });
++    });
+     wss.on('connection', (ws) => {
+         if (activeSession) {
+             bridgeLogger.info('replacing existing app connection with a newer client');
+@@ -202,16 +212,23 @@ export const createHarnessBridge = async (options) => {
+         on: (event, listener) => emitter.on(event, listener),
+         off: (event, listener) => emitter.off(event, listener),
+         dispose: () => {
+-            bridgeLogger.debug('disposing bridge');
+-            for (const { reject } of connectionWaiters.splice(0)) {
+-                reject(new AppBridgeDisconnectedError('bridge-disposed'));
+-            }
+-            activeSession?.disconnect(new AppBridgeDisconnectedError('bridge-disposed'));
+-            for (const client of wss.clients) {
+-                client.terminate();
+-            }
+-            wss.close();
+-            emitter.removeAllListeners();
++            disposePromise ??= (async () => {
++                bridgeLogger.debug('disposing bridge');
++                for (const { reject } of connectionWaiters.splice(0)) {
++                    reject(new AppBridgeDisconnectedError('bridge-disposed'));
++                }
++                activeSession?.disconnect(new AppBridgeDisconnectedError('bridge-disposed'));
++                for (const client of wss.clients) {
++                    client.terminate();
++                }
++                try {
++                    await closeServer();
++                }
++                finally {
++                    emitter.removeAllListeners();
++                }
++            })();
++            return disposePromise;
+         },
+     };
+ };
+diff --git a/src/server.ts b/src/server.ts
+index 3cded6184d33110309ae5cc76ddef868a83ce047..d44433181dbd7cc256875b5f31cab8b1179630ae 100644
+--- a/src/server.ts
++++ b/src/server.ts
+@@ -68,7 +68,7 @@ export type HarnessBridge = {
+   nextConnection: (signal?: AbortSignal) => Promise<AppConnection>;
+   on: <T extends keyof HarnessBridgeEvents>(event: T, listener: HarnessBridgeEvents[T]) => void;
+   off: <T extends keyof HarnessBridgeEvents>(event: T, listener: HarnessBridgeEvents[T]) => void;
+-  dispose: () => void;
++  dispose: () => Promise<void>;
+ };
+ 
+ const createWss = (transport: TransportOptions): Promise<WebSocketServer> => {
+@@ -118,11 +118,24 @@ export const createHarnessBridge = async (
+   let currentConnection: AppConnection | null = null;
+   let activeSession: { disconnect: (reason?: Error) => void; transport: BridgeTransport } | null =
+     null;
++  let disposePromise: Promise<void> | null = null;
+   const connectionWaiters: Array<{
+     resolve: (c: AppConnection) => void;
+     reject: (e: unknown) => void;
+   }> = [];
+ 
++  const closeServer = (): Promise<void> =>
++    new Promise((resolve, reject) => {
++      wss.close((error) => {
++        if (error) {
++          reject(error);
++          return;
++        }
++
++        resolve();
++      });
++    });
++
+   wss.on('connection', (ws: WebSocket) => {
+     if (activeSession) {
+       bridgeLogger.info('replacing existing app connection with a newer client');
+@@ -328,20 +341,27 @@ export const createHarnessBridge = async (
+     on: (event, listener) => emitter.on(event, listener),
+     off: (event, listener) => emitter.off(event, listener),
+     dispose: () => {
+-      bridgeLogger.debug('disposing bridge');
++      disposePromise ??= (async () => {
++        bridgeLogger.debug('disposing bridge');
+ 
+-      for (const { reject } of connectionWaiters.splice(0)) {
+-        reject(new AppBridgeDisconnectedError('bridge-disposed'));
+-      }
++        for (const { reject } of connectionWaiters.splice(0)) {
++          reject(new AppBridgeDisconnectedError('bridge-disposed'));
++        }
+ 
+-      activeSession?.disconnect(new AppBridgeDisconnectedError('bridge-disposed'));
++        activeSession?.disconnect(new AppBridgeDisconnectedError('bridge-disposed'));
+ 
+-      for (const client of wss.clients) {
+-        client.terminate();
+-      }
++        for (const client of wss.clients) {
++          client.terminate();
++        }
++
++        try {
++          await closeServer();
++        } finally {
++          emitter.removeAllListeners();
++        }
++      })();
+ 
+-      wss.close();
+-      emitter.removeAllListeners();
++      return disposePromise;
+     },
+   };
+ };

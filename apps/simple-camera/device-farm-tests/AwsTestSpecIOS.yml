@@ -33,7 +33,7 @@ phases:
       - HARNESS_JUNIT="$HARNESS_ARTIFACTS/harness-results.junit.xml"
       - HARNESS_LOG="$HARNESS_ARTIFACTS/harness-output.log"
       - HARNESS_METRO_HOST_FILE="$HARNESS_ARTIFACTS/metro-host-ip.txt"
-      - mkdir -p "$HARNESS_ARTIFACTS" "$WORKING_DIRECTORY/react-native-vision-camera/apps/simple-camera/.harness/crash-reports"
+      - mkdir -p "$HARNESS_ARTIFACTS"
 
       # Resolve host IPv6 for Metro. On macOS runners IPv4 won't work, as
       # confirmed by AWS support. AWS recommends utun interfaces for this.
@@ -79,4 +79,3 @@ phases:
 
 artifacts:
   - $WORKING_DIRECTORY/harness-artifacts
-  - $WORKING_DIRECTORY/react-native-vision-camera/apps/simple-camera/.harness/crash-reports

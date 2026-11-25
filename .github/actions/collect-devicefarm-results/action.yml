@@ -19,6 +19,12 @@ outputs:
   log-file:
     description: Copied harness log file path
     value: ${{ steps.find-harness-log.outputs.log_file }}
+  xcodebuild-log-file:
+    description: Copied iOS XCTest xcodebuild log file path
+    value: ${{ steps.find-xcodebuild-log.outputs.log_file }}
+  customer-artifacts-log-file:
+    description: Copied Device Farm customer artifacts log file path
+    value: ${{ steps.find-customer-artifacts-log.outputs.log_file }}
 
 runs:
   using: composite
@@ -51,6 +57,40 @@ runs:
           "$WORKSPACE_LOG"
         echo "log_file=$WORKSPACE_LOG" >> "$GITHUB_OUTPUT"
 
+    - name: Find Harness XCTest log
+      id: find-xcodebuild-log
+      if: inputs.platform == 'ios'
+      shell: bash
+      run: |
+        set -euo pipefail
+        ARTIFACT_DIR="${{ inputs.artifact-folder }}"
+        WORKSPACE_LOG=".github/test-results/harness-xcodebuild-ios.log"
+        if bash "$GITHUB_ACTION_PATH/../../scripts/find-devicefarm-artifact.sh" \
+          "$ARTIFACT_DIR" \
+          'xcodebuild.log' \
+          "$WORKSPACE_LOG"; then
+          echo "log_file=$WORKSPACE_LOG" >> "$GITHUB_OUTPUT"
+        else
+          echo "log_file=" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Find Device Farm customer artifacts log
+      id: find-customer-artifacts-log
+      shell: bash
+      run: |
+        set -euo pipefail
+        ARTIFACT_DIR="${{ inputs.artifact-folder }}"
+        PLATFORM="${{ inputs.platform }}"
+        WORKSPACE_LOG=".github/test-results/devicefarm-customer-artifacts-${PLATFORM}.log"
+        if bash "$GITHUB_ACTION_PATH/../../scripts/find-devicefarm-artifact.sh" \
+          "$ARTIFACT_DIR" \
+          '*-Customer Artifacts Log.txt' \
+          "$WORKSPACE_LOG"; then
+          echo "log_file=$WORKSPACE_LOG" >> "$GITHUB_OUTPUT"
+        else
+          echo "log_file=" >> "$GITHUB_OUTPUT"
+        fi
+
     - name: Publish Harness test results
       id: publish-harness-results
       if: steps.find-harness-junit.outputs.junit_file != ''
@@ -76,6 +116,20 @@ runs:
         echo "===== Harness ${PLATFORM} output log ====="
         cat "$LOG_FILE"
         echo "===== End Harness ${PLATFORM} output log ====="
+
+        XCODEBUILD_LOG="${{ steps.find-xcodebuild-log.outputs.log_file }}"
+        if [[ -n "$XCODEBUILD_LOG" && ( "$TEST_STEP_OUTCOME" == "failure" || "$PUBLISH_OUTCOME" == "failure" ) ]]; then
+          echo "===== Harness ${PLATFORM} xcodebuild log ====="
+          cat "$XCODEBUILD_LOG"
+          echo "===== End Harness ${PLATFORM} xcodebuild log ====="
+        fi
+
+        CUSTOMER_ARTIFACTS_LOG="${{ steps.find-customer-artifacts-log.outputs.log_file }}"
+        if [[ -n "$CUSTOMER_ARTIFACTS_LOG" && "$TEST_STEP_OUTCOME" == "failure" ]]; then
+          echo "===== Device Farm ${PLATFORM} customer artifacts log ====="
+          cat "$CUSTOMER_ARTIFACTS_LOG"
+          echo "===== End Device Farm ${PLATFORM} customer artifacts log ====="
+        fi
 
         if [[ "$PUBLISH_OUTCOME" == "failure" ]]; then
           echo "Harness test result publication reported failures." >&2
