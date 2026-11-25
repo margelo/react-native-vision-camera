@@ -32,7 +32,13 @@ extension CMVideoDimensions {
 
     let targetPixels = Double(target.width) * Double(target.height)
     let actualPixels = Double(width) * Double(height)
-    let logPixelDistance = Swift.abs(log(actualPixels / targetPixels))
+    // Weight pixel-distance on the same scale as the aspect term so the
+    // requested resolution stays a first-class signal. The raw log-ratio
+    // (~0–1.4) is otherwise far weaker than the FPS penalty (raw frame units,
+    // up to 30), so requesting a high FPS silently escalates the recording
+    // resolution well past `targetResolution` (e.g. a front-camera 1080p@60
+    // request lands on 4K@60 even though a native 1080p@60 format exists).
+    let logPixelDistance = aspectMismatchWeight * Swift.abs(log(actualPixels / targetPixels))
 
     return aspectRatioPenalty + logPixelDistance
   }
