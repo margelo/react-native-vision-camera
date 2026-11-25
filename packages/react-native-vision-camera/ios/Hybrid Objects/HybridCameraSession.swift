@@ -7,6 +7,7 @@
 import AVFoundation
 import Foundation
 import NitroModules
+import UIKit
 
 final class HybridCameraSession: HybridCameraSessionSpec {
   let session: AVCaptureSession
@@ -16,6 +17,7 @@ final class HybridCameraSession: HybridCameraSessionSpec {
     attributes: [],
     autoreleaseFrequency: .inherit,
     target: nil)
+  private var isKeepingScreenAwake = false
 
   init(enableMultiCam: Bool) {
     if enableMultiCam {
@@ -27,6 +29,14 @@ final class HybridCameraSession: HybridCameraSessionSpec {
     // session's preset-based format selection upfront.
     self.session.sessionPreset = .inputPriority
     super.init()
+  }
+
+  deinit {
+    if isKeepingScreenAwake {
+      DispatchQueue.main.async {
+        UIApplication.shared.isIdleTimerDisabled = false
+      }
+    }
   }
 
   var isRunning: Bool {
@@ -213,6 +223,7 @@ final class HybridCameraSession: HybridCameraSessionSpec {
   // pragma MARK: Start/Stop
   func start() -> Promise<Void> {
     return Promise.parallel(Self.queue) {
+      self.setKeepScreenAwake(true)
       if self.session.isRunning {
         return
       }
@@ -222,10 +233,18 @@ final class HybridCameraSession: HybridCameraSessionSpec {
 
   func stop() -> Promise<Void> {
     return Promise.parallel(Self.queue) {
+      self.setKeepScreenAwake(false)
       if !self.session.isRunning {
         return
       }
       self.session.stopRunning()
+    }
+  }
+
+  private func setKeepScreenAwake(_ keepAwake: Bool) {
+    isKeepingScreenAwake = keepAwake
+    DispatchQueue.main.async {
+      UIApplication.shared.isIdleTimerDisabled = keepAwake
     }
   }
 
