@@ -179,36 +179,39 @@ final class MeteringTask {
 
   private func setMeteringValuesToLocked() throws {
     logger.info("Locking AE/AF/AWB values...")
+    let exposureMode: AVCaptureDevice.ExposureMode? = device.isExposureModeSupported(.locked) ? .locked : nil
+    let focusMode: AVCaptureDevice.FocusMode? = device.isFocusModeSupported(.locked) ? .locked : nil
+    let whiteBalanceMode: AVCaptureDevice.WhiteBalanceMode? = device.isWhiteBalanceModeSupported(.locked) ? .locked : nil
     try setMeteringValues(
       focusPoint: nil,
-      exposure: .locked,
-      focus: .locked,
-      whiteBalance: .locked)
+      exposure: exposureMode,
+      focus: focusMode,
+      whiteBalance: whiteBalanceMode)
   }
 
   private func setMeteringValuesToContinuous() throws {
     logger.info("Setting AE/AF/AWB values to continuously auto-focus...")
     try setMeteringValues(
       focusPoint: nil,
-      exposure: .continuousAutoExposure,
-      focus: .continuousAutoFocus,
-      whiteBalance: .continuousAutoWhiteBalance)
+      exposure: getExposureModeIfSupported(responsiveness: .steady),
+      focus: getFocusModeIfSupported(responsiveness: .steady),
+      whiteBalance: getWhiteBalanceModeIfSupported(responsiveness: .steady))
   }
 
   private func resetMeteringValues() throws {
     logger.info("Resetting AE/AF/AWB values to continuously auto-focus at center...")
     try setMeteringValues(
       focusPoint: CGPoint(x: 0.5, y: 0.5),
-      exposure: .continuousAutoExposure,
-      focus: .continuousAutoFocus,
-      whiteBalance: .continuousAutoWhiteBalance)
+      exposure: getExposureModeIfSupported(responsiveness: .steady),
+      focus: getFocusModeIfSupported(responsiveness: .steady),
+      whiteBalance: getWhiteBalanceModeIfSupported(responsiveness: .steady))
   }
 
   private func setMeteringValues(
     focusPoint: CGPoint?,
-    exposure: AVCaptureDevice.ExposureMode,
-    focus: AVCaptureDevice.FocusMode,
-    whiteBalance: AVCaptureDevice.WhiteBalanceMode
+    exposure: AVCaptureDevice.ExposureMode?,
+    focus: AVCaptureDevice.FocusMode?,
+    whiteBalance: AVCaptureDevice.WhiteBalanceMode?
   ) throws {
     try self.device.lockForConfiguration()
     defer { self.device.unlockForConfiguration() }
@@ -218,7 +221,7 @@ final class MeteringTask {
         self.device.exposurePointOfInterest = focusPoint
         logger.debug("AE point = \(focusPoint.debugDescription)")
       }
-      if self.device.isExposureModeSupported(exposure) {
+      if let exposure, self.device.isExposureModeSupported(exposure) {
         self.device.exposureMode = exposure
         logger.debug("AE = \(exposure.rawValue)")
       }
@@ -229,14 +232,14 @@ final class MeteringTask {
         self.device.focusPointOfInterest = focusPoint
         logger.debug("AF point = \(focusPoint.debugDescription)")
       }
-      if self.device.isFocusModeSupported(focus) {
+      if let focus, self.device.isFocusModeSupported(focus) {
         self.device.focusMode = focus
         logger.debug("AF = \(focus.rawValue)")
       }
     }
     // Lock AWB
     if meteringStates.keys.contains(.awb) {
-      if self.device.isWhiteBalanceModeSupported(whiteBalance) {
+      if let whiteBalance, self.device.isWhiteBalanceModeSupported(whiteBalance) {
         self.device.whiteBalanceMode = whiteBalance
         logger.debug("AWB = \(whiteBalance.rawValue)")
       }
@@ -340,6 +343,15 @@ final class MeteringTask {
   private func getExposureMode(responsiveness: FocusResponsiveness) throws
     -> AVCaptureDevice.ExposureMode
   {
+    guard let mode = getExposureModeIfSupported(responsiveness: responsiveness) else {
+      throw RuntimeError.error(withMessage: "Metering Mode `AE` is not supported on this device!")
+    }
+    return mode
+  }
+
+  private func getExposureModeIfSupported(responsiveness: FocusResponsiveness)
+    -> AVCaptureDevice.ExposureMode?
+  {
     if responsiveness == .snappy {
       if device.isExposureModeSupported(.autoExpose) {
         // Use snappy AE if supported
@@ -357,10 +369,17 @@ final class MeteringTask {
         return .autoExpose
       }
     }
-    throw RuntimeError.error(withMessage: "Metering Mode `AF` is not supported on this device!")
+    return nil
   }
 
   private func getFocusMode(responsiveness: FocusResponsiveness) throws -> AVCaptureDevice.FocusMode {
+    guard let mode = getFocusModeIfSupported(responsiveness: responsiveness) else {
+      throw RuntimeError.error(withMessage: "Metering Mode `AF` is not supported on this device!")
+    }
+    return mode
+  }
+
+  private func getFocusModeIfSupported(responsiveness: FocusResponsiveness) -> AVCaptureDevice.FocusMode? {
     if responsiveness == .snappy {
       if device.isFocusModeSupported(.autoFocus) {
         // Use snappy AF if supported
@@ -378,11 +397,20 @@ final class MeteringTask {
         return .autoFocus
       }
     }
-    throw RuntimeError.error(withMessage: "Metering Mode `AF` is not supported on this device!")
+    return nil
   }
 
   private func getWhiteBalanceMode(responsiveness: FocusResponsiveness) throws
     -> AVCaptureDevice.WhiteBalanceMode
+  {
+    guard let mode = getWhiteBalanceModeIfSupported(responsiveness: responsiveness) else {
+      throw RuntimeError.error(withMessage: "Metering Mode `AWB` is not supported on this device!")
+    }
+    return mode
+  }
+
+  private func getWhiteBalanceModeIfSupported(responsiveness: FocusResponsiveness)
+    -> AVCaptureDevice.WhiteBalanceMode?
   {
     if responsiveness == .snappy {
       if device.isWhiteBalanceModeSupported(.autoWhiteBalance) {
@@ -401,6 +429,6 @@ final class MeteringTask {
         return .autoWhiteBalance
       }
     }
-    throw RuntimeError.error(withMessage: "Metering Mode `AWB` is not supported on this device!")
+    return nil
   }
 }
