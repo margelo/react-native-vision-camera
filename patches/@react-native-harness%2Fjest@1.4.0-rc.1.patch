@@ -1,0 +1,183 @@
+diff --git a/dist/execute-run.js b/dist/execute-run.js
+index 451d85154fdb21b2cb9ac386200250bc456e9c4e..62601d18e516703897b1175e6d4b61c606e8fa43 100644
+--- a/dist/execute-run.js
++++ b/dist/execute-run.js
+@@ -17,12 +17,36 @@ class CancelRun extends Error {
+         this.name = 'CancelRun';
+     }
+ }
+-const buildTestFailure = (err) => {
++const formatActiveHarnessContext = (context) => {
++    if (!context) {
++        return null;
++    }
++    if (context.test) {
++        return `Last started test before the device stopped responding: ${context.test.fullName}`;
++    }
++    if (context.suite) {
++        return `Last started suite before the device stopped responding: ${context.suite.name}`;
++    }
++    if (context.file) {
++        return `Last started test file before the device stopped responding: ${context.file.file}`;
++    }
++    return null;
++};
++const buildTestFailure = (err, activeContext) => {
+     if (err instanceof NativeCrashError ||
+         err instanceof RuntimeDisconnectError ||
+         err instanceof StartupStallError ||
+         err instanceof AppBridgeDisconnectedError ||
+         err instanceof DeviceNotRespondingError) {
++        const activeContextMessage = err instanceof DeviceNotRespondingError
++            ? formatActiveHarnessContext(activeContext)
++            : null;
++        if (activeContextMessage) {
++            return {
++                message: [err.message, '', activeContextMessage].join('\n'),
++                stack: '',
++            };
++        }
+         return { message: err.message, stack: '' };
+     }
+     return err;
+@@ -68,7 +92,27 @@ export const executeRun = async (session, tests, watcher, emitEvent, globalConfi
+     const testFiles = tests.map((t) => path.relative(rootDir, t.path));
+     const summary = createRunSummary();
+     let caseEventChain = Promise.resolve();
++    const activeContextByFile = new Map();
+     const unsubscribe = session.onTestRunnerEvent((event) => {
++        if (event.type === 'file-started') {
++            activeContextByFile.set(event.file, { file: event });
++        }
++        else if (event.type === 'suite-started') {
++            const context = activeContextByFile.get(event.file) ?? {};
++            activeContextByFile.set(event.file, { ...context, suite: event });
++        }
++        else if (event.type === 'test-started') {
++            const context = activeContextByFile.get(event.file) ?? {};
++            activeContextByFile.set(event.file, { ...context, test: event });
++        }
++        else if (event.type === 'test-finished' &&
++            activeContextByFile.get(event.file)?.test?.fullName === event.fullName) {
++            const { test, ...context } = activeContextByFile.get(event.file) ?? {};
++            activeContextByFile.set(event.file, context);
++        }
++        else if (event.type === 'file-finished') {
++            activeContextByFile.delete(event.file);
++        }
+         if (isHarnessCaseEvent(event)) {
+             caseEventChain = caseEventChain.then(() => event.type === 'test-started'
+                 ? emitHarnessTestStarted(emitEvent, event)
+@@ -203,7 +247,7 @@ export const executeRun = async (session, tests, watcher, emitEvent, globalConfi
+                 }
+                 updateRunState({ error: isRuntimeFailure ? undefined : err });
+                 await caseEventChain;
+-                await emitEvent('test-file-failure', test, buildTestFailure(err));
++                await emitEvent('test-file-failure', test, buildTestFailure(err, activeContextByFile.get(relativeTestPath)));
+             }
+         }
+     }
+diff --git a/src/execute-run.ts b/src/execute-run.ts
+index 6d326bbafb7c8632e753acf2b7ce97fcc50aaa0f..97c7ebd35eeb204167b81cd85608a3061d15dc79 100644
+--- a/src/execute-run.ts
++++ b/src/execute-run.ts
+@@ -20,6 +20,8 @@ import {
+ import type { TestCaseResult } from '@jest/test-result';
+ import type {
+   TestRunnerEvents,
++  TestRunnerFileStartedEvent,
++  TestRunnerSuiteStartedEvent,
+   TestRunnerTestFinishedEvent,
+   TestRunnerTestStartedEvent,
+ } from '@react-native-harness/bridge';
+@@ -52,7 +54,32 @@ class CancelRun extends Error {
+   }
+ }
+ 
+-const buildTestFailure = (err: unknown): { message: string; stack: string } => {
++type ActiveHarnessContext = {
++  file?: TestRunnerFileStartedEvent;
++  suite?: TestRunnerSuiteStartedEvent;
++  test?: TestRunnerTestStartedEvent;
++};
++
++const formatActiveHarnessContext = (context?: ActiveHarnessContext | null) => {
++  if (!context) {
++    return null;
++  }
++  if (context.test) {
++    return `Last started test before the device stopped responding: ${context.test.fullName}`;
++  }
++  if (context.suite) {
++    return `Last started suite before the device stopped responding: ${context.suite.name}`;
++  }
++  if (context.file) {
++    return `Last started test file before the device stopped responding: ${context.file.file}`;
++  }
++  return null;
++};
++
++const buildTestFailure = (
++  err: unknown,
++  activeContext?: ActiveHarnessContext | null,
++): { message: string; stack: string } => {
+   if (
+     err instanceof NativeCrashError ||
+     err instanceof RuntimeDisconnectError ||
+@@ -60,6 +87,16 @@ const buildTestFailure = (err: unknown): { message: string; stack: string } => {
+     err instanceof AppBridgeDisconnectedError ||
+     err instanceof DeviceNotRespondingError
+   ) {
++    const activeContextMessage =
++      err instanceof DeviceNotRespondingError
++        ? formatActiveHarnessContext(activeContext)
++        : null;
++    if (activeContextMessage) {
++      return {
++        message: [(err as Error).message, '', activeContextMessage].join('\n'),
++        stack: '',
++      };
++    }
+     return { message: (err as Error).message, stack: '' };
+   }
+   return err as { message: string; stack: string };
+@@ -128,7 +165,26 @@ export const executeRun = async (
+   const testFiles = tests.map((t) => path.relative(rootDir, t.path));
+   const summary = createRunSummary();
+   let caseEventChain = Promise.resolve();
++  const activeContextByFile = new Map<string, ActiveHarnessContext>();
+   const unsubscribe = session.onTestRunnerEvent((event) => {
++    if (event.type === 'file-started') {
++      activeContextByFile.set(event.file, { file: event });
++    } else if (event.type === 'suite-started') {
++      const context = activeContextByFile.get(event.file) ?? {};
++      activeContextByFile.set(event.file, { ...context, suite: event });
++    } else if (event.type === 'test-started') {
++      const context = activeContextByFile.get(event.file) ?? {};
++      activeContextByFile.set(event.file, { ...context, test: event });
++    } else if (
++      event.type === 'test-finished' &&
++      activeContextByFile.get(event.file)?.test?.fullName === event.fullName
++    ) {
++      const { test, ...context } = activeContextByFile.get(event.file) ?? {};
++      activeContextByFile.set(event.file, context);
++    } else if (event.type === 'file-finished') {
++      activeContextByFile.delete(event.file);
++    }
++
+     if (isHarnessCaseEvent(event)) {
+       caseEventChain = caseEventChain.then(() =>
+         event.type === 'test-started'
+@@ -288,7 +344,11 @@ export const executeRun = async (
+ 
+         updateRunState({ error: isRuntimeFailure ? undefined : err });
+         await caseEventChain;
+-        await emitEvent('test-file-failure', test, buildTestFailure(err));
++        await emitEvent(
++          'test-file-failure',
++          test,
++          buildTestFailure(err, activeContextByFile.get(relativeTestPath)),
++        );
+       }
+     }
+   } catch (err) {
