@@ -128,3 +128,33 @@ test('function api page keeps linked code symbols', async ({ page }) => {
     fullPage: true,
   })
 })
+
+test('api page without eligible toc headings hides empty toc state', async ({
+  page,
+}) => {
+  await page.goto('/api/react-native-vision-camera/views/NativePreviewView')
+  await page.waitForLoadState('networkidle')
+
+  await expect(page.getByRole('heading', { name: 'On this page' })).toHaveCount(
+    0,
+  )
+  await expect(page.getByText('No Headings')).toHaveCount(0)
+
+  const widget = page
+    .getByText('Building something ambitious?')
+    .locator('xpath=ancestor::aside[1]')
+  await expect(widget).toBeVisible()
+
+  const [titleBox, widgetBox] = await Promise.all([
+    page
+      .getByRole('heading', { level: 1, name: 'NativePreviewView' })
+      .boundingBox(),
+    widget.boundingBox(),
+  ])
+
+  if (titleBox == null || widgetBox == null) {
+    throw new Error('Unable to measure API page heading or CTA widget')
+  }
+
+  expect(widgetBox.y).toBeLessThan(titleBox.y)
+})
