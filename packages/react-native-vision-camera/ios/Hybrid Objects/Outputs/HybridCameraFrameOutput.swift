@@ -169,16 +169,19 @@ final class HybridCameraFrameOutput: HybridCameraFrameOutputSpec, NativeCameraOu
   }
 
   func setOnFrameDroppedCallback(onFrameDropped: ((FrameDroppedReason) -> Void)?) throws {
-    if let onFrameDropped {
-      delegate.onFrameDropped = { sampleBuffer in
-        guard let attachment = sampleBuffer.attachments[.droppedFrameReason] else {
-          return
+    // `didDrop` reads `onFrameDropped` on `queue`, so assign it on `queue` too.
+    queue.async { [delegate] in
+      if let onFrameDropped {
+        delegate.onFrameDropped = { sampleBuffer in
+          guard let attachment = sampleBuffer.attachments[.droppedFrameReason] else {
+            return
+          }
+          let reason = FrameDroppedReason(sampleBufferReason: attachment)
+          onFrameDropped(reason)
         }
-        let reason = FrameDroppedReason(sampleBufferReason: attachment)
-        onFrameDropped(reason)
+      } else {
+        delegate.onFrameDropped = nil
       }
-    } else {
-      delegate.onFrameDropped = nil
     }
   }
 }

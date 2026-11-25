@@ -1,7 +1,9 @@
 package com.margelo.nitro.camera.hybrids.outputs
 
 import android.annotation.SuppressLint
+import android.util.Log
 import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.ImageProxy
 import androidx.camera.core.resolutionselector.ResolutionSelector
 import com.margelo.nitro.camera.CameraOrientation
 import com.margelo.nitro.camera.DepthFrameOutputOptions
@@ -28,7 +30,7 @@ class HybridDepthFrameOutput(
   private val options: DepthFrameOutputOptions,
 ) : HybridCameraDepthFrameOutputSpec(),
   NativeCameraOutput {
-  private val executor = IdentifiableExecutor("com.margelo.camera.depth")
+  private val executor = IdentifiableExecutor("com.margelo.camera.depth").apply { setExitsWhenIdle(true) }
 
   override val mediaType: MediaType = MediaType.DEPTH
   override val thread: HybridNativeThreadSpec by lazy { HybridNativeThread(executor) }
@@ -46,11 +48,8 @@ class HybridDepthFrameOutput(
       field = value
       updateAnalyzer()
     }
-  private var onDepthFrame: ((HybridDepthSpec) -> Boolean)? = null
-    set(value) {
-      field = value
-      updateAnalyzer()
-    }
+
+  @Volatile private var onDepthFrame: ((HybridDepthSpec) -> Boolean)? = null
 
   override fun createUseCase(
     mirrorMode: MirrorMode,
@@ -88,28 +87,40 @@ class HybridDepthFrameOutput(
    */
   private fun updateAnalyzer() {
     val imageAnalysis = imageAnalysis ?: return
-    val onDepthFrame = this.onDepthFrame
 
     if (onDepthFrame != null) {
-      imageAnalysis.setAnalyzer(executor) { image ->
-        // This represents the Image's orientation relative to the
-        // Frame Output. If `enablePhysicalBufferRotation` is true,
-        // it will always be `UP` - otherwise it will be whatever
-        // sensor orientation the Hardware uses, relative to current
-        // target orientation.
-        val orientation = image.orientation
-        val isMirrored = mirrorMode == MirrorMode.ON
-        val frame = HybridDepthFrame(image, orientation, isMirrored)
-        onDepthFrame(frame)
-      }
+      imageAnalysis.setAnalyzer(executor, ::analyze)
     } else {
       imageAnalysis.clearAnalyzer()
+    }
+  }
+
+  private fun analyze(image: ImageProxy) {
+    // CameraX can run a Frame that it queued before the callback was removed.
+    val onDepthFrame = onDepthFrame ?: return image.close()
+    // This represents the Image's orientation relative to the
+    // Frame Output. If `enablePhysicalBufferRotation` is true,
+    // it will always be `UP` - otherwise it will be whatever
+    // sensor orientation the Hardware uses, relative to current
+    // target orientation.
+    val orientation = image.orientation
+    val isMirrored = mirrorMode == MirrorMode.ON
+    val frame = HybridDepthFrame(image, orientation, isMirrored)
+    try {
+      onDepthFrame(frame)
+    } catch (e: Exception) {
+      // The callback's JS Runtime is gone. Stop delivering Frames instead of killing this Thread.
+      Log.e(TAG, "onDepthFrame(...) failed, removing the Depth callback.", e)
+      image.close()
+      setOnDepthFrameCallback(null)
     }
   }
 
   override fun setOnDepthFrameCallback(onDepthFrame: ((HybridDepthSpec) -> Boolean)?) {
     require(executor.isRunningOnExecutor) { "setOnDepthFrameCallback(...) must be called on the DepthFrameOutput's `thread`!" }
     this.onDepthFrame = onDepthFrame
+    executor.setExitsWhenIdle(onDepthFrame == null)
+    updateAnalyzer()
   }
 
   override fun setOnDepthFrameDroppedCallback(onDepthFrameDropped: ((FrameDroppedReason) -> Unit)?) {
@@ -118,6 +129,12 @@ class HybridDepthFrameOutput(
 
   override fun dispose() {
     super.dispose()
+    onDepthFrame = null
     imageAnalysis?.clearAnalyzer()
+    executor.shutdown()
+  }
+
+  companion object {
+    private const val TAG = "HybridDepthFrameOutput"
   }
 }
