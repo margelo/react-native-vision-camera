@@ -8,6 +8,7 @@ import com.margelo.nitro.NitroModules
 import com.margelo.nitro.camera.CameraOrientation
 import com.margelo.nitro.camera.HybridOrientationManagerSpec
 import com.margelo.nitro.camera.OrientationSource
+import com.margelo.nitro.camera.extensions.counterRotated
 import com.margelo.nitro.camera.extensions.fromDegrees
 import com.margelo.nitro.camera.extensions.fromSurfaceRotation
 
@@ -41,7 +42,7 @@ class HybridDeviceOrientationManager : HybridOrientationManagerSpec() {
             // phone is laying flat - orientation is unknown! Avoid sending out event.
             return
           }
-          val orientation = CameraOrientation.fromDegrees(rotationDegrees)
+          val orientation = CameraOrientation.fromDegrees(rotationDegrees).counterRotated()
           if (currentOrientation != orientation) {
             Log.i(TAG, "Device orientation changed! $orientation")
             currentOrientation = orientation
