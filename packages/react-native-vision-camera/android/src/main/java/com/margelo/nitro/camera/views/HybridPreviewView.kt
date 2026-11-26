@@ -37,7 +37,10 @@ class HybridPreviewView(
 ) : HybridPreviewViewSpec(),
   View.OnTouchListener,
   Observer<PreviewView.StreamState> {
-  private val previewView = PreviewView(context)
+  // released on drop; JS may hold this object long after unmount
+  private var previewViewOrNull: PreviewView? = PreviewView(context)
+  private val previewView: PreviewView
+    get() = previewViewOrNull ?: throw Error("PreviewView has already been dropped from the React tree!")
   private val uiScope = CoroutineScope(Dispatchers.Main.immediate)
   override val view: View
     get() = previewView
@@ -67,6 +70,7 @@ class HybridPreviewView(
         field = newImplementationMode
         uiScope.launch {
           // Update ImplementationMode and reconnect output
+          val previewView = previewViewOrNull ?: return@launch
           previewView.implementationMode = newImplementationMode.toImplementationMode()
           previewOutput?.let { previewOutput -> connectPreviewOutput(previewOutput) }
         }
@@ -80,6 +84,7 @@ class HybridPreviewView(
         field = newResizeMode
         uiScope.launch {
           // Update scaleType
+          val previewView = previewViewOrNull ?: return@launch
           previewView.scaleType = newResizeMode.toScaleType()
         }
       }
@@ -100,9 +105,30 @@ class HybridPreviewView(
     pixelRatio = context.resources.displayMetrics.density
   }
 
+  override fun onDropView() {
+    super.onDropView()
+    uiScope.launch {
+      releasePreviewView()
+    }
+  }
+
   override fun dispose() {
     super.dispose()
+    uiScope.launch {
+      releasePreviewView()
+    }
+  }
+
+  /**
+   * Detaches the `PreviewView` from its Preview Output and releases it.
+   * Safe to call from both `onDropView()` and `dispose()`.
+   */
+  @UiThread
+  private fun releasePreviewView() {
+    val previewView = previewViewOrNull ?: return
     previewView.previewStreamState.removeObserver(this)
+    previewOutput?.let { previewOutput -> disconnectPreviewOutput(previewOutput) }
+    previewViewOrNull = null
   }
 
   override fun createMeteringPoint(
@@ -168,7 +194,9 @@ class HybridPreviewView(
   private fun connectPreviewOutput(previewOutput: HybridCameraPreviewOutputSpec) {
     // 1. Downcast
     val previewOutput = previewOutput as? NativePreviewOutput ?: throw Error("PreviewOutput is not of type `NativePreviewOutput`!")
-    // 2. Set surfaceProvider on UI Thread
+    // 2. Skip if the PreviewView was already dropped
+    val previewView = previewViewOrNull ?: return
+    // 3. Set surfaceProvider on UI Thread
     previewOutput.setSurfaceProvider(previewView.surfaceProvider)
   }
 
@@ -176,7 +204,9 @@ class HybridPreviewView(
   private fun disconnectPreviewOutput(previewOutput: HybridCameraPreviewOutputSpec) {
     // 1. Downcast
     val previewOutput = previewOutput as? NativePreviewOutput ?: throw Error("PreviewOutput is not of type `NativePreviewOutput`!")
-    // 2. Remove surfaceProvider on UI Thread
+    // 2. Skip if the PreviewView was already dropped
+    val previewView = previewViewOrNull ?: return
+    // 3. Remove surfaceProvider on UI Thread
     previewOutput.removeSurfaceProvider(previewView.surfaceProvider)
   }
 
@@ -201,7 +231,7 @@ class HybridPreviewView(
   // since it's accessible from the UI-Thread only.
   private fun updateCameraSpaceToViewPixelsMatrix() {
     val matrix =
-      previewView.sensorToViewTransform
+      previewViewOrNull?.sensorToViewTransform
         ?: return
     this.cameraSpaceToViewPixelsMatrix = matrix
   }
