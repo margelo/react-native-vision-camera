@@ -206,7 +206,7 @@ final class HybridFrameRecorder: HybridRecorderSpec {
           logger.error(
             "Waited \(timeout) seconds, but the session is still not finished - force-stopping session..."
           )
-          self.finish(reason: .stopped)
+          self.finishSuccessfully(reason: .stopped)
         }
       }
     }
@@ -255,16 +255,16 @@ final class HybridFrameRecorder: HybridRecorderSpec {
 
   func append(buffer: CMSampleBuffer, ofType type: TrackType) {
     queue.async {
-      guard !self.isFinishing else {
-        // Session is already finishing, can't write anything more
+      if self.isFinishing {
+        // Session is already finishing - can't write anything more
         return
       }
-      guard self.assetWriter.status == .writing else {
-        let error = RuntimeError.error(
-          withMessage:
-            "Frame arrived, but AssetWriter status is \(self.assetWriter.status.rawValue)!")
-        logger.error("\(error)")
-        self.onRecordingError?(error)
+
+      // If the writer has already transitioned out of `.writing` (e.g. an
+      // asynchronous resource failure), abort the recording
+      if self.assetWriter.status != .writing {
+        let error = RuntimeError("Frame arrived, but AssetWriter status is \(self.assetWriter.status.rawValue)!")
+        self.abort(withError: error)
         return
       }
 
@@ -274,34 +274,31 @@ final class HybridFrameRecorder: HybridRecorderSpec {
         try track.append(buffer: buffer)
         self.accumulatedBytes += Int64(CMSampleBufferGetTotalSampleSize(buffer))
       } catch {
-        logger.error("Failed to append buffer to \(type.rawValue) track! \(error)")
-        self.onRecordingError?(error)
-      }
-
-      // If we failed to write the frames, stop the Recording
-      if self.assetWriter.status == .failed {
-        logger.error("Failed to write buffer: \(self.assetWriter.error)")
-        let error = self.assetWriter.error ?? RuntimeError("Failed to write Buffer!")
-        self.onRecordingError?(error)
-        // finish() will hit the error guard below - reason is unused in that branch
-        self.finish(reason: .stopped)
+        self.abort(withError: error)
         return
       }
 
-      // Check if we reached any limits (file size or duration), if yes; stop
+      // The append itself succeeded, but the writer may still have failed mid-way
+      if self.assetWriter.status == .failed {
+        let error = self.assetWriter.error ?? RuntimeError("AssetWriter failed to write Buffer!")
+        self.abort(withError: error)
+        return
+      }
+
+      // Check if we reached any configured recording limits
       if self.reachedDurationLimit() {
-        self.finish(reason: .maxDurationReached)
+        self.finishSuccessfully(reason: .maxDurationReached)
         return
       }
       if self.reachedFileSizeLimit() {
-        self.finish(reason: .maxFileSizeReached)
+        self.finishSuccessfully(reason: .maxFileSizeReached)
         return
       }
 
-      // When all tracks (video + audio) are finished (via `stopRecording`),
-      // finish the Recording.
+      // All tracks (video + audio) have drained after `stopRecording()` -
+      // finish the Recording cleanly
       if self.isFinished {
-        self.finish(reason: .stopped)
+        self.finishSuccessfully(reason: .stopped)
       }
     }
   }
@@ -348,48 +345,51 @@ final class HybridFrameRecorder: HybridRecorderSpec {
     }
   }
 
-  private func finish(reason: RecordingFinishedReason) {
-    logger.info("Stopping AssetWriter with status \(self.assetWriter.status.rawValue)...")
+  /// Finish the recording cleanly with the given `reason`, closing the video
+  /// file and firing `onRecordingFinished`. Idempotent - calling this while
+  /// already finishing is a no-op.
+  private func finishSuccessfully(reason: RecordingFinishedReason) {
+    if isFinishing {
+      // Another condition already triggered a finish; ignore
+      return
+    }
 
+    // We need at least one recorded video frame to produce a valid file
     guard let videoTrack,
       let lastVideoTimestamp = videoTrack.lastTimestamp
     else {
-      // We don't even have a video track
-      let error = RuntimeError("Failed to finish() - No video track was ever initialized/started!")
-      logger.error("\(error.description)")
-      self.onRecordingError?(error)
-      assetWriter.cancelWriting()
-      self.delegate.onRecorderDidStop()
-      return
-    }
-    guard assetWriter.status == .writing else {
-      // The asset writer has an error - cancel everything.
-      let error = RuntimeError("Failed to finish() - AssetWriter status was \(assetWriter.status.rawValue)!")
-      logger.error("\(error.description)")
-      self.onRecordingError?(error)
-      assetWriter.cancelWriting()
-      self.delegate.onRecorderDidStop()
-      return
-    }
-
-    guard !isFinishing else {
-      // We're already finishing - there was a second call to this method.
-      logger.warning("Tried calling finish() twice!")
+      let error = RuntimeError("Cannot finish recording - no video frames were ever recorded!")
+      abort(withError: error)
       return
     }
 
     isFinishing = true
 
-    // End the session at the last video frame's timestamp.
-    // If there are audio frames after this timestamp, they will be cut off.
+    logger.info("Finishing recording (reason: \(reason.stringValue)) at \(lastVideoTimestamp.seconds)s...")
+    // End the session at the last video frame's timestamp. Any audio frames
+    // received after this timestamp are cut off
     assetWriter.endSession(atSourceTime: lastVideoTimestamp)
-    logger.info(
-      "Asset Writer session stopped at \(lastVideoTimestamp.seconds). (duration: \(self.recordedDuration) seconds)"
-    )
     assetWriter.finishWriting {
-      logger.info("Asset Writer finished writing successfully!")
+      logger.info("AssetWriter finished writing successfully!")
       self.onRecordingFinished?(self.filePath, reason)
       self.delegate.onRecorderDidStop()
     }
+  }
+
+  /// Abort the recording because something went wrong, cancelling the writer
+  /// and firing `onRecordingError`. Idempotent - calling this while already
+  /// finishing is a no-op, so we can never fire more than one terminal event
+  /// per recording.
+  private func abort(withError error: any Error) {
+    if isFinishing {
+      // Another condition already triggered a finish; ignore this error
+      return
+    }
+    isFinishing = true
+
+    logger.error("Aborting recording: \(error)")
+    assetWriter.cancelWriting()
+    onRecordingError?(error)
+    delegate.onRecorderDidStop()
   }
 }
