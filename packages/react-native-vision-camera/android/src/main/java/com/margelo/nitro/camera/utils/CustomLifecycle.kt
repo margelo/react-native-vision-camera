@@ -20,6 +20,7 @@ import kotlinx.coroutines.withContext
  */
 class CustomLifecycle(
   private val context: ReactApplicationContext,
+  initialIsActive: Boolean,
 ) : LifecycleEventListener,
   LifecycleOwner {
   companion object {
@@ -29,7 +30,7 @@ class CustomLifecycle(
   private val lifecycleRegistry = LifecycleRegistry(this)
   private val uiScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
-  @Volatile private var isActive: Boolean = false
+  @Volatile private var isActive: Boolean = initialIsActive
 
   @Volatile private var isDestroyed = false
 

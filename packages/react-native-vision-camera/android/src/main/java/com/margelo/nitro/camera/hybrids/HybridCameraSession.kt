@@ -37,7 +37,8 @@ class HybridCameraSession(
   ActiveCameraSession.LifecycleListener {
   private val context: ReactApplicationContext
     get() = NitroModules.applicationContext ?: throw Error("No Context!")
-  private val lifecycleOwner = CustomLifecycle(context)
+  private var lifecycleOwner: CustomLifecycle? = null
+  private var isActive = false
   private val uiScope = CoroutineScope(Dispatchers.Main)
 
   override val isRunning: Boolean
@@ -66,6 +67,9 @@ class HybridCameraSession(
       cameraProvider.unbindAll()
       activeSession?.close()
       activeSession = null
+      // Only `destroy()` releases the owner from CameraX and the `ReactApplicationContext`
+      lifecycleOwner?.destroy()
+      lifecycleOwner = null
 
       // 2. Build up Camera depending on connections count
       when (connections.size) {
@@ -87,7 +91,9 @@ class HybridCameraSession(
             connection.onSessionConfigSelected(hybridConfig)
           }
 
-          val camera = cameraProvider.bindToLifecycle(lifecycleOwner, cameraInfo.cameraSelector, config.sessionConfig)
+          val owner = CustomLifecycle(context, isActive)
+          lifecycleOwner = owner
+          val camera = cameraProvider.bindToLifecycle(owner, cameraInfo.cameraSelector, config.sessionConfig)
           // Notify outputs that their use-cases are now attached to the Camera
           config.preparedUseCases.forEach { it.notifyAttached() }
           activeSession = ActiveCameraSessionSingle(camera, this)
@@ -100,6 +106,8 @@ class HybridCameraSession(
           // TODO: In Multi-Cam we cannot use the CameraX `SessionConfig` API, so we cannot use `ConstraintsResolver`!
           //       This effectively means that no special features (FPS, HDR, Stabilization, ...) are supported in multi-cam... :(
           //       Implement this once CameraX supports it - feature request: https://issuetracker.google.com/issues/470629644
+          val owner = CustomLifecycle(context, isActive)
+          lifecycleOwner = owner
           val allPreparedUseCases = mutableListOf<NativeCameraOutput.PreparedUseCase>()
           val configs =
             connections.map { connection ->
@@ -117,7 +125,7 @@ class HybridCameraSession(
               ConcurrentCamera.SingleCameraConfig(
                 cameraInfo.cameraSelector,
                 useCaseGroup.build(),
-                lifecycleOwner,
+                owner,
               )
             }
           Log.i(TAG, "Binding configs: ${configs.joinToString { it.useCaseGroup.useCases.joinToString { it.name } }}")
@@ -137,13 +145,15 @@ class HybridCameraSession(
 
   override fun start(): Promise<Unit> {
     return Promise.async(uiScope) {
-      lifecycleOwner.setActive(true)
+      isActive = true
+      lifecycleOwner?.setActive(true)
     }
   }
 
   override fun stop(): Promise<Unit> {
     return Promise.async(uiScope) {
-      lifecycleOwner.setActive(false)
+      isActive = false
+      lifecycleOwner?.setActive(false)
     }
   }
 
@@ -151,7 +161,8 @@ class HybridCameraSession(
     super.dispose()
     Log.i(TAG, "Destroying CameraSession...")
     Promise.async(uiScope) {
-      lifecycleOwner.destroy()
+      lifecycleOwner?.destroy()
+      lifecycleOwner = null
       activeSession?.close()
       cameraProvider.unbindAll()
     }

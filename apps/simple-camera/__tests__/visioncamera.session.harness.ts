@@ -375,6 +375,50 @@ describe('VisionCamera - Session', () => {
     await session.stop()
   })
 
+  it('starts again after all connections were removed', async () => {
+    const device = factory.getDefaultCamera('back')
+    assert.exists(device, 'no back camera')
+
+    const session = await VisionCamera.createCameraSession(false)
+    const photoOutput = VisionCamera.createPhotoOutput({
+      targetResolution: CommonResolutions.HD_4_3,
+      containerFormat: 'jpeg',
+      quality: 0.8,
+      qualityPrioritization: 'balanced',
+    })
+    const connection = {
+      input: device,
+      outputs: [{ output: photoOutput, mirrorMode: 'auto' as const }],
+      constraints: [],
+    }
+
+    let started = deferred()
+    const startSub = session.addOnStartedListener(() => {
+      started.resolve()
+    })
+    const errorSub = session.addOnErrorListener((error) => {
+      started.reject(error)
+    })
+
+    try {
+      await session.configure([connection])
+      await session.start()
+      await withTimeout(started.promise, 10_000, 'session start')
+
+      started = deferred()
+      await session.configure([])
+      await session.stop()
+
+      await session.configure([connection])
+      await session.start()
+      await withTimeout(started.promise, 10_000, 'session restart')
+    } finally {
+      await session.stop()
+      startSub.remove()
+      errorSub.remove()
+    }
+  })
+
   it('supports a multi-cam session when the platform allows it', async (context) => {
     if (!VisionCamera.supportsMultiCamSessions) {
       return context.skip('multi-cam session: not supported on this platform')
