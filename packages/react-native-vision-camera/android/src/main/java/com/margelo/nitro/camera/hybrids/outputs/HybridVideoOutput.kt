@@ -3,6 +3,7 @@ package com.margelo.nitro.camera.hybrids.outputs
 import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
+import androidx.camera.core.AspectRatio
 import androidx.camera.core.DynamicRange
 import androidx.camera.video.FileOutputOptions
 import androidx.camera.video.Recorder
@@ -31,6 +32,9 @@ import com.margelo.nitro.camera.public.NativeLocation
 import com.margelo.nitro.core.Promise
 import com.margelo.nitro.core.resolved
 import java.io.File
+import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
 
 class HybridVideoOutput(
   private val options: VideoOutputOptions,
@@ -48,7 +52,15 @@ class HybridVideoOutput(
   private val context: Context
     get() = NitroModules.applicationContext ?: throw Error("No ApplicationContext!")
 
-  private val videoOutput: Recorder
+  // Whether `targetResolution` is closer to 4:3 than to 16:9.
+  private val isFourByThreeTarget: Boolean
+    get() {
+      val size = options.targetResolution
+      val aspectRatio = max(size.width, size.height) / min(size.width, size.height)
+      return abs(aspectRatio - 4.0 / 3.0) < abs(aspectRatio - 16.0 / 9.0)
+    }
+  private var enforceAspectRatio = true
+  private var videoOutput: Recorder = createVideoOutput()
   private var videoCapture: VideoCapture<*>? = null
   private val videoCapabilitiesSource: Int
     get() {
@@ -69,26 +81,57 @@ class HybridVideoOutput(
       return MirrorMode.fromMirrorMode(videoCapture.mirrorMode)
     }
 
-  init {
-    videoOutput =
-      Recorder
-        .Builder()
-        .apply {
-          if (options.targetBitRate != null) {
-            // Set custom target bit-rate.
-            setTargetVideoEncodingBitRate(options.targetBitRate.toInt())
-          }
-          // Set the capabilities source - this can unlock higher resolutions.
-          setVideoCapabilitiesSource(videoCapabilitiesSource)
+  private fun createVideoOutput(): Recorder {
+    return Recorder
+      .Builder()
+      .apply {
+        if (options.targetBitRate != null) {
+          // Set custom target bit-rate.
+          setTargetVideoEncodingBitRate(options.targetBitRate.toInt())
+        }
+        // Set the capabilities source - this can unlock higher resolutions.
+        setVideoCapabilitiesSource(videoCapabilitiesSource)
 
-          // TODO: Maybe CameraX can implement an API that allows us to just pass
-          //       a `Size` (or a `ResolutionSelector`), as this is what we already have.
-          // Sets the Quality itself (UHD, FHD, ...). We intentionally do not call
-          // `setAspectRatio` - it's a hard filter that can force CameraX to crop the
-          // chosen Quality's typical size, e.g. SD@640x480 + RATIO_16_9 → 640x360.
-          val qualitySelector = options.targetResolution.toQualitySelector()
-          setQualitySelector(qualitySelector)
-        }.build()
+        // TODO: Maybe CameraX can implement an API that allows us to just pass
+        //       a `Size` (or a `ResolutionSelector`), as this is what we already have.
+        // Sets the Quality itself (UHD, FHD, ...).
+        val qualitySelector = options.targetResolution.toQualitySelector()
+        setQualitySelector(qualitySelector)
+
+        // Without an aspect ratio, CameraX records each Quality in its encoder profile's
+        // size, which is 16:9 for HD and above - a 4:3 `targetResolution` would never
+        // record in 4:3. `setAspectRatio` is a hard filter and fails the bind if no
+        // Quality has a matching size, so the CameraSession retries without it (see
+        // `fallbackToUnconstrainedAspectRatio`). 16:9 targets keep the profile's size:
+        // forcing `RATIO_16_9` can crop it, e.g. SD@640x480 → 640x360.
+        if (enforceAspectRatio && isFourByThreeTarget) {
+          setAspectRatio(AspectRatio.RATIO_4_3)
+        }
+      }.build()
+  }
+
+  /**
+   * Rebuilds the [Recorder] without the 4:3 aspect ratio filter.
+   * Returns `false` if there was no filter to remove.
+   *
+   * Use-cases have to be re-created after this, as they hold on to the previous [Recorder].
+   */
+  fun fallbackToUnconstrainedAspectRatio(): Boolean {
+    if (!enforceAspectRatio || !isFourByThreeTarget) return false
+    enforceAspectRatio = false
+    videoOutput = createVideoOutput()
+    return true
+  }
+
+  /**
+   * Restores the 4:3 aspect ratio filter after [fallbackToUnconstrainedAspectRatio].
+   * An output can be re-used across configurations (e.g. when flipping Cameras),
+   * and the next Camera might support 4:3 again.
+   */
+  fun rearmAspectRatio() {
+    if (enforceAspectRatio) return
+    enforceAspectRatio = true
+    videoOutput = createVideoOutput()
   }
 
   override fun createUseCase(
