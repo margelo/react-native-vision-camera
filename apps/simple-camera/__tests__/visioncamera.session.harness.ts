@@ -375,6 +375,76 @@ describe('VisionCamera - Session', () => {
     await session.stop()
   })
 
+  it('keeps a stopped session bound when another session is configured and cleared', async () => {
+    const backDevice = factory.getDefaultCamera('back')
+    assert.exists(backDevice, 'no back camera')
+
+    const sessionA = await VisionCamera.createCameraSession(false)
+    const photoOutputA = VisionCamera.createPhotoOutput({
+      targetResolution: CommonResolutions.HD_4_3,
+      containerFormat: 'jpeg',
+      quality: 0.8,
+      qualityPrioritization: 'balanced',
+    })
+    await sessionA.configure([
+      {
+        input: backDevice,
+        outputs: [{ output: photoOutputA, mirrorMode: 'auto' }],
+        constraints: [],
+      },
+    ])
+    const startedA = deferred()
+    const startSubA = sessionA.addOnStartedListener(startedA.resolve)
+    await sessionA.start()
+    await withTimeout(startedA.promise, 10_000, 'session A start')
+    startSubA.remove()
+    await sessionA.stop()
+
+    // A second session on the same camera, set up and torn down the way a
+    // second <Camera> mounting and unmounting does.
+    const sessionB = await VisionCamera.createCameraSession(false)
+    const photoOutputB = VisionCamera.createPhotoOutput({
+      targetResolution: CommonResolutions.HD_4_3,
+      containerFormat: 'jpeg',
+      quality: 0.8,
+      qualityPrioritization: 'balanced',
+    })
+    await sessionB.configure([
+      {
+        input: backDevice,
+        outputs: [{ output: photoOutputB, mirrorMode: 'auto' }],
+        constraints: [],
+      },
+    ])
+    const startedB = deferred()
+    const startSubB = sessionB.addOnStartedListener(startedB.resolve)
+    await sessionB.start()
+    await withTimeout(startedB.promise, 10_000, 'session B start')
+    startSubB.remove()
+    await sessionB.stop()
+    await sessionB.configure([])
+
+    // Session A was never reconfigured, so resuming it must work.
+    const restartedA = deferred()
+    const restartSubA = sessionA.addOnStartedListener(restartedA.resolve)
+    await sessionA.start()
+    await withTimeout(restartedA.promise, 10_000, 'session A restart')
+    restartSubA.remove()
+
+    const photo = await withTimeout(
+      photoOutputA.capturePhoto(
+        { flashMode: 'off', enableShutterSound: false },
+        {},
+      ),
+      10_000,
+      'session A capture after session B was cleared',
+    )
+    expect(photo.width).toBeGreaterThan(0)
+    photo.dispose()
+
+    await sessionA.stop()
+  })
+
   it('supports a multi-cam session when the platform allows it', async (context) => {
     if (!VisionCamera.supportsMultiCamSessions) {
       return context.skip('multi-cam session: not supported on this platform')
