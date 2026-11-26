@@ -19,6 +19,7 @@ import com.margelo.nitro.camera.extensions.sortedByClosestTo
 import com.margelo.nitro.camera.extensions.surfaceRotation
 import com.margelo.nitro.camera.hybrids.HybridNativeThread
 import com.margelo.nitro.camera.hybrids.instances.HybridFrame
+import com.margelo.nitro.camera.public.FrameInterceptors
 import com.margelo.nitro.camera.public.NativeCameraOutput
 import com.margelo.nitro.camera.utils.IdentifiableExecutor
 
@@ -114,6 +115,7 @@ class HybridFrameOutput(
 
     if (onFrame != null) {
       imageAnalysis.setAnalyzer(executor) { image ->
+        val image = FrameInterceptors.intercept(image, mirrorMode == MirrorMode.ON) ?: return@setAnalyzer
         // This represents the Image's orientation relative to the
         // Frame Output. If `enablePhysicalBufferRotation` is true,
         // it will always be `UP` - otherwise it will be whatever

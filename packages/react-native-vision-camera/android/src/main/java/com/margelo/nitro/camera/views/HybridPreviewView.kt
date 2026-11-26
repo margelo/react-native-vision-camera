@@ -23,6 +23,7 @@ import com.margelo.nitro.camera.extensions.converters.toImplementationMode
 import com.margelo.nitro.camera.extensions.converters.toScaleType
 import com.margelo.nitro.camera.extensions.installHierarchyFitter
 import com.margelo.nitro.camera.hybrids.metering.HybridMeteringPoint
+import com.margelo.nitro.camera.public.FrameInterceptors
 import com.margelo.nitro.camera.public.NativeGestureController
 import com.margelo.nitro.camera.public.NativePreviewOutput
 import com.margelo.nitro.core.Promise
@@ -98,6 +99,7 @@ class HybridPreviewView(
     previewView.setOnTouchListener(this)
     meteringPointFactory = previewView.meteringPointFactory
     pixelRatio = context.resources.displayMetrics.density
+    FrameInterceptors.previewCreated(previewView)
   }
 
   override fun dispose() {

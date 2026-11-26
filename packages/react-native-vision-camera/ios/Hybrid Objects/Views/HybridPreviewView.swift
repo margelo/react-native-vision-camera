@@ -133,6 +133,7 @@ final class HybridPreviewView: HybridPreviewViewSpec {
           self.view.layer.addSublayer(previewLayer)
         }
         previewLayer.frame = self.view.bounds
+        FrameInterceptors.previewAttached(self.view)
 
         // Update resizeMode
         let resizeMode = self.resizeMode ?? .cover

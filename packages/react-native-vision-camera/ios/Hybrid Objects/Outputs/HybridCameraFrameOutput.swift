@@ -157,6 +157,7 @@ final class HybridCameraFrameOutput: HybridCameraFrameOutputSpec, NativeCameraOu
           at: timestamp,
           orientation: bufferOrientation,
           isMirrored: isBufferMirrored)
+        guard let sampleBuffer = FrameInterceptors.intercept(sampleBuffer, orientation: metadata.orientation, isMirrored: metadata.isMirrored) else { return }
         let frame = HybridFrame(
           buffer: sampleBuffer,
           metadata: metadata)
