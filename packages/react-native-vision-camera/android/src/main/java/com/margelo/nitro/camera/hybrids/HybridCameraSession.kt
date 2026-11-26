@@ -109,7 +109,7 @@ class HybridCameraSession(
                   it.output as? NativeCameraOutput
                     ?: throw Error("Output ${it.output} is not of type `NativeCameraOutput`!")
                 }
-              val outputConfig = emptyList<Constraint>().toConfig()
+              val outputConfig = emptyList<Constraint>().toConfig(cameraInfo)
               val preparedUseCases = outputs.map { it.createUseCase(it.mirrorMode, outputConfig) }
               allPreparedUseCases.addAll(preparedUseCases)
               val useCaseGroup = UseCaseGroup.Builder()

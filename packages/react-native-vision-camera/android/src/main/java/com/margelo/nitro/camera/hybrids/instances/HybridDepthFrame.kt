@@ -124,7 +124,7 @@ class HybridDepthFrame(
   }
 
   override fun toFrame(): HybridFrameSpec {
-    return HybridFrame(image, orientation, isMirrored)
+    return HybridFrame(image, orientation, isMirrored, null)
   }
 
   override fun toFrameAsync(): Promise<HybridFrameSpec> {
