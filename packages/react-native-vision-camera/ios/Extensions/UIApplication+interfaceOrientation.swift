@@ -27,4 +27,11 @@ extension UIApplication {
     }
     return windowScene.interfaceOrientation
   }
+
+  /**
+   Get the layer of the key window in the main window scene in the application.
+   */
+  var interfaceWindowLayer: CALayer? {
+    return windowScene?.keyWindow?.layer
+  }
 }
