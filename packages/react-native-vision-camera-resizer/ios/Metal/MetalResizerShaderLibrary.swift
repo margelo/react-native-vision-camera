@@ -15,6 +15,8 @@ struct MetalResizerUniforms {
   var outputHeight: UInt32
   var rotationDegrees: Int32
   var isMirrored: UInt32
+  /// The input buffer's YCbCr matrix. 0 == BT.601, 1 == BT.709, 2 == BT.2020 (see `yuvToRgb` in ResizerKernels.metal).
+  var colorMatrix: UInt32
 }
 
 /// Loads the precompiled Metal shader bundle and resolves the compute pipeline used by the resizer.
