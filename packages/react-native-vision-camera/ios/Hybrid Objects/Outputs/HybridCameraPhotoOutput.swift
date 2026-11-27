@@ -45,6 +45,11 @@ final class HybridCameraPhotoOutput: HybridCameraPhotoOutputSpec, NativeCameraOu
     return Size(width: Double(dims.width), height: Double(dims.height))
   }
 
+  /// Whether this output captures RAW (`dng`) photos, which needs the `.photo` session preset.
+  var capturesRawPhotos: Bool {
+    return options.containerFormat == .dng
+  }
+
   var streamType: StreamType = .photo
   var targetResolution: ResolutionRule {
     return .closestTo(options.targetResolution)
