@@ -13,6 +13,8 @@
 #error NitroModules cannot be found! Are you sure you installed NitroModules properly?
 #endif
 
+// Forward declaration of `Size` to properly resolve imports.
+namespace margelo::nitro::camera { struct Size; }
 // Forward declaration of `TargetStabilizationMode` to properly resolve imports.
 namespace margelo::nitro::camera { enum class TargetStabilizationMode; }
 // Forward declaration of `TargetDynamicRange` to properly resolve imports.
@@ -23,6 +25,7 @@ namespace margelo::nitro::camera { enum class PixelFormat; }
 namespace margelo::nitro::camera { enum class AutoFocusSystem; }
 
 #include <optional>
+#include "Size.hpp"
 #include "TargetStabilizationMode.hpp"
 #include "TargetDynamicRange.hpp"
 #include "PixelFormat.hpp"
@@ -56,6 +59,7 @@ namespace margelo::nitro::camera {
     public:
       // Properties
       virtual std::optional<double> getSelectedFPS() = 0;
+      virtual std::optional<Size> getSelectedVideoResolution() = 0;
       virtual std::optional<TargetStabilizationMode> getSelectedVideoStabilizationMode() = 0;
       virtual std::optional<TargetStabilizationMode> getSelectedPreviewStabilizationMode() = 0;
       virtual std::optional<TargetDynamicRange> getSelectedVideoDynamicRange() = 0;
