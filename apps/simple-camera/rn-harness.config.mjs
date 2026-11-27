@@ -34,6 +34,7 @@ const iosSimulatorName = process.env.HARNESS_IOS_SIMULATOR ?? 'iPhone 16 Pro'
 const iosSimulatorVersion = process.env.HARNESS_IOS_SIMULATOR_VERSION ?? '18.5'
 const iosPhysicalDeviceIdentifier =
   process.env.HARNESS_IOS_DEVICE_ID?.trim() || 'iPhone'
+const iosDeviceMode = process.env.HARNESS_IOS_DEVICE_MODE?.trim().toLowerCase()
 const iosMetroHostInput = process.env.HARNESS_IOS_METRO_HOST?.trim() ?? ''
 const iosMetroPort = process.env.HARNESS_IOS_METRO_PORT ?? '8081'
 
@@ -85,13 +86,16 @@ const androidDevice = useEmulator
     })
   : physicalAndroidDevice(androidPhysicalManufacturer, androidPhysicalModel)
 
-const iosDevice = isCI
-  ? applePhysicalDevice(iosPhysicalDeviceIdentifier, {
+const useIosSimulator =
+  iosDeviceMode === 'simulator' || (iosDeviceMode == null && !isCI)
+
+const iosDevice = useIosSimulator
+  ? appleSimulator(iosSimulatorName, iosSimulatorVersion)
+  : applePhysicalDevice(iosPhysicalDeviceIdentifier, {
       codeSign: {
         teamId: 'TheTeamHereDoesntMatterOnCiButWeHaveToPassItStillIthink',
       },
     })
-  : appleSimulator(iosSimulatorName, iosSimulatorVersion)
 
 const config = {
   entryPoint: './index.js',
