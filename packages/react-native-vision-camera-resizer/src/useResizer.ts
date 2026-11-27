@@ -59,6 +59,7 @@ export function useResizer({
   dataType,
   scaleMode,
   pixelLayout,
+  downscaleFilter,
 }: ResizerOptions): ResizerState {
   const [state, setState] = useState<ResizerState>({
     state: 'loading',
@@ -77,6 +78,7 @@ export function useResizer({
           dataType: dataType,
           scaleMode: scaleMode,
           pixelLayout: pixelLayout,
+          downscaleFilter: downscaleFilter,
         })
         if (isCanceled) return
         setState({ state: 'ready', resizer: resizer, error: undefined })
@@ -88,7 +90,15 @@ export function useResizer({
     return () => {
       isCanceled = true
     }
-  }, [channelOrder, dataType, height, pixelLayout, scaleMode, width])
+  }, [
+    channelOrder,
+    dataType,
+    downscaleFilter,
+    height,
+    pixelLayout,
+    scaleMode,
+    width,
+  ])
 
   return state
 }

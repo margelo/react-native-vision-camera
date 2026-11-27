@@ -18,6 +18,8 @@ constant uint kPixelLayout [[function_constant(1)]];
 constant uint kChannelCount [[function_constant(2)]];
 // 0u == ScaleMode::COVER, 1u == ScaleMode::CONTAIN, 2u == ScaleMode::STRETCH
 constant uint kScaleMode [[function_constant(3)]];
+// 0u == DownscaleFilter::BILINEAR, 1u == DownscaleFilter::AREA
+constant uint kDownscaleFilter [[function_constant(4)]];
 
 inline float3 yuvToRgb(float y, float2 uv) {
   float cb = uv.x - 0.5f;
@@ -30,15 +32,15 @@ inline float3 yuvToRgb(float y, float2 uv) {
   return clamp(float3(r, g, b), 0.0f, 1.0f);
 }
 
-inline float3 sampleRgb(
+/// Samples the source at one point of the output, `outputCoordinate` being in normalized output space.
+inline float3 sampleRgbAt(
   texture2d<float, access::sample> yTexture,
   texture2d<float, access::sample> uvTexture,
-  uint2 gid,
+  float2 outputCoordinate,
   constant ResizeUniforms& uniforms
 ) {
   float2 outputSize = float2(uniforms.outputWidth, uniforms.outputHeight);
   float2 sourceSize = float2(yTexture.get_width(), yTexture.get_height());
-  float2 outputCoordinate = (float2(gid) + 0.5f) / outputSize;
 
   int normalizedRotation = uniforms.rotationDegrees % 360;
   if (normalizedRotation < 0) {
@@ -109,6 +111,60 @@ inline float3 sampleRgb(
   float y = yTexture.sample(resizeSampler, coordinate).r;
   float2 uv = uvTexture.sample(resizeSampler, coordinate).rg;
   return yuvToRgb(y, uv);
+}
+
+/**
+ * The color of one output pixel.
+ *
+ * `DownscaleFilter::BILINEAR` takes one bilinear sample at the pixel's center.
+ * `DownscaleFilter::AREA` takes enough evenly spaced bilinear samples that
+ * neighbouring samples are at most one source pixel apart, and averages them
+ * (OpenCV's INTER_AREA). At exactly 2x every sample lands on a source pixel
+ * center, which is a true box filter; an upscale keeps the single sample.
+ */
+inline float3 sampleRgb(
+  texture2d<float, access::sample> yTexture,
+  texture2d<float, access::sample> uvTexture,
+  uint2 gid,
+  constant ResizeUniforms& uniforms
+) {
+  float2 outputSize = float2(uniforms.outputWidth, uniforms.outputHeight);
+  if (kDownscaleFilter != 1u) {
+    return sampleRgbAt(yTexture, uvTexture, (float2(gid) + 0.5f) / outputSize, uniforms);
+  }
+
+  float2 sourceSize = float2(yTexture.get_width(), yTexture.get_height());
+  int normalizedRotation = uniforms.rotationDegrees % 360;
+  if (normalizedRotation < 0) {
+    normalizedRotation += 360;
+  }
+  if (normalizedRotation == 90 || normalizedRotation == 270) {
+    sourceSize = sourceSize.yx;
+  }
+
+  float2 sourcePixelsPerOutputPixel;
+  switch (kScaleMode) {
+    case 0u: // 0u == ScaleMode::COVER
+      sourcePixelsPerOutputPixel = float2(1.0f / max(outputSize.x / sourceSize.x, outputSize.y / sourceSize.y));
+      break;
+    case 1u: // 1u == ScaleMode::CONTAIN
+      sourcePixelsPerOutputPixel = float2(1.0f / min(outputSize.x / sourceSize.x, outputSize.y / sourceSize.y));
+      break;
+    default: // 2u == ScaleMode::STRETCH
+      sourcePixelsPerOutputPixel = sourceSize / outputSize;
+      break;
+  }
+  // The epsilon keeps an exact integer ratio from rounding up to an extra sample.
+  uint2 taps = uint2(clamp(ceil(sourcePixelsPerOutputPixel - 0.001f), 1.0f, 8.0f));
+
+  float3 sum = float3(0.0f);
+  for (uint j = 0u; j < taps.y; j++) {
+    for (uint i = 0u; i < taps.x; i++) {
+      float2 offset = (float2(float(i), float(j)) + 0.5f) / float2(taps);
+      sum += sampleRgbAt(yTexture, uvTexture, (float2(gid) + offset) / outputSize, uniforms);
+    }
+  }
+  return sum / float(taps.x * taps.y);
 }
 
 inline float3 orderedColor(

@@ -14,6 +14,8 @@ layout(constant_id = 2) const uint kPixelLayout = 0u;
 layout(constant_id = 3) const uint kChannelCount = 0u;
 // 0u == ScaleMode::COVER, 1u == ScaleMode::CONTAIN, 2u == ScaleMode::STRETCH
 layout(constant_id = 4) const uint kScaleMode = 0u;
+// 0u == DownscaleFilter::BILINEAR, 1u == DownscaleFilter::AREA
+layout(constant_id = 5) const uint kDownscaleFilter = 0u;
 
 // The output buffer is addressed as 32-bit words. It must be pre-zeroed before dispatch
 // so that sub-word atomicOr writes from adjacent pixels combine correctly.
@@ -47,11 +49,12 @@ void writePacked(uint byteOffset, uint bitWidth, uint packed) {
   }
 }
 
-// Map each output pixel back into source texture space after mirroring and undoing the frame rotation.
-vec2 outputToInputCoordinate(uvec2 gid) {
+// Map a point of the output (in output pixels) back into source texture space after mirroring and
+// undoing the frame rotation.
+vec2 outputToInputCoordinate(vec2 outputPosition) {
   vec2 outputSize = vec2(float(pushConstants.outputWidth), float(pushConstants.outputHeight));
   vec2 sourceSize = vec2(textureSize(inputImage, 0));
-  vec2 outputCoordinate = (vec2(gid) + vec2(0.5)) / outputSize;
+  vec2 outputCoordinate = outputPosition / outputSize;
 
   int normalizedRotation = pushConstants.rotationDegrees % 360;
   if (normalizedRotation < 0) {
@@ -257,13 +260,56 @@ void main() {
     return;
   }
 
-  vec2 inputCoordinate = outputToInputCoordinate(gid);
-  if (inputCoordinate.x < 0.0 || inputCoordinate.y < 0.0) {
-    writeOutputColor(gid, orderedColor(vec3(0.0)));
+  if (kDownscaleFilter != 1u) {
+    vec2 inputCoordinate = outputToInputCoordinate(vec2(gid) + vec2(0.5));
+    if (inputCoordinate.x < 0.0 || inputCoordinate.y < 0.0) {
+      writeOutputColor(gid, orderedColor(vec3(0.0)));
+      return;
+    }
+
+    vec3 rgb = clamp(texture(inputImage, inputCoordinate).rgb, 0.0, 1.0);
+    vec3 ordered = orderedColor(rgb);
+    writeOutputColor(gid, ordered);
     return;
   }
 
-  vec3 rgb = clamp(texture(inputImage, inputCoordinate).rgb, 0.0, 1.0);
-  vec3 ordered = orderedColor(rgb);
-  writeOutputColor(gid, ordered);
+  // DownscaleFilter::AREA (OpenCV's INTER_AREA): take enough evenly spaced bilinear samples that
+  // neighbouring samples are at most one source pixel apart and average them. At exactly 2x every
+  // sample lands on a source pixel center (a true box filter); an upscale keeps the single sample.
+  vec2 outputSize = vec2(float(pushConstants.outputWidth), float(pushConstants.outputHeight));
+  vec2 sourceSize = vec2(textureSize(inputImage, 0));
+  int normalizedRotation = pushConstants.rotationDegrees % 360;
+  if (normalizedRotation < 0) {
+    normalizedRotation += 360;
+  }
+  if (normalizedRotation == 90 || normalizedRotation == 270) {
+    sourceSize = sourceSize.yx;
+  }
+  vec2 sourcePixelsPerOutputPixel;
+  switch (kScaleMode) {
+    case 0u: // 0u == ScaleMode::COVER
+      sourcePixelsPerOutputPixel = vec2(1.0 / max(outputSize.x / sourceSize.x, outputSize.y / sourceSize.y));
+      break;
+    case 1u: // 1u == ScaleMode::CONTAIN
+      sourcePixelsPerOutputPixel = vec2(1.0 / min(outputSize.x / sourceSize.x, outputSize.y / sourceSize.y));
+      break;
+    default: // 2u == ScaleMode::STRETCH
+      sourcePixelsPerOutputPixel = sourceSize / outputSize;
+      break;
+  }
+  // The epsilon keeps an exact integer ratio from rounding up to an extra sample.
+  uvec2 taps = uvec2(clamp(ceil(sourcePixelsPerOutputPixel - vec2(0.001)), vec2(1.0), vec2(8.0)));
+
+  vec3 sum = vec3(0.0);
+  for (uint j = 0u; j < taps.y; j++) {
+    for (uint i = 0u; i < taps.x; i++) {
+      vec2 offset = (vec2(float(i), float(j)) + vec2(0.5)) / vec2(taps);
+      vec2 inputCoordinate = outputToInputCoordinate(vec2(gid) + offset);
+      // Contain mode's bars (and unsupported scale modes) contribute black.
+      if (inputCoordinate.x >= 0.0 && inputCoordinate.y >= 0.0) {
+        sum += clamp(texture(inputImage, inputCoordinate).rgb, 0.0, 1.0);
+      }
+    }
+  }
+  writeOutputColor(gid, orderedColor(sum / float(taps.x * taps.y)));
 }

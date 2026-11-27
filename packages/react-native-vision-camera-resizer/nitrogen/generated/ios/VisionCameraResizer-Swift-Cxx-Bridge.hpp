@@ -12,6 +12,8 @@
 namespace margelo::nitro::camera::resizer { enum class ChannelOrder; }
 // Forward declaration of `DataType` to properly resolve imports.
 namespace margelo::nitro::camera::resizer { enum class DataType; }
+// Forward declaration of `DownscaleFilter` to properly resolve imports.
+namespace margelo::nitro::camera::resizer { enum class DownscaleFilter; }
 // Forward declaration of `HybridFrameSpec` to properly resolve imports.
 namespace margelo::nitro::camera { class HybridFrameSpec; }
 // Forward declaration of `HybridGPUFrameSpec` to properly resolve imports.
@@ -36,6 +38,7 @@ namespace VisionCameraResizer { class HybridResizerSpec_cxx; }
 // Include C++ defined types
 #include "ChannelOrder.hpp"
 #include "DataType.hpp"
+#include "DownscaleFilter.hpp"
 #include "HybridGPUFrameSpec.hpp"
 #include "HybridResizerFactorySpec.hpp"
 #include "HybridResizerSpec.hpp"
@@ -209,6 +212,21 @@ namespace margelo::nitro::camera::resizer::bridge::swift {
   Func_void_std__exception_ptr create_Func_void_std__exception_ptr(void* NON_NULL swiftClosureWrapper) noexcept;
   inline Func_void_std__exception_ptr_Wrapper wrap_Func_void_std__exception_ptr(Func_void_std__exception_ptr value) noexcept {
     return Func_void_std__exception_ptr_Wrapper(std::move(value));
+  }
+  
+  // pragma MARK: std::optional<DownscaleFilter>
+  /**
+   * Specialized version of `std::optional<DownscaleFilter>`.
+   */
+  using std__optional_DownscaleFilter_ = std::optional<DownscaleFilter>;
+  inline std::optional<DownscaleFilter> create_std__optional_DownscaleFilter_(const DownscaleFilter& value) noexcept {
+    return std::optional<DownscaleFilter>(value);
+  }
+  inline bool has_value_std__optional_DownscaleFilter_(const std::optional<DownscaleFilter>& optional) noexcept {
+    return optional.has_value();
+  }
+  inline DownscaleFilter get_std__optional_DownscaleFilter_(const std::optional<DownscaleFilter>& optional) noexcept {
+    return optional.value();
   }
   
   // pragma MARK: std::shared_ptr<HybridResizerFactorySpec>

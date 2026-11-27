@@ -36,11 +36,15 @@ namespace margelo::nitro::camera::resizer { enum class DataType; }
 namespace margelo::nitro::camera::resizer { enum class ScaleMode; }
 // Forward declaration of `PixelLayout` to properly resolve imports.
 namespace margelo::nitro::camera::resizer { enum class PixelLayout; }
+// Forward declaration of `DownscaleFilter` to properly resolve imports.
+namespace margelo::nitro::camera::resizer { enum class DownscaleFilter; }
 
 #include "ChannelOrder.hpp"
 #include "DataType.hpp"
 #include "ScaleMode.hpp"
 #include "PixelLayout.hpp"
+#include "DownscaleFilter.hpp"
+#include <optional>
 
 namespace margelo::nitro::camera::resizer {
 
@@ -55,10 +59,11 @@ namespace margelo::nitro::camera::resizer {
     DataType dataType     SWIFT_PRIVATE;
     ScaleMode scaleMode     SWIFT_PRIVATE;
     PixelLayout pixelLayout     SWIFT_PRIVATE;
+    std::optional<DownscaleFilter> downscaleFilter     SWIFT_PRIVATE;
 
   public:
     ResizerOptions() = default;
-    explicit ResizerOptions(double width, double height, ChannelOrder channelOrder, DataType dataType, ScaleMode scaleMode, PixelLayout pixelLayout): width(width), height(height), channelOrder(channelOrder), dataType(dataType), scaleMode(scaleMode), pixelLayout(pixelLayout) {}
+    explicit ResizerOptions(double width, double height, ChannelOrder channelOrder, DataType dataType, ScaleMode scaleMode, PixelLayout pixelLayout, std::optional<DownscaleFilter> downscaleFilter): width(width), height(height), channelOrder(channelOrder), dataType(dataType), scaleMode(scaleMode), pixelLayout(pixelLayout), downscaleFilter(downscaleFilter) {}
 
   public:
     friend bool operator==(const ResizerOptions& lhs, const ResizerOptions& rhs) = default;
@@ -79,7 +84,8 @@ namespace margelo::nitro {
         JSIConverter<margelo::nitro::camera::resizer::ChannelOrder>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "channelOrder"))),
         JSIConverter<margelo::nitro::camera::resizer::DataType>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "dataType"))),
         JSIConverter<margelo::nitro::camera::resizer::ScaleMode>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "scaleMode"))),
-        JSIConverter<margelo::nitro::camera::resizer::PixelLayout>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "pixelLayout")))
+        JSIConverter<margelo::nitro::camera::resizer::PixelLayout>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "pixelLayout"))),
+        JSIConverter<std::optional<margelo::nitro::camera::resizer::DownscaleFilter>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "downscaleFilter")))
       );
     }
     static inline jsi::Value toJSI(jsi::Runtime& runtime, const margelo::nitro::camera::resizer::ResizerOptions& arg) {
@@ -90,6 +96,7 @@ namespace margelo::nitro {
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "dataType"), JSIConverter<margelo::nitro::camera::resizer::DataType>::toJSI(runtime, arg.dataType));
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "scaleMode"), JSIConverter<margelo::nitro::camera::resizer::ScaleMode>::toJSI(runtime, arg.scaleMode));
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "pixelLayout"), JSIConverter<margelo::nitro::camera::resizer::PixelLayout>::toJSI(runtime, arg.pixelLayout));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "downscaleFilter"), JSIConverter<std::optional<margelo::nitro::camera::resizer::DownscaleFilter>>::toJSI(runtime, arg.downscaleFilter));
       return obj;
     }
     static inline bool canConvert(jsi::Runtime& runtime, const jsi::Value& value) {
@@ -106,6 +113,7 @@ namespace margelo::nitro {
       if (!JSIConverter<margelo::nitro::camera::resizer::DataType>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "dataType")))) return false;
       if (!JSIConverter<margelo::nitro::camera::resizer::ScaleMode>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "scaleMode")))) return false;
       if (!JSIConverter<margelo::nitro::camera::resizer::PixelLayout>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "pixelLayout")))) return false;
+      if (!JSIConverter<std::optional<margelo::nitro::camera::resizer::DownscaleFilter>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "downscaleFilter")))) return false;
       return true;
     }
   };
